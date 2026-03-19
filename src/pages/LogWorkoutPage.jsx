@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CONFIGURATION
+// ─────────────────────────────────────────────────────────────────────────────
+
 const EXERCISE_DB = {
   Strength: [
     { id: 1,  name: "Bench Press",       muscles: "Chest / Triceps / Shoulders" },
@@ -41,6 +45,10 @@ const EXERCISE_DB = {
 
 const CATEGORIES = ["Strength", "Cardio", "Bodyweight", "Mobility", "HIIT"];
 
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+
 function validate(form) {
   const errors = {};
   if (!form.workoutName.trim())                        errors.workoutName = "Workout name is required";
@@ -51,17 +59,20 @@ function validate(form) {
   return errors;
 }
 
+// Reusable field wrapper: shows label, input, and error message
 function Field({ label, error, children }) {
   return (
     <div className="flex flex-col gap-2">
       <label className="text-[8px] tracking-[0.22em] uppercase text-[#555]">{label}</label>
       {children}
-      {error && (
-        <span className="text-[9px] text-[#FF2A5E] tracking-wide">!! {error}</span>
-      )}
+      {error && <span className="text-[9px] text-[#FF2A5E] tracking-wide">!! {error}</span>}
     </div>
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN PAGE COMPONENT
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function LogWorkoutPage() {
   const navigate = useNavigate();
@@ -84,7 +95,8 @@ export default function LogWorkoutPage() {
   const [search,    setSearch]    = useState("");
   const [dropOpen,  setDropOpen]  = useState(false);
 
-  const exercises = form.category ? EXERCISE_DB[form.category] ?? [] : [];
+  // Exercises filtered by selected category and search text
+  const exercises        = form.category ? EXERCISE_DB[form.category] ?? [] : [];
   const filteredExercises = search.trim()
     ? exercises.filter((e) => e.name.toLowerCase().includes(search.toLowerCase()))
     : exercises;
@@ -110,10 +122,7 @@ export default function LogWorkoutPage() {
 
   function handleSubmit() {
     const errs = validate(form);
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
-      return;
-    }
+    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     const entry = {
       id:          Date.now(),
       workoutName: form.workoutName,
@@ -132,145 +141,84 @@ export default function LogWorkoutPage() {
   }
 
   function handleReset() {
-    setForm({
-      workoutName: "", category: "", exercise: "", sets: "", reps: "",
-      weight: "", weightUnit: "kg", notes: "",
-      date: new Date().toISOString().split("T")[0], duration: "",
-    });
+    setForm({ workoutName: "", category: "", exercise: "", sets: "", reps: "", weight: "", weightUnit: "kg", notes: "", date: new Date().toISOString().split("T")[0], duration: "" });
     setErrors({});
     setSearch("");
     setSubmitted(false);
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#080808] text-[#ECECEC] font-['JetBrains_Mono']">
+    <div>
 
-      <div className="bg-[#C6F135] text-black text-[10px] font-bold tracking-[0.2em] uppercase py-2 overflow-hidden whitespace-nowrap">
-        <div className="inline-flex animate-[ticker_22s_linear_infinite]">
-          {[...Array(2)].flatMap((_, ai) =>
-            ["Log New Workout", "* * *", "Track Your Limits", "* * *", "Stay Consistent", "* * *", "FitTrack v3.0", "* * *"].map(
-              (t, i) => <span key={ai + "-" + i} className="px-8">{t}</span>
-            )
-          )}
-        </div>
-      </div>
-
-      <nav className="sticky top-0 z-50 h-[60px] border-b border-[#1E1E1E] bg-[rgba(8,8,8,0.92)] backdrop-blur-xl grid grid-cols-[auto_1fr_auto_auto] items-center">
-        <div className="px-8 h-full border-r border-[#1E1E1E] flex items-center font-['Barlow_Condensed'] text-2xl font-black tracking-wider uppercase text-[#C6F135]">
-          FitTrack
-        </div>
-        <ul className="flex items-center gap-8 px-8 list-none">
-          {[
-            { label: "User Progress",    to: "/progress"  },
-            { label: "Meal Planner",     to: "/meals"     },
-            { label: "Exercise Library", to: "/exercises" },
-            { label: "Log Workout",      to: "/log",  active: true },
-            { label: "Settings",         to: "/settings"  },
-          ].map(({ label, to, active }) => (
-            <li key={to}>
-              <button
-                onClick={() => navigate(to)}
-                className={`text-[10px] tracking-[0.18em] uppercase transition-colors relative group bg-transparent border-none cursor-pointer ${active ? "text-[#ECECEC]" : "text-[#555] hover:text-[#ECECEC]"}`}
-              >
-                {label}
-                <span className={`absolute -bottom-1 left-0 right-0 h-px bg-[#C6F135] transition-transform origin-left ${active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"}`} />
-              </button>
-            </li>
-          ))}
-        </ul>
-        <div className="px-6 h-full border-l border-[#1E1E1E] flex items-center gap-2 text-[9px] tracking-[0.15em] uppercase text-[#555]">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#C6F135] animate-pulse" />
-          Live
-        </div>
-        <button
-          onClick={() => navigate("/profile")}
-          className="px-7 h-full border-l border-[#1E1E1E] bg-[#C6F135] text-black font-bold text-[10px] tracking-[0.18em] uppercase hover:bg-[#FF2A5E] hover:text-white transition-colors"
-        >
-          Account
-        </button>
-      </nav>
-
-      <div className="px-14 pt-12 pb-10 border-b border-[#1E1E1E] flex items-end justify-between">
+      {/* Page header */}
+      <div className="px-6 md:px-14 pt-10 pb-8 border-b border-[#1E1E1E] flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <div className="text-[8px] tracking-[0.25em] uppercase text-[#FF2A5E] mb-2.5">
-            // Log - New Session
-          </div>
-          <h1 className="font-['Barlow_Condensed'] font-black text-6xl uppercase leading-none tracking-tight">
+          <div className="text-[8px] tracking-[0.25em] uppercase text-[#FF2A5E] mb-2">// Log - New Session</div>
+          <h1 className="font-['Barlow_Condensed'] font-black text-5xl md:text-6xl uppercase leading-none tracking-tight">
             Log <em className="not-italic text-[#C6F135]">Workout</em>
           </h1>
         </div>
         <button
           onClick={() => navigate("/")}
-          className="text-[9px] tracking-[0.2em] uppercase text-[#555] border-b border-[#2A2A2A] pb-1 hover:text-[#C6F135] hover:border-[#C6F135] transition-colors bg-transparent cursor-pointer"
+          className="text-[9px] tracking-[0.2em] uppercase text-[#555] border-b border-[#2A2A2A] pb-1 hover:text-[#C6F135] hover:border-[#C6F135] transition-colors bg-transparent cursor-pointer self-start sm:self-auto"
         >
           Back to Dashboard
         </button>
       </div>
 
+      {/* Success screen */}
       {submitted ? (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] px-14 gap-8">
-          <div className="border border-[#C6F135] p-16 flex flex-col items-center gap-6 max-w-lg w-full">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 gap-8">
+          <div className="border border-[#C6F135] p-12 flex flex-col items-center gap-6 max-w-lg w-full">
             <div className="font-['Barlow_Condensed'] font-black text-6xl text-[#C6F135]">OK</div>
             <div className="font-['Barlow_Condensed'] font-black text-4xl text-[#C6F135] uppercase tracking-tight text-center">
               Workout Logged!
             </div>
             <div className="text-[9px] text-[#555] tracking-[0.15em] uppercase text-center">
-              {form.exercise} / {form.sets} Sets / {form.reps} Reps /{" "}
-              {form.weight ? form.weight + " " + form.weightUnit : "Bodyweight"}
+              {form.exercise} / {form.sets} Sets / {form.reps} Reps / {form.weight ? form.weight + " " + form.weightUnit : "Bodyweight"}
             </div>
             <div className="flex gap-0 w-full mt-4">
-              <button
-                onClick={handleReset}
-                className="flex-1 bg-[#C6F135] text-black font-bold text-[10px] tracking-[0.18em] uppercase py-4 hover:bg-[#FF2A5E] hover:text-white transition-colors cursor-pointer"
-              >
+              <button onClick={handleReset} className="flex-1 bg-[#C6F135] text-black font-bold text-[10px] tracking-[0.18em] uppercase py-4 hover:bg-[#FF2A5E] hover:text-white transition-colors cursor-pointer">
                 Log Another
               </button>
-              <button
-                onClick={() => navigate("/")}
-                className="flex-1 bg-transparent text-[#555] border border-[#2A2A2A] border-l-0 text-[10px] tracking-[0.18em] uppercase py-4 hover:text-[#ECECEC] hover:border-[#555] transition-colors cursor-pointer"
-              >
+              <button onClick={() => navigate("/")} className="flex-1 bg-transparent text-[#555] border border-[#2A2A2A] border-l-0 text-[10px] tracking-[0.18em] uppercase py-4 hover:text-[#ECECEC] hover:border-[#555] transition-colors cursor-pointer">
                 Dashboard
               </button>
             </div>
           </div>
         </div>
+
       ) : (
+        /* Form + preview layout */
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px]">
 
-          <div className="px-14 py-12 border-r border-[#1E1E1E] flex flex-col gap-10">
+          {/* Left — form */}
+          <div className="px-6 md:px-14 py-10 border-r border-[#1E1E1E] flex flex-col gap-8">
 
+            {/* Workout name + date */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Field label="Workout Name" error={errors.workoutName}>
-                <input
-                  type="text"
-                  value={form.workoutName}
-                  onChange={(e) => setField("workoutName", e.target.value)}
-                  placeholder="e.g. Morning Push Day"
+                <input type="text" value={form.workoutName} onChange={(e) => setField("workoutName", e.target.value)} placeholder="e.g. Morning Push Day"
                   className="bg-transparent border border-[#1E1E1E] text-[#ECECEC] text-[10px] tracking-[0.1em] px-4 py-3 outline-none focus:border-[#C6F135] transition-colors placeholder:text-[#333] w-full"
-                  style={{ fontFamily: "JetBrains Mono, monospace" }}
-                />
+                  style={{ fontFamily: "JetBrains Mono, monospace" }} />
               </Field>
               <Field label="Date">
-                <input
-                  type="date"
-                  value={form.date}
-                  onChange={(e) => setField("date", e.target.value)}
+                <input type="date" value={form.date} onChange={(e) => setField("date", e.target.value)}
                   className="bg-transparent border border-[#1E1E1E] text-[#ECECEC] text-[10px] tracking-[0.1em] px-4 py-3 outline-none focus:border-[#C6F135] transition-colors w-full"
-                  style={{ fontFamily: "JetBrains Mono, monospace", colorScheme: "dark" }}
-                />
+                  style={{ fontFamily: "JetBrains Mono, monospace", colorScheme: "dark" }} />
               </Field>
             </div>
 
+            {/* Category filter */}
             <Field label="Select Category" error={errors.category}>
               <div className="flex flex-wrap gap-0 border border-[#1E1E1E] w-fit">
                 {CATEGORIES.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => handleCategoryChange(cat)}
+                  <button key={cat} onClick={() => handleCategoryChange(cat)}
                     className={`px-5 py-3 text-[9px] tracking-[0.18em] uppercase border-r border-[#1E1E1E] last:border-r-0 transition-colors cursor-pointer ${
-                      form.category === cat
-                        ? "bg-[#C6F135] text-black font-bold"
-                        : "bg-transparent text-[#555] hover:bg-[#C6F135] hover:text-black"
+                      form.category === cat ? "bg-[#C6F135] text-black font-bold" : "bg-transparent text-[#555] hover:bg-[#C6F135] hover:text-black"
                     }`}
                   >
                     {cat}
@@ -279,26 +227,21 @@ export default function LogWorkoutPage() {
               </div>
             </Field>
 
+            {/* Exercise search */}
             <Field label="Exercise Name" error={errors.exercise}>
               <div className="relative">
-                <input
-                  type="text"
-                  value={search}
+                <input type="text" value={search}
                   onChange={(e) => { setSearch(e.target.value); setDropOpen(true); setField("exercise", ""); }}
                   onFocus={() => setDropOpen(true)}
                   placeholder={form.category ? "Search " + form.category + " exercises" : "Select a category first"}
                   disabled={!form.category}
                   className="bg-transparent border border-[#1E1E1E] text-[#ECECEC] text-[10px] tracking-[0.1em] px-4 py-3 outline-none focus:border-[#C6F135] transition-colors placeholder:text-[#333] w-full disabled:opacity-30 disabled:cursor-not-allowed"
-                  style={{ fontFamily: "JetBrains Mono, monospace" }}
-                />
+                  style={{ fontFamily: "JetBrains Mono, monospace" }} />
                 {dropOpen && form.category && filteredExercises.length > 0 && (
                   <div className="absolute top-full left-0 right-0 z-30 border border-[#2A2A2A] border-t-0 bg-[#0D0D0D] max-h-52 overflow-y-auto">
                     {filteredExercises.map((ex) => (
-                      <button
-                        key={ex.id}
-                        onClick={() => handleExerciseSelect(ex.name)}
-                        className="w-full text-left px-4 py-3 border-b border-[#1E1E1E] last:border-b-0 hover:bg-[#111] transition-colors cursor-pointer"
-                      >
+                      <button key={ex.id} onClick={() => handleExerciseSelect(ex.name)}
+                        className="w-full text-left px-4 py-3 border-b border-[#1E1E1E] last:border-b-0 hover:bg-[#111] transition-colors cursor-pointer">
                         <div className="text-[10px] text-[#ECECEC] tracking-wide">{ex.name}</div>
                         <div className="text-[8px] text-[#555] tracking-widest mt-0.5">{ex.muscles}</div>
                       </button>
@@ -315,50 +258,29 @@ export default function LogWorkoutPage() {
               )}
             </Field>
 
+            {/* Sets / Reps / Weight / Unit */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <Field label="Sets" error={errors.sets}>
-                <input
-                  type="number"
-                  min="1" max="20"
-                  value={form.sets}
-                  onChange={(e) => setField("sets", e.target.value)}
-                  placeholder="4"
-                  className="bg-transparent border border-[#1E1E1E] text-[#ECECEC] text-[10px] tracking-[0.1em] px-4 py-3 outline-none focus:border-[#C6F135] transition-colors placeholder:text-[#333] w-full"
-                  style={{ fontFamily: "JetBrains Mono, monospace" }}
-                />
+                <input type="number" min="1" max="20" value={form.sets} onChange={(e) => setField("sets", e.target.value)} placeholder="4"
+                  className="bg-transparent border border-[#1E1E1E] text-[#ECECEC] text-[10px] px-4 py-3 outline-none focus:border-[#C6F135] transition-colors placeholder:text-[#333] w-full"
+                  style={{ fontFamily: "JetBrains Mono, monospace" }} />
               </Field>
               <Field label="Reps" error={errors.reps}>
-                <input
-                  type="number"
-                  min="1" max="200"
-                  value={form.reps}
-                  onChange={(e) => setField("reps", e.target.value)}
-                  placeholder="10"
-                  className="bg-transparent border border-[#1E1E1E] text-[#ECECEC] text-[10px] tracking-[0.1em] px-4 py-3 outline-none focus:border-[#C6F135] transition-colors placeholder:text-[#333] w-full"
-                  style={{ fontFamily: "JetBrains Mono, monospace" }}
-                />
+                <input type="number" min="1" max="200" value={form.reps} onChange={(e) => setField("reps", e.target.value)} placeholder="10"
+                  className="bg-transparent border border-[#1E1E1E] text-[#ECECEC] text-[10px] px-4 py-3 outline-none focus:border-[#C6F135] transition-colors placeholder:text-[#333] w-full"
+                  style={{ fontFamily: "JetBrains Mono, monospace" }} />
               </Field>
               <Field label="Weight (optional)">
-                <input
-                  type="number"
-                  min="0"
-                  value={form.weight}
-                  onChange={(e) => setField("weight", e.target.value)}
-                  placeholder="0"
-                  className="bg-transparent border border-[#1E1E1E] text-[#ECECEC] text-[10px] tracking-[0.1em] px-4 py-3 outline-none focus:border-[#C6F135] transition-colors placeholder:text-[#333] w-full"
-                  style={{ fontFamily: "JetBrains Mono, monospace" }}
-                />
+                <input type="number" min="0" value={form.weight} onChange={(e) => setField("weight", e.target.value)} placeholder="0"
+                  className="bg-transparent border border-[#1E1E1E] text-[#ECECEC] text-[10px] px-4 py-3 outline-none focus:border-[#C6F135] transition-colors placeholder:text-[#333] w-full"
+                  style={{ fontFamily: "JetBrains Mono, monospace" }} />
               </Field>
               <Field label="Unit">
                 <div className="flex border border-[#1E1E1E]">
                   {["kg", "lbs"].map((u) => (
-                    <button
-                      key={u}
-                      onClick={() => setField("weightUnit", u)}
+                    <button key={u} onClick={() => setField("weightUnit", u)}
                       className={`flex-1 py-3 text-[9px] tracking-[0.18em] uppercase transition-colors cursor-pointer ${
-                        form.weightUnit === u
-                          ? "bg-[#C6F135] text-black font-bold"
-                          : "bg-transparent text-[#555] hover:text-[#ECECEC]"
+                        form.weightUnit === u ? "bg-[#C6F135] text-black font-bold" : "bg-transparent text-[#555] hover:text-[#ECECEC]"
                       }`}
                     >
                       {u}
@@ -368,41 +290,28 @@ export default function LogWorkoutPage() {
               </Field>
             </div>
 
+            {/* Duration + Notes */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Field label="Duration in minutes (optional)">
-                <input
-                  type="number"
-                  min="1"
-                  value={form.duration}
-                  onChange={(e) => setField("duration", e.target.value)}
-                  placeholder="45"
-                  className="bg-transparent border border-[#1E1E1E] text-[#ECECEC] text-[10px] tracking-[0.1em] px-4 py-3 outline-none focus:border-[#C6F135] transition-colors placeholder:text-[#333] w-full"
-                  style={{ fontFamily: "JetBrains Mono, monospace" }}
-                />
+                <input type="number" min="1" value={form.duration} onChange={(e) => setField("duration", e.target.value)} placeholder="45"
+                  className="bg-transparent border border-[#1E1E1E] text-[#ECECEC] text-[10px] px-4 py-3 outline-none focus:border-[#C6F135] transition-colors placeholder:text-[#333] w-full"
+                  style={{ fontFamily: "JetBrains Mono, monospace" }} />
               </Field>
               <Field label="Notes (optional)">
-                <textarea
-                  value={form.notes}
-                  onChange={(e) => setField("notes", e.target.value)}
-                  placeholder="How did it feel? Personal records?"
-                  rows={3}
-                  className="bg-transparent border border-[#1E1E1E] text-[#ECECEC] text-[10px] tracking-[0.1em] px-4 py-3 outline-none focus:border-[#C6F135] transition-colors placeholder:text-[#333] w-full resize-none"
-                  style={{ fontFamily: "JetBrains Mono, monospace" }}
-                />
+                <textarea value={form.notes} onChange={(e) => setField("notes", e.target.value)} placeholder="How did it feel? Personal records?" rows={3}
+                  className="bg-transparent border border-[#1E1E1E] text-[#ECECEC] text-[10px] px-4 py-3 outline-none focus:border-[#C6F135] transition-colors placeholder:text-[#333] w-full resize-none"
+                  style={{ fontFamily: "JetBrains Mono, monospace" }} />
               </Field>
             </div>
 
+            {/* Submit + Clear */}
             <div className="flex gap-0 pt-2">
-              <button
-                onClick={handleSubmit}
-                className="flex-1 bg-[#C6F135] text-black font-bold text-[11px] tracking-[0.18em] uppercase py-5 hover:bg-[#FF2A5E] hover:text-white transition-colors cursor-pointer"
-              >
+              <button onClick={handleSubmit}
+                className="flex-1 bg-[#C6F135] text-black font-bold text-[11px] tracking-[0.18em] uppercase py-5 hover:bg-[#FF2A5E] hover:text-white transition-colors cursor-pointer">
                 Log Workout
               </button>
-              <button
-                onClick={handleReset}
-                className="bg-transparent text-[#555] border border-[#2A2A2A] border-l-0 text-[10px] tracking-[0.18em] uppercase px-8 py-5 hover:text-[#ECECEC] hover:border-[#555] transition-colors cursor-pointer"
-              >
+              <button onClick={handleReset}
+                className="bg-transparent text-[#555] border border-[#2A2A2A] border-l-0 text-[10px] tracking-[0.18em] uppercase px-8 py-5 hover:text-[#ECECEC] hover:border-[#555] transition-colors cursor-pointer">
                 Clear
               </button>
             </div>
@@ -414,37 +323,32 @@ export default function LogWorkoutPage() {
             )}
           </div>
 
-          <div className="px-10 py-12 flex flex-col gap-8">
+          {/* Right — live preview */}
+          <div className="px-8 py-10 flex flex-col gap-8">
             <div className="text-[8px] tracking-[0.25em] uppercase text-[#FF2A5E]">// Session Preview</div>
 
             <div className="border border-[#1E1E1E] flex flex-col">
               <div className="px-6 py-5 border-b border-[#1E1E1E]">
-                <div className="text-[8px] tracking-widest text-[#555] uppercase mb-1">
-                  {form.date || "---"}
-                </div>
+                <div className="text-[8px] tracking-widest text-[#555] uppercase mb-1">{form.date || "---"}</div>
                 <div className="font-['Barlow_Condensed'] font-black text-3xl uppercase">
                   {form.workoutName || <span className="text-[#333]">Workout Name</span>}
                 </div>
               </div>
-
               <div className="grid grid-cols-2">
                 {[
-                  { label: "Category", value: form.category || "---", color: "#C6F135" },
-                  { label: "Exercise", value: form.exercise || "---", color: "#ECECEC" },
-                  { label: "Sets",     value: form.sets     || "---", color: "#FF2A5E" },
-                  { label: "Reps",     value: form.reps     || "---", color: "#00E5FF" },
+                  { label: "Category", value: form.category || "---",  color: "#C6F135" },
+                  { label: "Exercise", value: form.exercise || "---",  color: "#ECECEC" },
+                  { label: "Sets",     value: form.sets     || "---",  color: "#FF2A5E" },
+                  { label: "Reps",     value: form.reps     || "---",  color: "#00E5FF" },
                   { label: "Weight",   value: form.weight ? form.weight + " " + form.weightUnit : "BW", color: "#FFAA00" },
                   { label: "Duration", value: form.duration ? form.duration + " min" : "---", color: "#555" },
                 ].map(({ label, value, color }, i) => (
                   <div key={i} className="px-5 py-4 border-b border-r border-[#1E1E1E] even:border-r-0">
                     <div className="text-[8px] tracking-[0.2em] uppercase text-[#555] mb-1.5">{label}</div>
-                    <div className="font-['Barlow_Condensed'] font-black text-2xl leading-none" style={{ color }}>
-                      {value}
-                    </div>
+                    <div className="font-['Barlow_Condensed'] font-black text-2xl leading-none" style={{ color }}>{value}</div>
                   </div>
                 ))}
               </div>
-
               {form.notes && (
                 <div className="px-6 py-4 border-t border-[#1E1E1E]">
                   <div className="text-[8px] tracking-widest text-[#555] uppercase mb-2">Notes</div>
@@ -474,10 +378,6 @@ export default function LogWorkoutPage() {
       )}
 
       <style>{`
-        @keyframes ticker {
-          from { transform: translateX(0); }
-          to   { transform: translateX(-50%); }
-        }
         input[type="number"]::-webkit-inner-spin-button,
         input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type="number"] { -moz-appearance: textfield; }
