@@ -1,9 +1,8 @@
-// ─────────────────────────────────────────────────────────────────────────────
+
 // mockData.js
 // All mock data and helper functions for FitTrack Phase 1.
-// ─────────────────────────────────────────────────────────────────────────────
 
-// ── Users ─────────────────────────────────────────────────────────────────────
+
 // Survey data collected at registration.
 // currentWeight + targetWeight + duration → system calculates weekly rate
 export const MOCK_USERS = [
@@ -15,11 +14,11 @@ export const MOCK_USERS = [
     gender: "male",
     age: 22,
     currentWeight: 78,       // kg
-    targetWeight: 85,         // kg — wants to gain
+    targetWeight: 85,         // kg - wants to gain
     height: 180,              // cm
     activityLevel: "moderately_active",
     goal: "gain_muscle",
-    duration: 6,              // months — null if ongoing
+    duration: 6,              // months - null if ongoing
     isOngoing: false,
   },
   {
@@ -45,7 +44,7 @@ export const MOCK_USERS = [
     gender: "male",
     age: 28,
     currentWeight: 90,
-    targetWeight: 90,         // no change — maintain
+    targetWeight: 90,         // no change - maintain
     height: 175,
     activityLevel: "very_active",
     goal: "maintain",
@@ -69,7 +68,7 @@ export const MOCK_USERS = [
   },
 ];
 
-// ── Fitness Goals ─────────────────────────────────────────────────────────────
+// - Fitness Goals 
 export const FITNESS_GOALS = [
   { id: "lose_weight", label: "Lose Weight", desc: "Calorie deficit to reduce body fat." },
   { id: "maintain",    label: "Maintain",    desc: "Maintain current weight and composition." },
@@ -77,20 +76,19 @@ export const FITNESS_GOALS = [
   { id: "bulk",        label: "Bulk",        desc: "Larger surplus to gain overall body weight." },
 ];
 
-// ── Nutrition Calculator ──────────────────────────────────────────────────────
+//  Nutrition Calculator 
 // Takes the user's full profile and returns personalised daily macro targets.
 //
 // New logic:
 //   - Calculates weekly rate from (currentWeight - targetWeight) / (duration in weeks)
 //   - If ongoing → uses safe default rates per goal
-//   - Caps weekly rate at 1kg/week (loss) or 0.5kg/week (gain) — flags isAggressive if capped
-//   - Returns { kcal, protein, carbs, fat, weeklyRate, isAggressive, durationWeeks }
+//  
 export function calcNutritionTargets(user) {
   if (!user) {
     return { kcal: 2000, protein: 140, carbs: 220, fat: 65, weeklyRate: 0, isAggressive: false, durationWeeks: null };
   }
 
-  // ── Step 1: BMR (Mifflin-St Jeor) ─────────────────────────────────────────
+  //  Step 1: BMR (Mifflin-St Jeor) 
   let bmr;
   if (user.gender === "female") {
     bmr = 10 * user.currentWeight + 6.25 * user.height - 5 * user.age - 161;
@@ -98,7 +96,7 @@ export function calcNutritionTargets(user) {
     bmr = 10 * user.currentWeight + 6.25 * user.height - 5 * user.age + 5;
   }
 
-  // ── Step 2: TDEE = BMR × activity multiplier ──────────────────────────────
+  //  Step 2: TDEE = BMR × activity multiplier 
   const activityMultipliers = {
     sedentary:         1.2,
     lightly_active:    1.375,
@@ -107,11 +105,11 @@ export function calcNutritionTargets(user) {
   };
   const tdee = bmr * (activityMultipliers[user.activityLevel] || 1.55);
 
-  // ── Step 3: Calculate weekly rate from goal + duration ────────────────────
+  //  Step 3: Calculate weekly rate from goal + duration 
   // Convert months to weeks (1 month ≈ 4.33 weeks)
   const durationWeeks = user.isOngoing || !user.duration ? null : user.duration * 4.33;
 
-  // Weight difference — positive means gaining, negative means losing
+  // Weight difference - positive means gaining, negative means losing
   const weightDiff = (user.targetWeight || user.currentWeight) - user.currentWeight;
 
   let weeklyRate = 0;
@@ -131,10 +129,10 @@ export function calcNutritionTargets(user) {
     // Calculate from target weight and duration
     weeklyRate = Math.abs(weightDiff) / durationWeeks;
 
-    // No caps needed — survey ensures the user picks a healthy goal upfront
+    
   }
 
-  // ── Step 4: Daily calorie adjustment from weekly rate ─────────────────────
+  //  Step 4: Daily calorie adjustment from weekly rate 
   // 1kg of body weight ≈ 7700 kcal
   const dailyAdjustment = (weeklyRate * 7700) / 7;
 
@@ -148,7 +146,7 @@ export function calcNutritionTargets(user) {
     kcal = Math.round(tdee + dailyAdjustment);
   }
 
-  // ── Step 5: Protein (g/kg, higher for muscle goals) ──────────────────────
+  //  Step 5: Protein (g/kg, higher for muscle goals) 
   const proteinPerKg = {
     lose_weight: 1.6,
     maintain:    1.6,
@@ -157,10 +155,10 @@ export function calcNutritionTargets(user) {
   };
   const protein = Math.round(user.currentWeight * (proteinPerKg[user.goal] || 1.6));
 
-  // ── Step 6: Fat (25% of calories) ────────────────────────────────────────
+  //  Step 6: Fat (25% of calories) 
   const fat = Math.round((kcal * 0.25) / 9);
 
-  // ── Step 7: Carbs (remaining calories) ───────────────────────────────────
+  //  Step 7: Carbs (remaining calories) 
   const remainingKcal = kcal - (protein * 4) - (fat * 9);
   const carbs = Math.max(20, Math.round(remainingKcal / 4));
 
@@ -174,8 +172,8 @@ export function calcNutritionTargets(user) {
   };
 }
 
-// ── Meal Pool ─────────────────────────────────────────────────────────────────
-// 16 meals — recommender picks from these based on user targets + duration
+//  Meal Pool 
+// 16 meals - recommender picks from these based on user targets + duration
 export const MEAL_POOL = [
   // Breakfast
   { id: "B1", cat: "breakfast", name: "Oats & Protein Shake",      time: "07:30", kcal: 520, protein: 42, carbs: 62, fat: 8,  profile: "high_protein" },
@@ -199,16 +197,16 @@ export const MEAL_POOL = [
   { id: "S4", cat: "snack",     name: "Mixed Nuts & Banana",       time: "16:00", kcal: 310, protein: 8,  carbs: 34, fat: 16, profile: "high_carb"    },
 ];
 
-// ── Meal Recommender ──────────────────────────────────────────────────────────
+//  Meal Recommender 
 // Picks 4 meals (one per category) that together hit the user's daily targets.
 //
 // Now accounts for:
 //   - Duration: short plans → prioritise specific profiles (e.g. low_cal for fast cut)
 //   - Goal: which meal profiles to favour
 //   - 3-day rotation via localStorage
-//   - Within 15% tolerance of all 4 macro targets
+//   - Within 10% tolerance of all 4 macro targets
 export function recommendMeals(targets, todayKey, user) {
-  // ── Determine which meal profile to prioritise based on goal + duration ────
+  //  Determine which meal profile to prioritise based on goal + duration 
   // Short duration = more aggressive = prioritise specific profile
   // Long duration / ongoing = balanced variety is fine
 
@@ -226,11 +224,11 @@ export function recommendMeals(targets, todayKey, user) {
     if (user.goal === "maintain")                     preferredProfile = "balanced";
   }
 
-  // ── Filter out recently used meals (3-day rotation) ───────────────────────
+  //  Filter out recently used meals (3-day rotation) 
   let available = MEAL_POOL.filter((meal) => !usedRecently(meal.id, todayKey));
   if (available.length < 6) available = [...MEAL_POOL]; // safety fallback
 
-  // ── Shuffle using date-seeded random (stable all day) ─────────────────────
+  //  Shuffle using date-seeded random (stable all day) 
   const seed = todayKey.split("").reduce((total, char) => total + char.charCodeAt(0), 0);
   let randomState = seed;
 
@@ -247,7 +245,7 @@ export function recommendMeals(targets, todayKey, user) {
     shuffled[j] = temp;
   }
 
-  // ── Sort: preferred profile meals come first within each category ──────────
+  //  Sort: preferred profile meals come first within each category 
   // This means when we pick "the first available meal per category",
   // we're more likely to get a meal that fits the user's goal
   shuffled.sort((a, b) => {
@@ -256,7 +254,7 @@ export function recommendMeals(targets, todayKey, user) {
     return 0;
   });
 
-  // ── Pick one meal per category ────────────────────────────────────────────
+  //  Pick one meal per category 
   const categories = ["breakfast", "lunch", "dinner", "snack"];
 
   function pickOneMealPerCategory(mealList) {
@@ -270,7 +268,7 @@ export function recommendMeals(targets, todayKey, user) {
 
   let combo = pickOneMealPerCategory(shuffled);
 
-  // ── Check if combo hits targets within 15% ────────────────────────────────
+  //  Check if combo hits targets within 10% 
   function isGoodEnough(mealCombo) {
     let totalKcal = 0, totalProtein = 0, totalCarbs = 0, totalFat = 0;
     for (const meal of mealCombo) {
@@ -287,7 +285,7 @@ export function recommendMeals(targets, todayKey, user) {
     return kcalOk && proteinOk && carbsOk && fatOk;
   }
 
-  // ── Try swapping meals if combo doesn't hit targets ───────────────────────
+  //  Try swapping meals if combo doesn't hit targets
   if (!isGoodEnough(combo)) {
     for (let attempt = 0; attempt < 20; attempt++) {
       const catToSwap = categories[attempt % categories.length];
@@ -300,13 +298,13 @@ export function recommendMeals(targets, todayKey, user) {
     }
   }
 
-  // ── Save selected meals to localStorage ──────────────────────────────────
+  //  Save selected meals to localStorage to enforce 3-day rotation
   saveMealDates(combo.map((m) => m.id), todayKey);
 
   return combo;
 }
 
-// ── 3-Day Rotation Helpers ────────────────────────────────────────────────────
+//  3-Day Rotation Helpers 
 function getSavedDates() {
   try {
     return JSON.parse(localStorage.getItem("fittrack_meal_dates") || "{}");
@@ -333,7 +331,7 @@ function usedRecently(mealId, todayKey) {
   return daysApart < 3;
 }
 
-// ── Meal Ingredients ──────────────────────────────────────────────────────────
+//  Meal Ingredients 
 export const MEAL_INGREDIENTS = {
   B1: [
     { ingredientId: 15, portionG: 80,  label: "Oats (dry)"           },
@@ -420,7 +418,7 @@ export const MEAL_INGREDIENTS = {
   ],
 };
 
-// ── Ingredient Database (per 100g) ────────────────────────────────────────────
+//  Ingredient Database (per 100g) 
 export const INGREDIENTS = [
   // Proteins
   { id: 1,  name: "Chicken Breast",        cat: "protein",   kcal: 165, protein: 31,  carbs: 0,   fat: 3.6 },
@@ -481,7 +479,7 @@ export const INGREDIENTS = [
   { id: 51, name: "Protein Shake Powder", cat: "protein",   kcal: 380, protein: 80,  carbs: 7,   fat: 4   },
 ];
 
-// ── Calendar Seed Data ────────────────────────────────────────────────────────
+//  Calendar Seed Data 
 function daysAgo(n) {
   const d = new Date();
   d.setDate(d.getDate() - n);
@@ -507,7 +505,7 @@ export const INITIAL_CALENDAR = {
   ],
 };
 
-// ── Today Key ─────────────────────────────────────────────────────────────────
+//  Today Key 
 export function getTodayKey() {
   return new Date().toISOString().split("T")[0];
 }
