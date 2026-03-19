@@ -1,0 +1,133 @@
+.register-header .login-title em {
+  color: var(--lime); /* Different color for register */
+}
+
+/* Password strength indicator */
+.password-strength {
+  margin-top: 8px;
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.strength-bar {
+  height: 4px;
+  background: var(--line);
+  margin-top: 4px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.strength-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.strength-weak {
+  background: var(--hot);
+  width: 33.33%;
+}
+
+.strength-medium {
+  background: var(--amber);
+  width: 66.66%;
+}
+
+.strength-strong {
+  background: var(--lime);
+  width: 100%;
+}
+
+.strength-text {
+  margin-top: 4px;
+  color: var(--dim);
+}
+
+/* Terms agreement */
+.terms-agreement {
+  margin: 20px 0;
+  font-size: 9px;
+  color: var(--dim);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.terms-agreement input[type="checkbox"] {
+  width: 12px;
+  height: 12px;
+  accent-color: var(--lime);
+}
+
+.terms-agreement a {
+  color: var(--lime);
+  text-decoration: none;
+  border-bottom: 1px solid var(--lime);
+  padding-bottom: 2px;
+}
+
+/* Register specific grid for multiple fields */
+.register-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 500px) {
+  .register-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
+/* Success message for registration */
+.register-success {
+  text-align: center;
+  padding: 40px;
+}
+
+.register-success h3 {
+  font-size: 24px;
+  color: var(--lime);
+  margin-bottom: 16px;
+}
+
+.register-success p {
+  color: var(--dim);
+  font-size: 12px;
+  margin-bottom: 24px;
+}
+
+/* Verification badge */
+.verification-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(198, 241, 53, 0.1);
+  border: 1px solid var(--lime);
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-size: 8px;
+  color: var(--lime);
+}
+
+/* Birthday field specific */
+.birthday-fields {
+  display: flex;
+  gap: 8px;
+}
+
+.birthday-fields select {
+  flex: 1;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--line);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  padding: 12px 8px;
+  outline: none;
+}
+
+.birthday-fields select:focus {
+  border-color: var(--lime);
+}
