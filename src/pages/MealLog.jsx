@@ -13,9 +13,9 @@
 //
 // Props:
 //   darkMode           (bool)
-//   currentUser        (object) — used to get personalised daily targets
-//   calendarData       (object) — to calculate already eaten today
-//   addMealToCalendar  (fn)     — called on form submit to update shared state
+//   currentUser        (object) - used to get personalised daily targets
+//   calendarData       (object) - to calculate already eaten today
+//   addMealToCalendar  (fn)     - called on form submit to update shared state
 //
 // Hooks used: useState, useEffect, useRef
 
@@ -23,9 +23,9 @@
 // Page: Log a Meal
 //
 // New features:
-//   - "My Meals" tab — shows user's saved custom meals, log directly from there
-//   - "Save as Meal" button — saves current ingredients as a reusable meal
-//   - Macro limit warning — warns if logging this meal would exceed daily targets
+//   - "My Meals" tab - shows user's saved custom meals, log directly from there
+//   - "Save as Meal" button - saves current ingredients as a reusable meal
+//   - Macro limit warning - warns if logging this meal would exceed daily targets
 //   - Each saved meal shows ingredient breakdown modal (same as Diet Program)
 //
 // Props:
@@ -62,10 +62,10 @@ export default function MealLog({
   const todayDate = new Date();
   const targets   = calcNutritionTargets(currentUser);
 
-  // ── Active tab: "log" (new meal form) or "saved" (my meals) ───────────────
+  //  Active tab: "log" (new meal form) or "saved" (my meals) 
   const [activeTab, setActiveTab] = useState("log");
 
-  // ── Form state ─────────────────────────────────────────────────────────────
+  //  Form state 
   const [mealName, setMealName] = useState("");
   const [mealType, setMealType] = useState("breakfast");
   const [mealDate, setMealDate] = useState(today);
@@ -73,13 +73,13 @@ export default function MealLog({
   const [servings, setServings] = useState(1);
   const [notes,    setNotes]    = useState("");
 
-  // ── Ingredient state ───────────────────────────────────────────────────────
+  //  Ingredient state 
   const [ingredients, setIngredients] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [catFilter,   setCatFilter]   = useState("all");
   const [showResults, setShowResults] = useState(false);
 
-  // ── Validation, toast, warning ────────────────────────────────────────────
+  //  Validation, toast, warning 
   const [errors,       setErrors]       = useState({});
   const [toast,        setToast]        = useState(null);
   const [showOverLimit, setShowOverLimit] = useState(false); // macro limit warning
@@ -89,7 +89,7 @@ export default function MealLog({
   const searchRef  = useRef(null);
   const navigate   = useNavigate();
 
-  // ── Search results ─────────────────────────────────────────────────────────
+  //  Search results 
   let searchResults = catFilter === "all" ? INGREDIENTS : INGREDIENTS.filter((i) => i.cat === catFilter);
   if (searchQuery.trim()) {
     searchResults = searchResults.filter((i) =>
@@ -111,7 +111,7 @@ export default function MealLog({
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
 
-  // ── Already consumed today ─────────────────────────────────────────────────
+  //  Already consumed today 
   const todayEntries   = calendarData[today] || [];
   let alreadyEatenKcal = 0, alreadyEatenProtein = 0, alreadyEatenCarbs = 0, alreadyEatenFat = 0;
   for (const entry of todayEntries) {
@@ -121,7 +121,7 @@ export default function MealLog({
     alreadyEatenFat     += entry.fat     || 0;
   }
 
-  // ── This meal's totals ─────────────────────────────────────────────────────
+  //  This meal's totals 
   let mealKcal = 0, mealProtein = 0, mealCarbs = 0, mealFat = 0;
   for (const { item, portionG } of ingredients) {
     const ratio = portionG / 100;
@@ -152,7 +152,7 @@ export default function MealLog({
     return Math.min(100, Math.round((value / target) * 100));
   }
 
-  // ── Ingredient handlers ────────────────────────────────────────────────────
+  //  Ingredient handlers 
   function addIngredient(item) {
     setIngredients([...ingredients, { item, portionG: 100 }]);
     setSearchQuery("");
@@ -173,7 +173,7 @@ export default function MealLog({
     }
   }
 
-  // ── Validation ─────────────────────────────────────────────────────────────
+  //  Validation 
   function validate() {
     const newErrors = {};
     if (!mealName.trim())         newErrors.mealName    = "Meal name is required";
@@ -182,14 +182,14 @@ export default function MealLog({
     return Object.keys(newErrors).length === 0;
   }
 
-  // ── Toast ──────────────────────────────────────────────────────────────────
+  //  Toast 
   function showToastMessage(message) {
     setToast(message);
     clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(null), 3000);
   }
 
-  // ── Submit — checks macro limits first ────────────────────────────────────
+  //  Submit — checks macro limits first 
   function handleSubmit(e) {
     e.preventDefault();
     if (!validate()) return;
@@ -203,7 +203,7 @@ export default function MealLog({
     logTheMeal();
   }
 
-  // ── Actually log the meal (called after warning confirmation too) ──────────
+  //  Actually log the meal (used by both form submit and "Log Meal" button in saved meals tab)
   function logTheMeal() {
     const entry = {
       name:    mealName.trim(),
@@ -221,7 +221,7 @@ export default function MealLog({
     setShowOverLimit(false);
   }
 
-  // ── Save as custom meal ────────────────────────────────────────────────────
+  //  Save as custom meal 
   function handleSaveAsMeal() {
     if (!validate()) return;
     saveCustomMeal({
@@ -237,7 +237,7 @@ export default function MealLog({
     resetForm();
   }
 
-  // ── Log a saved meal directly ──────────────────────────────────────────────
+  //  Log a saved meal directly 
   function logSavedMeal(meal) {
     const entry = {
       name:    meal.name,
@@ -253,7 +253,7 @@ export default function MealLog({
     showToastMessage(`"${meal.name}" logged — ${meal.kcal} kcal`);
   }
 
-  // ── Reset form ─────────────────────────────────────────────────────────────
+  //  Reset form 
   function resetForm() {
     setMealName("");
     setNotes("");
@@ -267,7 +267,7 @@ export default function MealLog({
     setCatFilter("all");
   }
 
-  // ── Styling helpers ────────────────────────────────────────────────────────
+  //  Styling helpers 
   const bg    = darkMode ? "bg-[#0a0a0a]"   : "bg-white";
   const bg2   = darkMode ? "bg-[#111]"      : "bg-neutral-50";
   const bg3   = darkMode ? "bg-[#161616]"   : "bg-neutral-100";
@@ -276,11 +276,11 @@ export default function MealLog({
   const muted = darkMode ? "text-[#555]"    : "text-neutral-400";
   const inputClass = `w-full ${bg2} ${txt} border ${bdr} font-mono text-xs px-3 py-2.5 outline-none focus:border-[#C6F135] transition-colors placeholder:text-[#333]`;
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  //  Render 
   return (
     <main className={`${bg} ${txt} min-h-screen`}>
 
-      {/* ── Page Header ──────────────────────────────────────────────────── */}
+      {/*  Page Header  */}
       <header className={`px-6 md:px-8 pt-6 pb-5 border-b ${bdr}`}>
         <Link to="/diet-program"
           className={`inline-flex items-center gap-2 text-xs tracking-widest uppercase ${muted} hover:text-[#C6F135] transition-colors mb-4`}>
@@ -296,7 +296,7 @@ export default function MealLog({
         </h1>
       </header>
 
-      {/* ── Tab switcher: Log New Meal vs My Meals ────────────────────────── */}
+      {/*  Tab switcher: Log New Meal vs My Meals  */}
       <div className={`flex border-b ${bdr}`}>
         <button
           onClick={() => setActiveTab("log")}
@@ -314,9 +314,9 @@ export default function MealLog({
         </button>
       </div>
 
-      {/* ══════════════════════════════════════════════════════════════════ */}
-      {/* TAB 1: LOG NEW MEAL FORM                                          */}
-      {/* ══════════════════════════════════════════════════════════════════ */}
+      
+      {/* TAB 1: LOG NEW MEAL FORM  */}
+      
       {activeTab === "log" && (
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px]">
 
@@ -506,19 +506,19 @@ export default function MealLog({
               </div>
             </section>
 
-            {/* Submit row — Log + Save as Meal */}
+            {/* Submit row - Log + Save as Meal */}
             <div className="flex items-center justify-between px-6 py-4 gap-3">
               <button type="button" onClick={resetForm}
                 className={`text-xs tracking-widest uppercase px-5 py-2.5 border ${bdr} ${muted} hover:text-[#e8e8e8] hover:border-[#555] transition-colors`}>
                 Clear
               </button>
               <div className="flex gap-3">
-                {/* Save as Meal — saves without logging */}
+                {/* Save as Meal - saves without logging */}
                 <button type="button" onClick={handleSaveAsMeal}
                   className={`text-xs tracking-widest uppercase px-5 py-2.5 border border-[#C6F135] text-[#C6F135] hover:bg-[#C6F135] hover:text-black transition-colors`}>
                   Save as Meal
                 </button>
-                {/* Log Meal — logs to calendar */}
+                {/* Log Meal - logs to calendar */}
                 <button type="submit"
                   className="bg-[#C6F135] text-black text-xs font-bold tracking-widest uppercase px-7 py-2.5 hover:bg-[#FF2A5E] hover:text-white transition-colors">
                   Log Meal ✓
@@ -593,9 +593,9 @@ export default function MealLog({
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════════ */}
-      {/* TAB 2: MY MEALS                                                   */}
-      {/* ══════════════════════════════════════════════════════════════════ */}
+      
+      {/* TAB 2: MY MEALS  */}
+      
       {activeTab === "saved" && (
         <div className="px-6 md:px-8 py-6">
           {savedMeals.length === 0 ? (
@@ -667,7 +667,7 @@ export default function MealLog({
         </div>
       )}
 
-      {/* ── Saved Meal Ingredient Modal ───────────────────────────────────── */}
+      {/*  Saved Meal Ingredient Modal */}
       {/* Same layout as the Diet Program ingredient modal */}
       {savedMealModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
@@ -740,7 +740,7 @@ export default function MealLog({
         </div>
       )}
 
-      {/* ── Macro Limit Warning Modal ─────────────────────────────────────── */}
+      {/*  Macro Limit Warning Modal  */}
       {/* Shows when logging would exceed daily targets by more than 10% */}
       {showOverLimit && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
