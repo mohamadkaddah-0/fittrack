@@ -17,7 +17,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { INGREDIENTS } from "../data/mockData";
 
-// ── Food images from Unsplash (matched per ingredient id) ─────────────────────
+//  Food images from Unsplash (matched per ingredient id) 
 const INGREDIENT_IMAGES = {
   1:  "https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800&q=80",
   2:  "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=800&q=80",
@@ -90,7 +90,7 @@ const CAT_COLORS = {
   dairy:     { text: "text-[#00E5FF]", border: "border-[#00E5FF]", hex: "#00E5FF" },
 };
 
-// ── Component ──────────────────────────────────────────────────────────────────
+//  Component 
 export default function IngredientDetail({ darkMode }) {
 
   const { id }   = useParams();   // ingredient ID from the URL
@@ -98,7 +98,7 @@ export default function IngredientDetail({ darkMode }) {
 
   const [item,     setItem]     = useState(null);
   const [notFound, setNotFound] = useState(false);
-  const [portion,  setPortion]  = useState(100); // grams — adjustable by user
+  const [portion,  setPortion]  = useState(100); // grams - adjustable by user
   const [imgError, setImgError] = useState(false);
 
   // Find the ingredient in the database when the page loads or the ID changes
@@ -112,7 +112,7 @@ export default function IngredientDetail({ darkMode }) {
     }
   }, [id]);
 
-  // ── Not found state ────────────────────────────────────────────────────────
+  //  Not found state 
   if (notFound) {
     return (
       <main className={`${darkMode ? "bg-[#0a0a0a] text-[#e8e8e8]" : "bg-white text-neutral-900"} min-h-screen flex flex-col items-center justify-center gap-4`}>
@@ -125,7 +125,7 @@ export default function IngredientDetail({ darkMode }) {
     );
   }
 
-  // ── Loading state ──────────────────────────────────────────────────────────
+  //  Loading state 
   if (!item) {
     return (
       <main className={`${darkMode ? "bg-[#0a0a0a] text-[#555]" : "bg-white text-neutral-400"} min-h-screen flex items-center justify-center`}>
@@ -134,7 +134,7 @@ export default function IngredientDetail({ darkMode }) {
     );
   }
 
-  // ── Scaled nutrition values based on current portion ──────────────────────
+  //  Scaled nutrition values based on current portion 
   const ratio = portion / 100;
   const scaledKcal    = Math.round(item.kcal    * ratio);
   const scaledProtein = Math.round(item.protein * ratio * 10) / 10;
@@ -144,7 +144,7 @@ export default function IngredientDetail({ darkMode }) {
   // Largest macro value — used to scale the bar widths relative to each other
   const maxMacro = Math.max(item.protein, item.carbs, item.fat, 1);
 
-  // ── Styling ────────────────────────────────────────────────────────────────
+  //  Styling   
   const bg    = darkMode ? "bg-[#0a0a0a]"   : "bg-white";
   const bg2   = darkMode ? "bg-[#111]"      : "bg-neutral-50";
   const bg3   = darkMode ? "bg-[#161616]"   : "bg-neutral-100";
@@ -157,11 +157,11 @@ export default function IngredientDetail({ darkMode }) {
     ? CAT_FALLBACK[item.cat]
     : (INGREDIENT_IMAGES[item.id] || CAT_FALLBACK[item.cat]);
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  //  Render 
   return (
     <main className={`${bg} ${txt} min-h-screen`}>
 
-      {/* ── Breadcrumb ──────────────────────────────────────────────────── */}
+      {/*  Breadcrumb  */}
       <div className={`px-6 md:px-8 py-3 border-b ${bdr} ${bg2} flex items-center gap-2 text-xs ${muted}`}>
         <Link to="/meal-log" className="hover:text-[#C6F135] transition-colors">Meal Log</Link>
         <span>/</span>
@@ -170,7 +170,7 @@ export default function IngredientDetail({ darkMode }) {
         <span className={txt}>{item.name}</span>
       </div>
 
-      {/* ── Food Photo ──────────────────────────────────────────────────── */}
+      {/*  Food Photo  */}
       <div className="relative w-full h-56 md:h-72 overflow-hidden">
         <img
           src={imgSrc}
@@ -198,7 +198,7 @@ export default function IngredientDetail({ darkMode }) {
         </div>
       </div>
 
-      {/* ── Page Title ──────────────────────────────────────────────────── */}
+      {/*  Page Title  */}
       <header className={`px-6 md:px-8 pt-5 pb-5 border-b ${bdr}`}>
         <h1 className="font-black text-4xl md:text-5xl uppercase tracking-tight leading-none">
           {item.name}
@@ -208,10 +208,10 @@ export default function IngredientDetail({ darkMode }) {
         </p>
       </header>
 
-      {/* ── Main Content: Nutrition + Sidebar ───────────────────────────── */}
+      {/*  Main Content: Nutrition + Sidebar  */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px]">
 
-        {/* ── Left: Nutrition Details ──────────────────────────────────── */}
+        {/*  Left: Nutrition Details  */}
         <div className={`border-r ${bdr}`}>
 
           {/* Calorie hero */}
@@ -305,7 +305,7 @@ export default function IngredientDetail({ darkMode }) {
 
         </div>
 
-        {/* ── Right: Sidebar ───────────────────────────────────────────── */}
+        {/*  Right: Sidebar  */}
         <aside className="flex flex-col">
 
           {/* Quick stats per 100g */}
