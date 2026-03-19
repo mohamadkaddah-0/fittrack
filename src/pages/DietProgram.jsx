@@ -5,18 +5,18 @@
 //   - Macro bar showing daily targets (calculated from user profile) vs consumed
 //   - Recommended meals picked by the 3-day rotation recommender
 //   - Category filter tabs (All / Breakfast / Lunch / Dinner / Snack)
-//   - Checkable meals — checking adds to calendar and macro bar
-//   - Clickable meal names — opens ingredient breakdown modal
+//   - Checkable meals - checking adds to calendar and macro bar
+//   - Clickable meal names - opens ingredient breakdown modal
 //   - Monthly calendar with colored dots per logged meal
 //   - Day detail panel below calendar
-//   - Goal switcher modal
+//
 //
 // Props:
 //   darkMode       (bool)
-//   currentUser    (object) — used to calculate personalised targets
-//   calendarData   (object) — { "YYYY-MM-DD": [meal entries] }
-//   loggedMeals    (object) — { "YYYY-MM-DD": Set of checked meal ids }
-//   togglePlanMeal (fn)     — called when user checks/unchecks a meal
+//   currentUser    (object) - used to calculate personalised targets
+//   calendarData   (object) - { "YYYY-MM-DD": [meal entries] }
+//   loggedMeals    (object) - { "YYYY-MM-DD": Set of checked meal ids }
+//   togglePlanMeal (fn)     - called when user checks/unchecks a meal
 //
 // Hooks used: useState
 
@@ -25,7 +25,7 @@
 // Page: Personalised Diet Program
 //
 // New features:
-//   - Read-only past days — delete button only shown on today
+//   - Read-only past days - delete button only shown on today
 //   - recommendMeals now receives user for duration-aware meal selection
 //   - Targets now include weeklyRate and durationWeeks, shown in header
 //   - user cannot log in more than 10% of the daily macros
@@ -71,20 +71,20 @@ export default function DietProgram({
   const today     = getTodayKey();
   const todayDate = new Date();
 
-  // ── Local state ────────────────────────────────────────────────────────────
+  //  Local state 
   const [activeFilter,    setActiveFilter]    = useState("all");
   const [calYear,         setCalYear]         = useState(todayDate.getFullYear());
   const [calMonth,        setCalMonth]        = useState(todayDate.getMonth());
   const [selectedDay,     setSelectedDay]     = useState(today);
   const [mealModal, setMealModal] = useState(null);
 
-  // ── Targets — now includes weeklyRate, isAggressive, durationWeeks ─────────
+  //  Targets - now includes weeklyRate, durationWeeks 
   const targets = calcNutritionTargets(currentUser);
 
-  // Recommended meals — passes user for duration-aware selection
+  // Recommended meals - passes user for duration-aware selection
   const recommendedMeals = recommendMeals(targets, today, currentUser);
 
-  // ── Today's consumed totals ────────────────────────────────────────────────
+  //  Today's consumed totals 
   const todayEntries = calendarData[today] || [];
   let consumedKcal = 0, consumedProtein = 0, consumedCarbs = 0, consumedFat = 0;
   for (const entry of todayEntries) {
@@ -105,7 +105,7 @@ export default function DietProgram({
     return Math.min(100, Math.round((consumed / target) * 100));
   }
 
-  // ── Open meal ingredient modal ─────────────────────────────────────────────
+  //  Open meal ingredient modal 
   function openMealModal(meal) {
     const ingList  = MEAL_INGREDIENTS[meal.id] || [];
     const resolved = [];
@@ -124,7 +124,7 @@ export default function DietProgram({
     setMealModal({ meal, ingredients: resolved });
   }
 
-  // ── Calendar helpers ───────────────────────────────────────────────────────
+  //  Calendar helpers 
   function changeMonth(direction) {
     let newMonth = calMonth + direction;
     if (newMonth < 0)  { setCalYear(calYear - 1); newMonth = 11; }
@@ -169,7 +169,7 @@ export default function DietProgram({
     return cells;
   }
 
-  // ── Styling ────────────────────────────────────────────────────────────────
+  //  Styling 
   const bg    = darkMode ? "bg-[#0a0a0a]"   : "bg-white";
   const bg2   = darkMode ? "bg-[#111]"      : "bg-neutral-50";
   const bg3   = darkMode ? "bg-[#161616]"   : "bg-neutral-100";
@@ -181,11 +181,11 @@ export default function DietProgram({
   const firstName          = currentUser?.name?.split(" ")[0] || "You";
   const goalLabel          = currentUser?.goal?.replace(/_/g, " ") || "your plan";
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  //  Render 
   return (
     <main className={`${bg} ${txt} min-h-screen`}>
 
-      {/* ── Page Header ──────────────────────────────────────────────────── */}
+      {/*  Page Header  */}
       <header className={`flex flex-wrap items-end justify-between gap-4 px-6 md:px-8 pt-6 pb-5 border-b ${bdr}`}>
         <div>
           <p className={`text-xs tracking-widest uppercase ${muted} mb-2`}>
@@ -210,7 +210,7 @@ export default function DietProgram({
         </div>
       </header>
 
-      {/* ── Macro Bar ────────────────────────────────────────────────────── */}
+      {/*  Macro Bar  */}
       <section className={`grid grid-cols-2 md:grid-cols-4 border-b ${bdr}`}>
         {[
           { label: "Daily Calories", target: targets.kcal,    consumed: consumedKcal,    color: "#C6F135", cls: "text-[#C6F135]", unit: "kcal" },
@@ -237,10 +237,10 @@ export default function DietProgram({
         ))}
       </section>
 
-      {/* ── Main Grid ────────────────────────────────────────────────────── */}
+      {/*  Main Grid  */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px]">
 
-        {/* ── Left: Meal List ────────────────────────────────────────────── */}
+        {/*  Left: Meal List  */}
         <div className={`border-r ${bdr}`}>
 
           {/* Category filter tabs */}
@@ -340,7 +340,7 @@ export default function DietProgram({
           </div>
         </div>
 
-        {/* ── Right: Calendar ──────────────────────────────────────────────── */}
+        {/*  Right: Calendar  */}
         <div className="flex flex-col">
           <div className={`flex items-center justify-between px-5 py-3 border-b ${bdr}`}>
             <p className="font-black text-xl uppercase tracking-tight">
@@ -454,7 +454,7 @@ export default function DietProgram({
         </div>
       </div>
 
-      {/* ── Meal Ingredient Modal ─────────────────────────────────────────── */}
+      {/*  Meal Ingredient Modal  */}
       {mealModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           role="dialog" aria-modal="true"
