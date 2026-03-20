@@ -56,16 +56,16 @@ const Surveys = () => {
   };
 
   // Options for select fields
-  const genderOptions = ['Male', 'Female', 'Other', 'Prefer not to say'];
+  const genderOptions = ['Male', 'Female'];
   
   const weightGoalOptions = [
     { value: 'lose', label: 'Lose Weight' },
     { value: 'gain', label: 'Gain Weight' },
-    { value: 'maintain', label: 'Maintain Weight' }
+    { value: 'maintain', label: 'Maintain Weight' },
+    { value: 'buildMuscle', label: 'Build Muscle' }
   ];
 
   const performanceGoalOptions = [
-    { value: 'buildMuscle', label: 'Build Muscle' },
     { value: 'buildStrength', label: 'Build Strength' },
     { value: 'improveEndurance', label: 'Improve Endurance' },
     { value: 'improveFlexibility', label: 'Improve Flexibility' },
