@@ -14,18 +14,48 @@ import { Link } from "react-router-dom";
 //             and everyone imports from there)
 // ─────────────────────────────────────────────────────────────
 
-const mockUser = {
-  name:          "Jana",
-  gender:        "female",
-  age:           22,
-  weight:        65,
-  height:        165,
-  activityLevel: "moderate",
-  goal:          "weight loss",
-  level:         "beginner",
-  weeklyTarget:  0.5,
-  totalGoal:     5,
-};
+function loadUserProfile() {
+  try {
+    const saved = localStorage.getItem("userProfile");
+    if (saved) {
+      const p = JSON.parse(saved);
+      return {
+        name:         p.name          || "User",
+        gender:       p.gender        || "Male",
+        age:          p.age           || 20,
+        weight:       parseFloat(p.weight) || 70,
+        weightUnit:   p.weightUnit    || "kg",
+        height:       parseFloat(p.height) || 170,
+        goal:
+          p.weightGoal === "lose"        ? "weight loss"     :
+          p.weightGoal === "gain"        ? "muscle gain"     :
+          p.weightGoal === "buildMuscle" ? "muscle gain"     :
+          p.weightGoal === "maintain"    ? "general fitness" :
+                                          "general fitness",
+        weightGoal:   p.weightGoal    || "maintain",
+        level:        p.fitnessLevel  ? p.fitnessLevel.toLowerCase() : "beginner",
+        limitations:  Array.isArray(p.limitations) ? p.limitations : [],
+        equipment:    Array.isArray(p.equipment)   ? p.equipment   : [],
+        workoutTypes: Array.isArray(p.workoutTypes)? p.workoutTypes : [],
+        targetWeight: parseFloat(p.targetWeight)   || 65,
+        timeline:     p.timeline      || "3 months",
+        weeklyTarget: p.weeklyRate    ? parseFloat(p.weeklyRate) : 0.5,
+        totalGoal:    p.targetWeight && p.weight
+          ? Math.abs(parseFloat(p.targetWeight) - parseFloat(p.weight))
+          : 5,
+      };
+    }
+  } catch (e) {}
+  return {
+    name: "User", gender: "Male", age: 20,
+    weight: 70, weightUnit: "kg", height: 170,
+    goal: "general fitness", weightGoal: "maintain",
+    level: "beginner", limitations: [], equipment: [],
+    workoutTypes: [], targetWeight: 70,
+    timeline: "3 months", weeklyTarget: 0.5, totalGoal: 5,
+  };
+}
+const mockUser = loadUserProfile();
 
 // Shared with friend's meal planner.
 // Friend reads:
@@ -44,6 +74,8 @@ const exercises = [
     goals: ["weight loss", "general fitness"],
     link: "/exercise/1",  kcalRange: "70–90",  muscles: "Full Body",
     desc: "A cardio movement for endurance, rhythm, and calorie burn. Excellent for coordination and cardiovascular fitness.",
+    limitedFor: ["Knee issues", "Joint pain"],
+
   },
   {
     id: 2,  name: "High Knees",       category: "Cardio",        difficulty: "Beginner",
@@ -51,6 +83,8 @@ const exercises = [
     goals: ["weight loss", "general fitness"],
     link: "/exercise/2",  kcalRange: "60–80",  muscles: "Legs, Core",
     desc: "A fast-paced cardio drill that drives your knees up and spikes your heart rate very quickly.",
+    limitedFor: ["Knee issues", "Joint pain"],
+
   },
   {
     id: 3,  name: "Burpees",          category: "Cardio",        difficulty: "Intermediate",
@@ -58,6 +92,8 @@ const exercises = [
     goals: ["weight loss", "general fitness"],
     link: "/exercise/3",  kcalRange: "80–100", muscles: "Full Body",
     desc: "Full-body cardio combining squat, jump, and plank. One of the highest calorie-burning bodyweight exercises.",
+limitedFor: ["Knee issues", "Shoulder injuries", "Back problems", "Joint pain"],
+
   },
   {
     id: 4,  name: "Mountain Climbers",category: "Cardio",        difficulty: "Beginner",
@@ -65,6 +101,8 @@ const exercises = [
     goals: ["weight loss", "general fitness"],
     link: "/exercise/4",  kcalRange: "60–80",  muscles: "Core, Shoulders",
     desc: "Core and cardio movement in a plank position. Drives knees toward chest alternately at pace.",
+    limitedFor: ["Shoulder injuries", "Back problems", "Knee issues"],
+
   },
   {
     id: 5,  name: "Jumping Jacks",    category: "Cardio",        difficulty: "Beginner",
@@ -72,6 +110,8 @@ const exercises = [
     goals: ["weight loss", "general fitness"],
     link: "/exercise/5",  kcalRange: "50–70",  muscles: "Full Body",
     desc: "Classic full-body cardio exercise great for warm-ups and fat loss. Simple and requires no equipment.",
+   limitedFor: ["Knee issues", "Joint pain"],
+
   },
   {
     id: 6,  name: "Running in Place", category: "Cardio",        difficulty: "Beginner",
@@ -79,6 +119,8 @@ const exercises = [
     goals: ["weight loss", "general fitness"],
     link: "/exercise/6",  kcalRange: "55–75",  muscles: "Legs, Core",
     desc: "A basic cardio exercise that builds stamina indoors without any equipment needed.",
+    limitedFor: ["Knee issues", "Joint pain"],
+
   },
   {
     id: 7,  name: "Cycling",          category: "Cardio",        difficulty: "Intermediate",
@@ -86,6 +128,8 @@ const exercises = [
     goals: ["weight loss", "general fitness"],
     link: "/exercise/7",  kcalRange: "60–90",  muscles: "Legs, Glutes",
     desc: "Steady endurance and calorie burn on the bike. Low impact on joints, high calorie output.",
+    limitedFor: [],
+
   },
   {
     id: 8,  name: "Treadmill Walk",   category: "Cardio",        difficulty: "Beginner",
@@ -93,6 +137,8 @@ const exercises = [
     goals: ["weight loss", "general fitness"],
     link: "/exercise/8",  kcalRange: "35–50",  muscles: "Legs, Core",
     desc: "Low-impact cardio activity suitable for beginner routines and active recovery days.",
+    limitedFor: [],
+
   },
   {
     id: 9,  name: "Rowing Machine",   category: "Cardio",        difficulty: "Intermediate",
@@ -100,6 +146,8 @@ const exercises = [
     goals: ["weight loss", "general fitness"],
     link: "/exercise/9",  kcalRange: "70–95",  muscles: "Back, Arms, Legs",
     desc: "Full-body cardio that engages the back, arms, and legs all at once for high calorie burn.",
+   limitedFor: ["Back problems", "Shoulder injuries"],
+  
   },
   {
     id: 10, name: "Stair Climber",    category: "Cardio",        difficulty: "Intermediate",
@@ -107,6 +155,8 @@ const exercises = [
     goals: ["weight loss", "general fitness"],
     link: "/exercise/10", kcalRange: "65–85",  muscles: "Glutes, Legs",
     desc: "Challenges the legs and builds cardiovascular fitness with every step. High glute activation.",
+    limitedFor: ["Knee issues", "Joint pain"],
+
   },
   {
     id: 11, name: "Push Up",          category: "Weightlifting", difficulty: "Beginner",
@@ -114,6 +164,8 @@ const exercises = [
     goals: ["muscle gain", "general fitness"],
     link: "/exercise/11", kcalRange: "50–65",  muscles: "Chest, Triceps, Shoulders",
     desc: "The most fundamental bodyweight exercise. Builds chest, shoulder, and triceps strength with zero equipment.",
+    limitedFor: ["Shoulder injuries"],
+
   },
   {
     id: 12, name: "Bench Press",      category: "Weightlifting", difficulty: "Intermediate",
@@ -121,6 +173,7 @@ const exercises = [
     goals: ["muscle gain"],
     link: "/exercise/12", kcalRange: "45–65",  muscles: "Chest, Triceps, Shoulders",
     desc: "A pressing movement used to build upper-body strength, power, and muscle control with a barbell.",
+    limitedFor: ["Shoulder injuries"],
   },
   {
     id: 13, name: "Pull Up",          category: "Weightlifting", difficulty: "Intermediate",
@@ -128,6 +181,7 @@ const exercises = [
     goals: ["muscle gain", "general fitness"],
     link: "/exercise/13", kcalRange: "50–70",  muscles: "Back, Biceps",
     desc: "Compound back exercise that also works the arms and grip strength significantly.",
+    limitedFor: ["Shoulder injuries"],
   },
   {
     id: 14, name: "Lat Pulldown",     category: "Weightlifting", difficulty: "Beginner",
@@ -135,6 +189,8 @@ const exercises = [
     goals: ["muscle gain", "general fitness"],
     link: "/exercise/14", kcalRange: "40–55",  muscles: "Lats, Upper Back",
     desc: "Machine-based pulling exercise that targets the lats and upper back effectively.",
+    limitedFor: ["Shoulder injuries"],
+
   },
   {
     id: 15, name: "Squat",            category: "Weightlifting", difficulty: "Beginner",
@@ -142,6 +198,8 @@ const exercises = [
     goals: ["weight loss", "muscle gain", "general fitness"],
     link: "/exercise/15", kcalRange: "50–70",  muscles: "Quads, Glutes, Hamstrings",
     desc: "The king of lower body exercises. Builds raw leg and glute strength from the ground up.",
+    limitedFor: ["Knee issues", "Back problems", "Joint pain"],
+
   },
   {
     id: 16, name: "Lunges",           category: "Weightlifting", difficulty: "Beginner",
@@ -149,6 +207,8 @@ const exercises = [
     goals: ["weight loss", "general fitness"],
     link: "/exercise/16", kcalRange: "45–60",  muscles: "Quads, Glutes",
     desc: "Unilateral leg movement that improves balance, coordination, and lower body strength.",
+    limitedFor: ["Knee issues", "Joint pain"],
+
   },
   {
     id: 17, name: "Deadlift",         category: "Weightlifting", difficulty: "Advanced",
@@ -156,6 +216,7 @@ const exercises = [
     goals: ["muscle gain"],
     link: "/exercise/17", kcalRange: "60–80",  muscles: "Hamstrings, Glutes, Back",
     desc: "Powerful compound lift targeting the posterior chain. The most complete strength exercise.",
+    limitedFor: ["Back problems"],
   },
   {
     id: 18, name: "Leg Press",        category: "Weightlifting", difficulty: "Intermediate",
@@ -163,6 +224,8 @@ const exercises = [
     goals: ["muscle gain", "general fitness"],
     link: "/exercise/18", kcalRange: "45–60",  muscles: "Quads, Glutes",
     desc: "Machine exercise for quads, glutes, and leg drive with a safe controlled range of motion.",
+    limitedFor: ["Knee issues", "Joint pain"],
+
   },
   {
     id: 19, name: "Shoulder Press",   category: "Weightlifting", difficulty: "Intermediate",
@@ -170,6 +233,7 @@ const exercises = [
     goals: ["muscle gain"],
     link: "/exercise/19", kcalRange: "40–55",  muscles: "Shoulders, Triceps",
     desc: "Pressing movement that builds strong shoulders and triceps from seated or standing position.",
+    limitedFor: ["Shoulder injuries"],
   },
   {
     id: 20, name: "Biceps Curl",      category: "Weightlifting", difficulty: "Beginner",
@@ -177,6 +241,8 @@ const exercises = [
     goals: ["muscle gain", "general fitness"],
     link: "/exercise/20", kcalRange: "30–45",  muscles: "Biceps",
     desc: "Classic arm isolation exercise for direct biceps growth. Simple and effective with any weight.",
+    limitedFor: [],
+
   },
 ];
 
@@ -205,13 +271,41 @@ function pickRandom(array, n) {
   return result;
 }
 
-function getMatchingExercises(goal, level) {
-  return exercises.filter((ex) => {
-    const goalOk = ex.goals.includes(goal);
-    if (level === "beginner")     return goalOk && ex.difficulty === "Beginner";
-    if (level === "intermediate") return goalOk && ex.difficulty !== "Advanced";
-    return goalOk;
+function getCardioRatio(weightGoal) {
+  if (weightGoal === "lose")        return 0.7;
+  if (weightGoal === "gain")        return 0.3;
+  if (weightGoal === "buildMuscle") return 0.2;
+  if (weightGoal === "maintain")    return 0.5;
+  return 0.5;
+}
+
+function isRiskyForUser(ex, limitations) {
+  if (!limitations || limitations.length === 0) return false;
+  if (limitations.includes("No limitations")) return false;
+  return ex.limitedFor.some(l => limitations.includes(l));
+}
+
+function getMatchingExercises(goal, level, weightGoal, limitations) {
+  const levelLower = (level || "beginner").toLowerCase();
+  const byLevel = exercises.filter(ex => {
+    if (levelLower === "beginner")     return ex.difficulty === "Beginner";
+    if (levelLower === "intermediate") return ex.difficulty !== "Advanced";
+    if (levelLower === "advanced")     return true;
+    if (levelLower === "athlete")      return true;
+    return true;
   });
+
+  const cardioPool   = byLevel.filter(ex => ex.category === "Cardio");
+  const strengthPool = byLevel.filter(ex => ex.category === "Weightlifting");
+
+  const ratio         = getCardioRatio(weightGoal || "maintain");
+  const cardioCount   = Math.round(byLevel.length * ratio);
+  const strengthCount = byLevel.length - cardioCount;
+
+  return [
+    ...cardioPool.slice(0, cardioCount),
+    ...strengthPool.slice(0, strengthCount),
+  ];
 }
 
 function getTodayCalories() {
@@ -303,59 +397,81 @@ function Navbar({ onLogWorkout }) {
 
 // Single exercise card in the ALL EXERCISES grid
 function ExerciseCard({ ex }) {
-  const catColor  = getCatColor(ex.category);
-  const diffColor = getDiffColor(ex.difficulty);
-  const initials  = ex.name.split(" ").map(w => w[0]).join("").slice(0, 2);
+  const catColor   = getCatColor(ex.category);
+  const diffColor  = getDiffColor(ex.difficulty);
+  const initials   = ex.name.split(" ").map(w => w[0]).join("").slice(0, 2);
+  const hasWarning = isRiskyForUser(ex, mockUser.limitations);
 
   return (
     <article
       className="rounded-xl overflow-hidden transition-all duration-300 cursor-pointer"
-      style={{ background: "#0D0D0D", border: "1px solid #1E1E1E" }}
+      style={{ background: "#0D0D0D", border: `1px solid ${hasWarning ? "#FFAA00" : "#1E1E1E"}` }}
       onMouseEnter={e => {
-        e.currentTarget.style.borderColor = "#C6F135";
+        e.currentTarget.style.borderColor = hasWarning ? "#FF2A5E" : "#C6F135";
         e.currentTarget.style.transform   = "scale(1.02)";
       }}
       onMouseLeave={e => {
-        e.currentTarget.style.borderColor = "#1E1E1E";
+        e.currentTarget.style.borderColor = hasWarning ? "#FFAA00" : "#1E1E1E";
         e.currentTarget.style.transform   = "scale(1)";
       }}
     >
       <Link to={ex.link} className="block no-underline">
+
         {/* Thumbnail */}
-        <div className="h-32 flex items-center justify-center relative" style={{ background: "#111111", borderBottom: "1px solid #1E1E1E" }}>
+        <div className="h-32 flex items-center justify-center relative"
+          style={{ background: "#111111", borderBottom: "1px solid #1E1E1E" }}>
           <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: "56px", color: "#2A2A2A", userSelect: "none" }}>
             {initials}
           </span>
-          <span
-            className="absolute top-2 right-2 text-[9px] font-bold tracking-widest uppercase px-2 py-1 rounded border"
-            style={{ color: diffColor, borderColor: diffColor + "66" }}
-          >
+          <span className="absolute top-2 right-2 text-[9px] font-bold tracking-widest uppercase px-2 py-1 rounded border"
+            style={{ color: diffColor, borderColor: diffColor + "66" }}>
             {ex.difficulty}
           </span>
+          {hasWarning && (
+            <span className="absolute top-2 left-2 text-[9px] font-bold tracking-widest uppercase px-2 py-1 rounded"
+              style={{ background: "#FFAA00", color: "#080808" }}>
+              ⚠ Caution
+            </span>
+          )}
         </div>
 
         {/* Body */}
         <div className="p-4">
-          <h3 className="text-xl mb-1" style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, color: "#ECECEC" }}>
+          {hasWarning && (
+            <div className="rounded-lg px-3 py-2 mb-3 text-xs leading-5"
+              style={{ background: "rgba(255,170,0,0.1)", border: "1px solid rgba(255,170,0,0.4)", color: "#FFAA00" }}>
+              ⚠ Not suitable for your limitations. Consult your doctor first.
+            </div>
+          )}
+          <h3 className="text-xl mb-1"
+            style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, color: "#ECECEC" }}>
             {ex.name}
           </h3>
-          <p className="flex items-center gap-2 text-xs uppercase tracking-widest mb-2" style={{ color: "#555555" }}>
-            <span className="w-[7px] h-[7px] rounded-full flex-shrink-0 inline-block" style={{ background: catColor }} />
+          <p className="flex items-center gap-2 text-xs uppercase tracking-widest mb-2"
+            style={{ color: "#555555" }}>
+            <span className="w-[7px] h-[7px] rounded-full flex-shrink-0 inline-block"
+              style={{ background: catColor }} />
             {ex.category}
           </p>
-          <p className="text-xs leading-6 mb-3" style={{ color: "#555555" }}>{ex.desc}</p>
+          <p className="text-xs leading-6 mb-3" style={{ color: "#555555" }}>
+            {ex.desc}
+          </p>
           <span className="inline-block text-[9px] font-bold tracking-widest uppercase px-2 py-1 rounded mb-3"
             style={{ color: "#FFAA00", border: "1px solid rgba(255,170,0,0.3)" }}>
             {ex.kcalRange} kcal / 10 min
           </span>
-          <p className="text-[10px] uppercase tracking-widest mb-3" style={{ color: "#333333" }}>{ex.muscles}</p>
-          <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "#00E5FF" }}>Open exercise page →</p>
+          <p className="text-[10px] uppercase tracking-widest mb-3" style={{ color: "#333333" }}>
+            {ex.muscles}
+          </p>
+          <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "#00E5FF" }}>
+            Open exercise page →
+          </p>
         </div>
+
       </Link>
     </article>
   );
 }
-
 // One card in the 14-day plan grid
 function PlanDayCard({ day, isRest, picks, isDay14, onDay14Click, intensityBoostCount }) {
   function getBoostedRange(rangeString) {
@@ -726,7 +842,7 @@ export default function ExerciseLibrary() {
 
   // ── Helpers ────────────────────────────────────────────────
   function buildPlanDays(level) {
-    const pool     = getMatchingExercises(mockUser.goal, level);
+const pool = getMatchingExercises(mockUser.goal, level, mockUser.weightGoal, mockUser.limitations);
     const lastUsed = {};
     const days     = [];
     for (let day = 1; day <= 14; day++) {
