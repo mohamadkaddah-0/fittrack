@@ -24,55 +24,21 @@ const ACHIEVEMENTS = [
   { emoji: "🎯", name: "25 Workouts",              sub: "1 more session to go - Locked",  color: "#555",    locked: true  },
 ];
 
-const EXPLORE_PLANS = [
-  { id: 1, name: "5x5 Strength",     level: "Intermediate", duration: "6 wks",  tag: "Strength",   tagColor: "lime"  },
-  { id: 2, name: "Fat-Loss HIIT",    level: "Beginner",     duration: "4 wks",  tag: "Cardio",     tagColor: "hot"   },
-  { id: 3, name: "Mobility Flow",    level: "All Levels",   duration: "3 wks",  tag: "Mobility",   tagColor: "cyan"  },
-  { id: 4, name: "Powerlifting Prep",level: "Advanced",     duration: "8 wks",  tag: "Strength",   tagColor: "lime"  },
-  { id: 5, name: "Calisthenics Base",level: "Beginner",     duration: "5 wks",  tag: "Bodyweight", tagColor: "amber" },
-  { id: 6, name: "Marathon Ready",   level: "Intermediate", duration: "12 wks", tag: "Endurance",  tagColor: "cyan"  },
-];
-
-const EXPLORE_FILTERS = ["All", "Strength", "Cardio", "Mobility", "Endurance", "Bodyweight"];
-
-const TAG_COLORS = {
-  lime:  { border: "#C6F135", text: "#C6F135" },
-  hot:   { border: "#FF2A5E", text: "#FF2A5E" },
-  cyan:  { border: "#00E5FF", text: "#00E5FF" },
-  amber: { border: "#FFAA00", text: "#FFAA00" },
-};
-
 // ─────────────────────────────────────────────────────────────────────────────
 // SMALL REUSABLE COMPONENTS
 // ─────────────────────────────────────────────────────────────────────────────
 
-function Tag({ label, color }) {
-  const c = TAG_COLORS[color] || TAG_COLORS.lime;
-  return (
-    <span
-      className="inline-block text-[8px] tracking-[0.15em] uppercase px-2.5 py-1 border"
-      style={{ borderColor: c.border, color: c.text }}
-    >
-      {label}
-    </span>
-  );
-}
-
 function RingProgress({ value, max, color, size = 120, stroke = 8, children }) {
-  const radius       = (size - stroke) / 2;
+  const radius        = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
-  const fillAmount   = max > 0 ? Math.min(value / max, 1) * circumference : 0;
+  const fillAmount    = max > 0 ? Math.min(value / max, 1) * circumference : 0;
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90" style={{ position: "absolute" }}>
         <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke="#1E1E1E" strokeWidth={stroke} />
-        <circle
-          cx={size/2} cy={size/2} r={radius}
-          fill="none" stroke={color} strokeWidth={stroke}
-          strokeDasharray={`${fillAmount} ${circumference}`}
-          strokeLinecap="round"
-          style={{ transition: "stroke-dasharray 0.6s ease" }}
-        />
+        <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke={color} strokeWidth={stroke}
+          strokeDasharray={`${fillAmount} ${circumference}`} strokeLinecap="round"
+          style={{ transition: "stroke-dasharray 0.6s ease" }} />
       </svg>
       <div className="relative z-10 flex flex-col items-center justify-center">{children}</div>
     </div>
@@ -111,26 +77,18 @@ function EditableStatCard({ label, value, unit, goal, color, onSave }) {
         <span className="text-[8px] tracking-[0.22em] uppercase text-[#555]">{label}</span>
         <span className="text-[8px] text-[#333] uppercase tracking-widest">click to edit</span>
       </div>
-
       {editing ? (
-        <input
-          autoFocus
-          type="number"
-          min="0"
-          value={input}
+        <input autoFocus type="number" min="0" value={input}
           onChange={(e) => setInput(e.target.value)}
-          onBlur={saveValue}
-          onKeyDown={handleKeyDown}
+          onBlur={saveValue} onKeyDown={handleKeyDown}
           onClick={(e) => e.stopPropagation()}
-          className="bg-transparent border-b border-[#C6F135] text-[#C6F135] font-['Barlow_Condensed'] font-black text-4xl w-full outline-none pb-1"
-        />
+          className="bg-transparent border-b border-[#C6F135] text-[#C6F135] font-['Barlow_Condensed'] font-black text-4xl w-full outline-none pb-1" />
       ) : (
         <div className="font-['Barlow_Condensed'] font-black text-5xl leading-none" style={{ color }}>
           {value}
           {unit && <span className="text-base text-[#555] font-['JetBrains_Mono'] ml-1">{unit}</span>}
         </div>
       )}
-
       {goal > 0 && (
         <>
           <div className="w-full bg-[#1E1E1E] h-[3px]">
@@ -150,7 +108,6 @@ function EditableStatCard({ label, value, unit, goal, color, onSave }) {
 export default function HomePage() {
   const navigate = useNavigate();
 
-  // All stats start at 0
   const [caloriesIntake, setCaloriesIntake] = useState(0);
   const [caloriesBurnt,  setCaloriesBurnt]  = useState(0);
   const [waterIntake,    setWaterIntake]     = useState(0);
@@ -158,22 +115,14 @@ export default function HomePage() {
   const [steps,          setSteps]           = useState(0);
   const [daysCompleted,  setDaysCompleted]   = useState(0);
 
-  const [exploreFilter, setExploreFilter]   = useState("All");
-
-  const planProgress  = Math.round((daysCompleted / CURRENT_PLAN.totalDays) * 100);
-  const filteredPlans = exploreFilter === "All"
-    ? EXPLORE_PLANS
-    : EXPLORE_PLANS.filter((plan) => plan.tag === exploreFilter);
+  const planProgress = Math.round((daysCompleted / CURRENT_PLAN.totalDays) * 100);
 
   return (
     <div>
 
-      {/* ══════════════════════════════════════════════════════════ */}
-      {/* SECTION 1 — Today's Stats                                 */}
-      {/* ══════════════════════════════════════════════════════════ */}
+      {/* SECTION 1 — Today's Stats */}
       <div className="border-b border-[#1E1E1E]">
 
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between px-6 md:px-14 pt-10 pb-8 border-b border-[#1E1E1E] gap-4">
           <div>
             <div className="text-[8px] tracking-[0.25em] uppercase text-[#FF2A5E] mb-2">
@@ -188,7 +137,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Editable stat cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border-b border-[#1E1E1E]">
           <EditableStatCard label="Calories Intake" value={caloriesIntake} unit="kcal" goal={GOALS.calories}  color="#C6F135" onSave={setCaloriesIntake} />
           <EditableStatCard label="Calories Burnt"  value={caloriesBurnt}  unit="kcal" goal={0}               color="#FF2A5E" onSave={setCaloriesBurnt}  />
@@ -196,7 +144,6 @@ export default function HomePage() {
           <EditableStatCard label="Exercises Done"  value={exercisesDone}  unit=""     goal={GOALS.exercises} color="#FFAA00" onSave={setExercisesDone}   />
         </div>
 
-        {/* Steps row */}
         <div
           className="px-6 md:px-14 py-5 border-b border-[#1E1E1E] flex flex-col sm:flex-row sm:items-center gap-4 cursor-pointer hover:bg-[#111] transition-colors"
           onClick={() => {
@@ -216,14 +163,14 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════════════════════ */}
-      {/* SECTION 2 — Plan Progress + Achievements                  */}
-      {/* ══════════════════════════════════════════════════════════ */}
+      {/* SECTION 2 — Plan Progress + Achievements */}
       <div className="border-b border-[#1E1E1E]">
 
         <div className="flex items-end justify-between px-6 md:px-14 pt-10 pb-8 border-b border-[#1E1E1E]">
           <div>
-            <div className="text-[8px] tracking-[0.25em] uppercase text-[#FF2A5E] mb-2">// 002 - Plan and Achievements</div>
+            <div className="text-[8px] tracking-[0.25em] uppercase text-[#FF2A5E] mb-2">
+              // 002 - Plan and Achievements
+            </div>
             <h2 className="font-['Barlow_Condensed'] font-black text-4xl md:text-5xl uppercase leading-none tracking-tight">
               Your <em className="not-italic text-[#C6F135]">Progress</em>
             </h2>
@@ -241,20 +188,16 @@ export default function HomePage() {
               <RingProgress value={daysCompleted} max={CURRENT_PLAN.totalDays} color="#C6F135" size={120} stroke={8}>
                 <span className="font-['Barlow_Condensed'] font-black text-3xl text-[#C6F135] leading-none">{planProgress}%</span>
               </RingProgress>
-
               <div className="flex flex-col gap-3">
                 <div className="text-[9px] tracking-[0.15em] uppercase text-[#555]">Click a day to mark it done</div>
                 <div className="flex gap-2 flex-wrap mt-1">
                   {Array.from({ length: CURRENT_PLAN.totalDays }).map((_, i) => (
-                    <button
-                      key={i}
+                    <button key={i}
                       onClick={() => setDaysCompleted(i < daysCompleted ? i : i + 1)}
                       className="w-9 h-9 border flex items-center justify-center text-[10px] transition-colors cursor-pointer"
-                      style={
-                        i < daysCompleted
-                          ? { borderColor: "#C6F135", background: "rgba(198,241,53,0.1)", color: "#C6F135" }
-                          : { borderColor: "#1E1E1E", color: "#333" }
-                      }
+                      style={i < daysCompleted
+                        ? { borderColor: "#C6F135", background: "rgba(198,241,53,0.1)", color: "#C6F135" }
+                        : { borderColor: "#1E1E1E", color: "#333" }}
                     >
                       {i < daysCompleted ? "OK" : i + 1}
                     </button>
@@ -282,11 +225,11 @@ export default function HomePage() {
             </div>
             <div className="border border-[#1E1E1E]">
               {ACHIEVEMENTS.map((a, i) => (
-                <div
-                  key={i}
+                <div key={i}
                   className={`flex items-center gap-5 px-6 py-5 border-b border-[#1E1E1E] last:border-b-0 transition-all duration-200 cursor-default hover:bg-[#111] hover:pl-8 ${a.locked ? "opacity-40" : ""}`}
                 >
-                  <div className="w-10 h-10 border flex items-center justify-center text-lg flex-shrink-0" style={{ borderColor: a.locked ? "#333" : a.color }}>
+                  <div className="w-10 h-10 border flex items-center justify-center text-lg flex-shrink-0"
+                    style={{ borderColor: a.locked ? "#333" : a.color }}>
                     {a.emoji}
                   </div>
                   <div>
@@ -300,68 +243,6 @@ export default function HomePage() {
               ))}
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* ══════════════════════════════════════════════════════════ */}
-      {/* SECTION 3 — Explore Workout Plans                         */}
-      {/* ══════════════════════════════════════════════════════════ */}
-      <div className="border-b border-[#1E1E1E]">
-
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between px-6 md:px-14 pt-10 pb-8 border-b border-[#1E1E1E] gap-4">
-          <div>
-            <div className="text-[8px] tracking-[0.25em] uppercase text-[#FF2A5E] mb-2">// 003 - Explore</div>
-            <h2 className="font-['Barlow_Condensed'] font-black text-4xl md:text-5xl uppercase leading-none tracking-tight">
-              Workout <em className="not-italic text-[#C6F135]">Plans</em>
-            </h2>
-          </div>
-          <button
-            onClick={() => navigate("/exercises")}
-            className="text-[9px] tracking-[0.2em] uppercase text-[#555] border-b border-[#2A2A2A] pb-1 hover:text-[#C6F135] hover:border-[#C6F135] transition-colors bg-transparent cursor-pointer self-start sm:self-auto"
-          >
-            View All
-          </button>
-        </div>
-
-        {/* Filter buttons */}
-        <div className="flex items-center border-b border-[#1E1E1E] overflow-x-auto">
-          {EXPLORE_FILTERS.map((f) => (
-            <button
-              key={f}
-              onClick={() => setExploreFilter(f)}
-              className={`px-5 py-3 text-[9px] tracking-[0.18em] uppercase border-r border-[#1E1E1E] whitespace-nowrap transition-colors first:border-l first:border-[#1E1E1E] cursor-pointer ${
-                exploreFilter === f ? "bg-[#C6F135] text-black font-bold" : "bg-transparent text-[#555] hover:bg-[#C6F135] hover:text-black"
-              }`}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
-
-        {/* Plans grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 px-6 md:px-14 py-10 gap-0">
-          {filteredPlans.map((plan) => (
-            <div
-              key={plan.id}
-              className="border border-[#1E1E1E] -mt-px -ml-px p-8 hover:bg-[#111] hover:border-[#C6F135] transition-all duration-200 cursor-pointer group relative overflow-hidden"
-              onClick={() => navigate(`/plan/${plan.id}`)}
-            >
-              <div className="absolute top-0 right-2 font-['Barlow_Condensed'] font-black text-[100px] leading-none text-[#1E1E1E] select-none pointer-events-none group-hover:text-[#111] transition-colors">
-                {String(plan.id).padStart(2, "0")}
-              </div>
-              <div className="relative z-10">
-                <div className="flex items-start justify-between mb-4">
-                  <Tag label={plan.tag} color={plan.tagColor} />
-                  <span className="text-[8px] tracking-widest text-[#555] uppercase">{plan.duration}</span>
-                </div>
-                <div className="font-['Barlow_Condensed'] font-black text-3xl uppercase mb-2 tracking-wide">{plan.name}</div>
-                <div className="text-[9px] text-[#555] tracking-[0.15em] uppercase mb-6">{plan.level}</div>
-                <button className="w-full border border-[#C6F135] text-[#C6F135] text-[9px] tracking-[0.18em] uppercase py-2.5 hover:bg-[#C6F135] hover:text-black transition-colors cursor-pointer">
-                  View Plan
-                </button>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
 

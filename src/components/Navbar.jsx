@@ -1,5 +1,9 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONFIGURATION
+// ─────────────────────────────────────────────────────────────────────────────
 
 const NAV_LINKS = [
   { label: "Home",             to: "/"          },
@@ -11,10 +15,50 @@ const NAV_LINKS = [
   { label: "Settings",         to: "/settings"  },
 ];
 
+// Account dropdown menu options
+const ACCOUNT_MENU = [
+  { label: "My Profile",  to: "/profile"   },
+  { label: "Dashboard",   to: "/dashboard" },
+  { label: "Settings",    to: "/settings"  },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NAVBAR COMPONENT
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function Navbar() {
   const navigate  = useNavigate();
   const location  = useLocation();
-  const [menuOpen, setMenuOpen] = useState(false);
+
+  const [menuOpen,    setMenuOpen]    = useState(false); // burger menu
+  const [accountOpen, setAccountOpen] = useState(false); // account dropdown
+  const [loggedIn,    setLoggedIn]    = useState(false); // mock login state
+
+  const accountRef = useRef(null);
+
+  // Close account dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (accountRef.current && !accountRef.current.contains(e.target)) {
+        setAccountOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Mock logout
+  function handleLogout() {
+    setLoggedIn(false);
+    setAccountOpen(false);
+    navigate("/login");
+  }
+
+  // Navigate from account menu
+  function handleAccountNav(to) {
+    setAccountOpen(false);
+    navigate(to);
+  }
 
   return (
     <>
@@ -41,7 +85,7 @@ export default function Navbar() {
             FitTrack
           </button>
 
-          {/* Desktop links */}
+          {/* Desktop nav links */}
           <ul className="hidden md:flex items-center gap-8 list-none">
             {NAV_LINKS.map(({ label, to }) => {
               const isActive = location.pathname === to;
@@ -72,13 +116,61 @@ export default function Navbar() {
               Live
             </div>
 
-            {/* Account button */}
-            <button
-              onClick={() => navigate("/profile")}
-              className="bg-[#C6F135] text-black font-bold text-[10px] tracking-[0.18em] uppercase px-4 py-2 hover:bg-[#FF2A5E] hover:text-white transition-colors cursor-pointer"
-            >
-              Account
-            </button>
+            {/* Account button + dropdown */}
+            <div className="relative" ref={accountRef}>
+              <button
+                onClick={() => setAccountOpen(!accountOpen)}
+                className="bg-[#C6F135] text-black font-bold text-[10px] tracking-[0.18em] uppercase px-4 py-2 hover:bg-[#FF2A5E] hover:text-white transition-colors cursor-pointer flex items-center gap-2"
+              >
+                Account
+                {/* Arrow indicator */}
+                <span className={`text-[8px] transition-transform duration-200 ${accountOpen ? "rotate-180" : ""}`}>
+                  ▼
+                </span>
+              </button>
+
+              {/* Dropdown menu */}
+              {accountOpen && (
+                <div className="absolute right-0 top-full mt-1 w-48 border border-[#2A2A2A] bg-[#0D0D0D] z-50">
+
+                  {/* User info row */}
+                  <div className="px-4 py-3 border-b border-[#1E1E1E]">
+                    <div className="text-[8px] tracking-[0.2em] uppercase text-[#555]">Signed in as</div>
+                    <div className="text-[10px] text-[#ECECEC] mt-1 truncate">
+                      {loggedIn ? "demo@fittrack.io" : "Guest"}
+                    </div>
+                  </div>
+
+                  {/* Menu options */}
+                  {ACCOUNT_MENU.map(({ label, to }) => (
+                    <button
+                      key={to}
+                      onClick={() => handleAccountNav(to)}
+                      className="w-full text-left px-4 py-3 text-[9px] tracking-[0.18em] uppercase text-[#555] hover:text-[#ECECEC] hover:bg-[#111] border-b border-[#1E1E1E] transition-colors cursor-pointer bg-transparent"
+                    >
+                      {label}
+                    </button>
+                  ))}
+
+                  {/* Login / Logout */}
+                  {loggedIn ? (
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-3 text-[9px] tracking-[0.18em] uppercase text-[#FF2A5E] hover:bg-[#111] transition-colors cursor-pointer bg-transparent"
+                    >
+                      Logout
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => { setAccountOpen(false); navigate("/login"); }}
+                      className="w-full text-left px-4 py-3 text-[9px] tracking-[0.18em] uppercase text-[#C6F135] hover:bg-[#111] transition-colors cursor-pointer bg-transparent"
+                    >
+                      Login
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Burger — mobile only */}
             <button
@@ -105,6 +197,17 @@ export default function Navbar() {
                 {label}
               </button>
             ))}
+            {/* Mobile account options */}
+            <div className="border-t border-[#2A2A2A]">
+              <button onClick={() => { navigate("/profile"); setMenuOpen(false); }}
+                className="w-full text-left px-6 py-4 text-[10px] tracking-[0.18em] uppercase text-[#555] hover:text-[#ECECEC] hover:bg-[#111] border-b border-[#1E1E1E] transition-colors cursor-pointer bg-transparent">
+                My Profile
+              </button>
+              <button onClick={() => { navigate("/login"); setMenuOpen(false); }}
+                className="w-full text-left px-6 py-4 text-[10px] tracking-[0.18em] uppercase text-[#C6F135] hover:bg-[#111] transition-colors cursor-pointer bg-transparent">
+                Login
+              </button>
+            </div>
           </div>
         )}
       </nav>
