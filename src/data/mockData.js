@@ -522,11 +522,16 @@ export const workoutLog = [];
 // Read user profile saved by survey
 export function getUserProfile() {
   try {
+    // Get registration info (name, email, username) from sessionStorage
+    const sessionUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
+    
     const saved = localStorage.getItem("userProfile");
     if (saved) {
       const p = JSON.parse(saved);
       return {
-        name:         p.name || "User",
+        name:     sessionUser.name     || p.name  || "User",
+        email:    sessionUser.email    || p.email || "",
+        username: sessionUser.username || "",
         gender:       (p.gender || "male").toLowerCase(),
         age:          p.age || 20,
         weight:       parseFloat(p.weight) || 70,
@@ -551,7 +556,12 @@ export function getUserProfile() {
         // optional extra usage for other pages
         currentWeight: parseFloat(p.weight) || 70,
         targetWeight: parseFloat(p.targetWeight) || 70,
-        activityLevel: "moderately_active",
+        activityLevel:
+  p.activityLevel === "lightly_active"    ? "lightly_active"    :
+  p.activityLevel === "moderately_active" ? "moderately_active" :
+  p.activityLevel === "very_active"       ? "very_active"       :
+  p.activityLevel === "sedentary"         ? "sedentary"         :
+  "moderately_active",
         isOngoing: p.timeline === "Ongoing",
         duration:
           p.timeline === "1 month"  ? 1  :
