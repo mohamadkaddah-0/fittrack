@@ -278,8 +278,8 @@ export default function MealLog({
           })}
         </p>
        <h1 className="font-['Barlow_Condensed'] font-black text-5xl md:text-7xl uppercase tracking-tight leading-none">
-       Diet <span className="text-[#C6F135]">Program</span>
-      </h1>
+       Log a <span className="text-[#C6F135]">Meal</span>
+       </h1>
       </header>
 
       {/*  Tab switcher  */}
