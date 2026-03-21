@@ -283,7 +283,7 @@ export default function MealLog({
       </header>
 
       {/*  Tab switcher  */}
-      <div className={`flex border-b ${bdr}`}>
+      <div className={`flex border-b ${bdr} overflow-x-auto`}>
         <button onClick={() => setActiveTab("log")}
           className={`px-6 py-3 text-xs tracking-widest uppercase border-r transition-all ${bdr} ${
             activeTab === "log" ? "bg-[#C6F135] text-black font-bold" : `${muted} ${bg2} hover:text-[#e8e8e8]`
