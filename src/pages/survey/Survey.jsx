@@ -21,13 +21,14 @@ const Surveys = () => {
     timeline: '',
     
     // Step 3: Workout Preferences
-    workoutTypes: [],
+    workoutTypes: '',
     workoutLocation: '',
     workoutDuration: '',
     workoutTime: '',
     
     // Step 4: Experience Level
     fitnessLevel: '',
+    activityLevel: '', // Added activity level
     limitations: [],
     equipment: []
   });
@@ -73,9 +74,7 @@ const Surveys = () => {
   ];
 
   const workoutTypeOptions = [
-    'Running', 'Walking', 'Cycling', 'Swimming',
-    'Weight Training', 'Bodyweight', 'Yoga', 'HIIT',
-    'Pilates', 'CrossFit', 'Dance', 'Sports'
+    'Cardio', 'Weightlifting', 'Calisthenics'
   ];
 
   const locationOptions = ['Home', 'Gym', 'Outdoors', 'Anywhere'];
@@ -85,6 +84,30 @@ const Surveys = () => {
   const timeOptions = ['Early Morning', 'Morning', 'Afternoon', 'Evening', 'Late Night'];
   
   const fitnessLevelOptions = ['Beginner', 'Intermediate', 'Advanced', 'Athlete'];
+  
+  // Activity level options with descriptions
+  const activityLevelOptions = [
+    { 
+      value: 'sedentary', 
+      label: 'Sedentary',
+      description: 'Little or no exercise, desk job, minimal movement throughout the day'
+    },
+    { 
+      value: 'lightlyActive', 
+      label: 'Lightly Active',
+      description: 'Light exercise 1-3 days/week, occasional walking, light household activities'
+    },
+    { 
+      value: 'moderatelyActive', 
+      label: 'Moderately Active',
+      description: 'Moderate exercise 3-5 days/week, daily movement, active job or regular workouts'
+    },
+    { 
+      value: 'veryActive', 
+      label: 'Very Active',
+      description: 'Hard exercise 6-7 days/week, physically demanding job, intensive training'
+    }
+  ];
   
   const limitationOptions = [
     'Knee issues', 'Back problems', 'Shoulder injuries',
@@ -311,6 +334,7 @@ const Surveys = () => {
         if (!surveyData.performanceGoal) errors.performanceGoal = 'Please select a performance goal';
         if (!surveyData.timeline) errors.timeline = 'Timeline is required';
         
+        // Target weight validation - only required for lose/gain
         if ((surveyData.weightGoal === 'lose' || surveyData.weightGoal === 'gain') && !surveyData.targetWeight) {
           errors.targetWeight = 'Target weight is required';
         } else if (surveyData.targetWeight && surveyData.weight) {
@@ -328,21 +352,22 @@ const Surveys = () => {
           } else if (surveyData.weightGoal === 'gain' && targetWeight <= currentWeight) {
             errors.targetWeight = 'Target weight must be greater than current weight for weight gain';
           } else if (surveyData.weightGoal === 'maintain' && targetWeight) {
+            // Optional validation only if user enters a target weight
             if (Math.abs(targetWeight - currentWeight) > 2) {
               errors.targetWeight = 'For maintenance, target weight should be close to current weight (±2kg)';
             }
           }
-          
-          // Add error if goal is impossible
-          if (goalAnalysis && goalAnalysis.status === 'impossible') {
-            errors.targetWeight = 'This goal is impossible with the selected timeline. Please adjust your target weight or timeline.';
-          }
+        }
+        
+        // Add error if goal is impossible
+        if (goalAnalysis && goalAnalysis.status === 'impossible') {
+          errors.targetWeight = 'This goal is impossible with the selected timeline. Please adjust your target weight or timeline.';
         }
         break;
         
       case 3:
-        if (surveyData.workoutTypes.length === 0) {
-          errors.workoutTypes = 'Select at least one workout type';
+        if (!surveyData.workoutTypes) {
+          errors.workoutTypes = 'Please select a workout type';
         }
         if (!surveyData.workoutLocation) errors.workoutLocation = 'Workout location is required';
         if (!surveyData.workoutDuration) errors.workoutDuration = 'Workout duration is required';
@@ -350,6 +375,7 @@ const Surveys = () => {
         
       case 4:
         if (!surveyData.fitnessLevel) errors.fitnessLevel = 'Fitness level is required';
+        if (!surveyData.activityLevel) errors.activityLevel = 'Activity level is required';
         break;
         
       default:
@@ -381,14 +407,14 @@ const Surveys = () => {
     const stepErrors = validateStep(4);
     
     if (Object.keys(stepErrors).length === 0) {
-      // Check if goal is impossible
-      if (goalAnalysis && goalAnalysis.status === 'impossible') {
+      // Check if goal is impossible (only for lose/gain goals with target weight)
+      if (goalAnalysis && goalAnalysis.status === 'impossible' && surveyData.targetWeight) {
         alert('Please fix the impossible goal before continuing.');
         return;
       }
       
-      // Check if goal is ambitious and confirm
-      if (goalAnalysis && goalAnalysis.status === 'ambitious') {
+      // Check if goal is ambitious and confirm (only for lose/gain goals with target weight)
+      if (goalAnalysis && goalAnalysis.status === 'ambitious' && surveyData.targetWeight) {
         if (!window.confirm(
           'This goal is ambitious and may be difficult to achieve.\n\n' +
           `Weekly rate: ${goalAnalysis.weeklyRate} kg/week\n` +
@@ -409,7 +435,10 @@ const Surveys = () => {
       const weightInKg = convertToKg(surveyData.weight, surveyData.weightUnit);
       const bmi = (weightInKg / (heightInM * heightInM)).toFixed(1);
       
-      // Save to user profile
+      // Get activity level description
+      const activityLevelInfo = activityLevelOptions.find(level => level.value === surveyData.activityLevel);
+      
+
       const userProfile = {
         name: 'New User',
         email: 'user@example.com',
@@ -422,12 +451,14 @@ const Surveys = () => {
         weightUnit: surveyData.weightUnit,
         bmi: bmi,
         fitnessLevel: surveyData.fitnessLevel,
+        activityLevel: surveyData.activityLevel,
+        activityLevelDescription: activityLevelInfo ? activityLevelInfo.description : '',
         fitnessGoal: surveyData.performanceGoal,
         weightGoal: surveyData.weightGoal,
         targetWeight: surveyData.targetWeight,
         timeline: surveyData.timeline,
         weeklyRate: goalAnalysis ? `${goalAnalysis.weeklyRate} kg/week` : null,
-        workoutTypes: surveyData.workoutTypes,
+        workoutTypes: surveyData.workoutTypes, // Now a string, not an array
         workoutLocation: surveyData.workoutLocation,
         workoutDuration: surveyData.workoutDuration,
         workoutTime: surveyData.workoutTime,
@@ -442,16 +473,24 @@ const Surveys = () => {
     }
   };
 
-  // Handle multi-select options
-  const toggleSelection = (field, value) => {
-    setSurveyData(prev => {
-      const current = prev[field] || [];
-      const newValue = current.includes(value)
-        ? current.filter(item => item !== value)
-        : [...current, value];
-      return { ...prev, [field]: newValue };
-    });
-  };
+  // Handle single selection for workout types
+const selectWorkoutType = (type) => {
+  setSurveyData(prev => ({
+    ...prev,
+    workoutTypes: type // Direct assignment instead of array toggling
+  }));
+};
+
+// Handle multi-select options (limitations, equipment)
+const toggleSelection = (field, value) => {
+  setSurveyData(prev => {
+    const current = prev[field] || [];
+    const newValue = current.includes(value)
+      ? current.filter(item => item !== value)
+      : [...current, value];
+    return { ...prev, [field]: newValue };
+  });
+};
 
   // Progress percentage
   const progressPercentage = (currentStep / 4) * 100;
@@ -615,11 +654,11 @@ const Surveys = () => {
                 {errors.weightGoal && <span className="error-message">{errors.weightGoal}</span>}
               </div>
 
-              {/* Target Weight Input */}
-              {(surveyData.weightGoal === 'lose' || surveyData.weightGoal === 'gain' || surveyData.weightGoal === 'maintain') && (
+              {/* Target Weight Input - Required for lose/gain, Optional for maintain */}
+              {(surveyData.weightGoal === 'lose' || surveyData.weightGoal === 'gain') && (
                 <div className="form-group target-weight-group">
                   <label>
-                    {surveyData.weightGoal === 'maintain' ? 'Preferred Weight Range' : `Target Weight (${surveyData.weightUnit}) *`}
+                    Target Weight ({surveyData.weightUnit}) *
                   </label>
                   <input
                     type="number"
@@ -635,6 +674,8 @@ const Surveys = () => {
                   {errors.targetWeight && <span className="error-message">{errors.targetWeight}</span>}
                 </div>
               )}
+
+            
 
               <div className="form-group">
                 <label>Performance Goal *</label>
@@ -672,8 +713,8 @@ const Surveys = () => {
                 {errors.timeline && <span className="error-message">{errors.timeline}</span>}
               </div>
 
-              {/* Goal Analysis Display */}
-              {goalAnalysis && (
+              {/* Goal Analysis Display - Only show for lose/gain with target weight */}
+              {goalAnalysis && (surveyData.weightGoal === 'lose' || surveyData.weightGoal === 'gain') && (
                 <div className={`analysis-box ${goalAnalysis.status}`}>
                   <h4>{goalAnalysis.title}</h4>
                   
@@ -707,88 +748,86 @@ const Surveys = () => {
           )}
 
           {/* Step 3: Workout Preferences */}
-          {currentStep === 3 && (
-            <div className="survey-step">
-              <h3 className="step-title">Workout Preferences</h3>
-              
-              <div className="form-group">
-                <label>Preferred Workout Types *</label>
-                <div className="button-grid">
-                  {workoutTypeOptions.map(type => (
-                    <button
-                      key={type}
-                      type="button"
-                      className={`select-button ${surveyData.workoutTypes.includes(type) ? 'selected' : ''}`}
-                      onClick={() => toggleSelection('workoutTypes', type)}
-                    >
-                      {type}
-                    </button>
-                  ))}
-                </div>
-                {errors.workoutTypes && <span className="error-message">{errors.workoutTypes}</span>}
-                {surveyData.workoutTypes.length > 0 && (
-                  <small className="hint">Selected: {surveyData.workoutTypes.length} activities</small>
-                )}
-              </div>
+{currentStep === 3 && (
+  <div className="survey-step">
+    <h3 className="step-title">Workout Preferences</h3>
+    
+    <div className="form-group">
+      <label>Preferred Workout Type *</label>
+      <div className="button-grid">
+        {workoutTypeOptions.map(type => (
+          <button
+            key={type}
+            type="button"
+            className={`select-button ${surveyData.workoutTypes === type ? 'selected' : ''}`}
+            onClick={() => selectWorkoutType(type)}
+          >
+            {type}
+          </button>
+        ))}
+      </div>
+      {errors.workoutTypes && <span className="error-message">{errors.workoutTypes}</span>}
+      
+    </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Workout Location *</label>
-                  <div className="button-grid">
-                    {locationOptions.map(location => (
-                      <button
-                        key={location}
-                        type="button"
-                        className={`select-button ${surveyData.workoutLocation === location ? 'selected' : ''}`}
-                        onClick={() => setSurveyData({...surveyData, workoutLocation: location})}
-                      >
-                        {location}
-                      </button>
-                    ))}
-                  </div>
-                  {errors.workoutLocation && <span className="error-message">{errors.workoutLocation}</span>}
-                </div>
+    <div className="form-row">
+      <div className="form-group">
+        <label>Workout Location *</label>
+        <div className="button-grid">
+          {locationOptions.map(location => (
+            <button
+              key={location}
+              type="button"
+              className={`select-button ${surveyData.workoutLocation === location ? 'selected' : ''}`}
+              onClick={() => setSurveyData({...surveyData, workoutLocation: location})}
+            >
+              {location}
+            </button>
+          ))}
+        </div>
+        {errors.workoutLocation && <span className="error-message">{errors.workoutLocation}</span>}
+      </div>
 
-                <div className="form-group">
-                  <label>Workout Duration *</label>
-                  <div className="button-grid">
-                    {durationOptions.map(duration => (
-                      <button
-                        key={duration}
-                        type="button"
-                        className={`select-button ${surveyData.workoutDuration === duration ? 'selected' : ''}`}
-                        onClick={() => setSurveyData({...surveyData, workoutDuration: duration})}
-                      >
-                        {duration}
-                      </button>
-                    ))}
-                  </div>
-                  {errors.workoutDuration && <span className="error-message">{errors.workoutDuration}</span>}
-                </div>
-              </div>
+      <div className="form-group">
+        <label>Workout Duration *</label>
+        <div className="button-grid">
+          {durationOptions.map(duration => (
+            <button
+              key={duration}
+              type="button"
+              className={`select-button ${surveyData.workoutDuration === duration ? 'selected' : ''}`}
+              onClick={() => setSurveyData({...surveyData, workoutDuration: duration})}
+            >
+              {duration}
+            </button>
+          ))}
+        </div>
+        {errors.workoutDuration && <span className="error-message">{errors.workoutDuration}</span>}
+      </div>
+    </div>
 
-              <div className="form-group">
-                <label>Preferred Workout Time (Optional)</label>
-                <div className="button-grid">
-                  {timeOptions.map(time => (
-                    <button
-                      key={time}
-                      type="button"
-                      className={`select-button ${surveyData.workoutTime === time ? 'selected' : ''}`}
-                      onClick={() => setSurveyData({...surveyData, workoutTime: time})}
-                    >
-                      {time}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
+    <div className="form-group">
+      <label>Preferred Workout Time (Optional)</label>
+      <div className="button-grid">
+        {timeOptions.map(time => (
+          <button
+            key={time}
+            type="button"
+            className={`select-button ${surveyData.workoutTime === time ? 'selected' : ''}`}
+            onClick={() => setSurveyData({...surveyData, workoutTime: time})}
+          >
+            {time}
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
 
           {/* Step 4: Experience Level */}
           {currentStep === 4 && (
             <div className="survey-step">
-              <h3 className="step-title">Experience & Limitations</h3>
+              <h3 className="step-title">Experience & Lifestyle</h3>
               
               <div className="form-group">
                 <label>Fitness Level *</label>
@@ -805,6 +844,27 @@ const Surveys = () => {
                   ))}
                 </div>
                 {errors.fitnessLevel && <span className="error-message">{errors.fitnessLevel}</span>}
+              </div>
+
+              <div className="form-group">
+                <label>Activity Level *</label>
+                <div className="activity-level-grid">
+                  {activityLevelOptions.map(level => (
+                    <button
+                      key={level.value}
+                      type="button"
+                      className={`activity-button ${surveyData.activityLevel === level.value ? 'selected' : ''}`}
+                      onClick={() => setSurveyData({...surveyData, activityLevel: level.value})}
+                    >
+                      <div className="activity-label">{level.label}</div>
+                      <div className="activity-description">{level.description}</div>
+                    </button>
+                  ))}
+                </div>
+                {errors.activityLevel && <span className="error-message">{errors.activityLevel}</span>}
+                <small className="hint">
+                  This helps us estimate your daily energy expenditure and tailor recommendations
+                </small>
               </div>
 
               <div className="form-group">
@@ -867,7 +927,7 @@ const Surveys = () => {
               <button 
                 className="nav-btn submit-btn" 
                 onClick={handleSubmit}
-                disabled={goalAnalysis?.status === 'impossible'}
+                disabled={goalAnalysis?.status === 'impossible' && surveyData.targetWeight}
               >
                 Complete Survey
               </button>
