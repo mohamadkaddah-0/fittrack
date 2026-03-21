@@ -3,6 +3,7 @@
 // All mock data and helper functions for FitTrack Phase 1.
 
 
+//  Users 
 // Survey data collected at registration.
 // currentWeight + targetWeight + duration → system calculates weekly rate
 export const MOCK_USERS = [
@@ -32,7 +33,7 @@ export const MOCK_USERS = [
     targetWeight: 62,         // wants to lose 10kg
     height: 165,
     activityLevel: "lightly_active",
-    goal: "lose_weight",
+    goal: "lose",
     duration: 3,              // months
     isOngoing: false,
   },
@@ -62,18 +63,18 @@ export const MOCK_USERS = [
     targetWeight: 60,         // wants to gain
     height: 160,
     activityLevel: "sedentary",
-    goal: "bulk",
+    goal: "gain",
     duration: 4,
     isOngoing: false,
   },
 ];
 
-// - Fitness Goals 
+//  Fitness Goals 
 export const FITNESS_GOALS = [
-  { id: "lose_weight", label: "Lose Weight", desc: "Calorie deficit to reduce body fat." },
+  { id: "lose", label: "Lose Weight", desc: "Calorie deficit to reduce body fat." },
   { id: "maintain",    label: "Maintain",    desc: "Maintain current weight and composition." },
   { id: "gain_muscle", label: "Gain Muscle", desc: "Slight surplus with high protein to build muscle." },
-  { id: "bulk",        label: "Bulk",        desc: "Larger surplus to gain overall body weight." },
+  { id: "gain",        label: "Gain Weight", desc: "Larger surplus to gain overall body weight." },
 ];
 
 //  Nutrition Calculator 
@@ -82,10 +83,10 @@ export const FITNESS_GOALS = [
 // New logic:
 //   - Calculates weekly rate from (currentWeight - targetWeight) / (duration in weeks)
 //   - If ongoing → uses safe default rates per goal
-//  
+//   - Returns { kcal, protein, carbs, fat, weeklyRate, durationWeeks }
 export function calcNutritionTargets(user) {
   if (!user) {
-    return { kcal: 2000, protein: 140, carbs: 220, fat: 65, weeklyRate: 0, isAggressive: false, durationWeeks: null };
+    return { kcal: 2000, protein: 140, carbs: 220, fat: 65, weeklyRate: 0, durationWeeks: null };
   }
 
   //  Step 1: BMR (Mifflin-St Jeor) 
@@ -109,18 +110,17 @@ export function calcNutritionTargets(user) {
   // Convert months to weeks (1 month ≈ 4.33 weeks)
   const durationWeeks = user.isOngoing || !user.duration ? null : user.duration * 4.33;
 
-  // Weight difference - positive means gaining, negative means losing
+  // Weight difference — positive means gaining, negative means losing
   const weightDiff = (user.targetWeight || user.currentWeight) - user.currentWeight;
 
   let weeklyRate = 0;
-  let isAggressive = false;
 
   if (user.goal === "maintain" || user.isOngoing) {
     // Ongoing or maintain → use safe defaults
     const defaultRates = {
-      lose_weight: 0.5,
+      lose:        0.5,
       gain_muscle: 0.25,
-      bulk:        0.5,
+      gain:        0.5,
       maintain:    0,
     };
     weeklyRate = defaultRates[user.goal] || 0;
@@ -129,7 +129,7 @@ export function calcNutritionTargets(user) {
     // Calculate from target weight and duration
     weeklyRate = Math.abs(weightDiff) / durationWeeks;
 
-    
+    // No caps needed — survey ensures the user picks a healthy goal upfront
   }
 
   //  Step 4: Daily calorie adjustment from weekly rate 
@@ -137,21 +137,21 @@ export function calcNutritionTargets(user) {
   const dailyAdjustment = (weeklyRate * 7700) / 7;
 
   let kcal;
-  if (user.goal === "lose_weight") {
+  if (user.goal === "lose") {
     kcal = Math.round(tdee - dailyAdjustment);
   } else if (user.goal === "maintain") {
     kcal = Math.round(tdee);
   } else {
-    // gain_muscle or bulk
+    // gain_muscle or gain
     kcal = Math.round(tdee + dailyAdjustment);
   }
 
   //  Step 5: Protein (g/kg, higher for muscle goals) 
   const proteinPerKg = {
-    lose_weight: 1.6,
+    lose:        1.6,
     maintain:    1.6,
     gain_muscle: 2.2,
-    bulk:        1.8,
+    gain:        1.8,
   };
   const protein = Math.round(user.currentWeight * (proteinPerKg[user.goal] || 1.6));
 
@@ -204,9 +204,9 @@ export const MEAL_POOL = [
 //   - Duration: short plans → prioritise specific profiles (e.g. low_cal for fast cut)
 //   - Goal: which meal profiles to favour
 //   - 3-day rotation via localStorage
-//   - Within 10% tolerance of all 4 macro targets
+//   - Within 15% tolerance of all 4 macro targets
 export function recommendMeals(targets, todayKey, user) {
-  //  Determine which meal profile to prioritise based on goal + duration 
+  // ── Determine which meal profile to prioritise based on goal + duration ────
   // Short duration = more aggressive = prioritise specific profile
   // Long duration / ongoing = balanced variety is fine
 
@@ -217,14 +217,14 @@ export function recommendMeals(targets, todayKey, user) {
   // Which meal profile fits this user best
   let preferredProfile = "balanced";
   if (user) {
-    if (user.goal === "lose_weight" && isShortPlan)  preferredProfile = "low_cal";
-    if (user.goal === "lose_weight" && isLongPlan)   preferredProfile = "balanced";
+    if (user.goal === "lose" && isShortPlan)  preferredProfile = "low_cal";
+    if (user.goal === "lose" && isLongPlan)   preferredProfile = "balanced";
     if (user.goal === "gain_muscle")                  preferredProfile = "high_protein";
-    if (user.goal === "bulk")                         preferredProfile = "high_carb";
+    if (user.goal === "gain")                         preferredProfile = "high_carb";
     if (user.goal === "maintain")                     preferredProfile = "balanced";
   }
 
-  //  Filter out recently used meals (3-day rotation) 
+  //  Filter out recently used meals (3-day rotation)
   let available = MEAL_POOL.filter((meal) => !usedRecently(meal.id, todayKey));
   if (available.length < 6) available = [...MEAL_POOL]; // safety fallback
 
@@ -268,7 +268,7 @@ export function recommendMeals(targets, todayKey, user) {
 
   let combo = pickOneMealPerCategory(shuffled);
 
-  //  Check if combo hits targets within 10% 
+  //  Check if combo hits targets within 15% 
   function isGoodEnough(mealCombo) {
     let totalKcal = 0, totalProtein = 0, totalCarbs = 0, totalFat = 0;
     for (const meal of mealCombo) {
@@ -285,7 +285,7 @@ export function recommendMeals(targets, todayKey, user) {
     return kcalOk && proteinOk && carbsOk && fatOk;
   }
 
-  //  Try swapping meals if combo doesn't hit targets
+  //  Try swapping meals if combo doesn't hit targets 
   if (!isGoodEnough(combo)) {
     for (let attempt = 0; attempt < 20; attempt++) {
       const catToSwap = categories[attempt % categories.length];
@@ -298,7 +298,7 @@ export function recommendMeals(targets, todayKey, user) {
     }
   }
 
-  //  Save selected meals to localStorage to enforce 3-day rotation
+  //  Save selected meals to localStorage 
   saveMealDates(combo.map((m) => m.id), todayKey);
 
   return combo;
@@ -509,6 +509,7 @@ export const INITIAL_CALENDAR = {
 export function getTodayKey() {
   return new Date().toISOString().split("T")[0];
 }
+
 // ─────────────────────────────────────────────────────────────
 // added by jawad
 // ─────────────────────────────────────────────────────────────
