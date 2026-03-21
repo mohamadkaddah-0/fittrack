@@ -19,14 +19,14 @@ import MealLog          from "./pages/MealLog";
 import IngredientDetail from "./pages/IngredientDetail";
 
 // ── Mock data (teammate's) ────────────────────────────────────
-import { MOCK_USERS, INITIAL_CALENDAR, getTodayKey } from "./data/mockData";
+import { getUserProfile, INITIAL_CALENDAR, getTodayKey } from "./data/mockData";
 
 
 
 export default function App() {
 
   // ── Shared state (Diet Program) ──────────────────────────────
-  const [currentUser,  setCurrentUser]  = useState(MOCK_USERS[0]);
+  const [currentUser, setCurrentUser] = useState(getUserProfile());
   const [calendarData, setCalendarData] = useState(INITIAL_CALENDAR);
   const [loggedMeals,  setLoggedMeals]  = useState({});
   const [savedMeals,   setSavedMeals]   = useState([]);
