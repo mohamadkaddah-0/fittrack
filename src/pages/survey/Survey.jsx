@@ -93,17 +93,17 @@ const Surveys = () => {
       description: 'Little or no exercise, desk job, minimal movement throughout the day'
     },
     { 
-      value: 'lightlyActive', 
+      value: 'lightly_active', 
       label: 'Lightly Active',
       description: 'Light exercise 1-3 days/week, occasional walking, light household activities'
     },
     { 
-      value: 'moderatelyActive', 
+      value: 'moderately_active', 
       label: 'Moderately Active',
       description: 'Moderate exercise 3-5 days/week, daily movement, active job or regular workouts'
     },
     { 
-      value: 'veryActive', 
+      value: 'very_active', 
       label: 'Very Active',
       description: 'Hard exercise 6-7 days/week, physically demanding job, intensive training'
     }
