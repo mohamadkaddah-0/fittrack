@@ -9,6 +9,9 @@ import Navbar from "./components/Navbar";
 // ── Mohamad Kaddah's pages ────────────────────────────────────
 import HomePage       from "./pages/HomePage";
 import LogWorkoutPage from "./pages/LogWorkoutPage";
+// jawad's Added pages 
+import ExerciseLibrary from "./pages/ExerciseLibrary";
+import ExerciseDetailPage from "./pages/ExerciseDetailPage";
 
 // ── Teammate's pages (Diet Program) ──────────────────────────
 import DietProgram      from "./pages/DietProgram";
@@ -107,6 +110,9 @@ export default function App() {
           {/* ── Mohamad Kaddah ── */}
           <Route path="/"    element={<HomePage />} />
           <Route path="/log" element={<LogWorkoutPage />} />
+         {/* ── Jawad Al Housseini ── */}
+         <Route path="/exercises" element={<ExerciseLibrary />} />
+         <Route path="/exercise/:id" element={<ExerciseDetailPage />} />
 
           {/*  ── Sara Ibrahim  ── */}
           <Route path="/diet" element={
