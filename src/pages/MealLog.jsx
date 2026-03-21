@@ -277,9 +277,9 @@ export default function MealLog({
             weekday: "long", year: "numeric", month: "long", day: "numeric"
           })}
         </p>
-        <h1 className="font-black text-4xl md:text-5xl uppercase tracking-tight leading-none">
-          Log a <span className="text-[#C6F135]">Meal</span>
-        </h1>
+       <h1 className="font-['Barlow_Condensed'] font-black text-5xl md:text-7xl uppercase tracking-tight leading-none">
+       Diet <span className="text-[#C6F135]">Program</span>
+      </h1>
       </header>
 
       {/*  Tab switcher  */}
