@@ -2,9 +2,9 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const NAV_LINKS = [
+  { label: "Home",             to: "/"          },
   { label: "User Progress",    to: "/progress"  },
-  { label: "Diet Program",     to: "/diet-program"},
-  { label: "Meal Log",         to: "/meal-log"      },
+  { label: "Diet Program",     to: "/diet"      },
   { label: "Exercise Library", to: "/exercises" },
   { label: "Log Workout",      to: "/log"       },
   { label: "Settings",         to: "/settings"  },
