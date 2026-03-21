@@ -5,6 +5,7 @@ const NAV_LINKS = [
   { label: "Home",             to: "/"          },
   { label: "User Progress",    to: "/progress"  },
   { label: "Diet Program",     to: "/diet"      },
+  { label: "Log Meal",         to: "/meal-log"  }, 
   { label: "Exercise Library", to: "/exercises" },
   { label: "Log Workout",      to: "/log"       },
   { label: "Settings",         to: "/settings"  },
