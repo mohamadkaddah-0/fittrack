@@ -372,7 +372,7 @@ export default function MealLog({
                 <div ref={searchRef} className="mb-4">
 
                   {/* Category filter */}
-                  <div className={`flex border border-b-0 ${bdr}`} role="group">
+                  <div className={`flex border border-b-0 ${bdr} overflow-x-auto`} role="group">
                     {ING_CATS.map((cat) => (
                       <button key={cat} type="button" onClick={() => setCatFilter(cat)} aria-pressed={catFilter === cat}
                         className={`flex-1 py-2 text-xs tracking-wide uppercase border-r last:border-r-0 transition-all ${bdr} ${
