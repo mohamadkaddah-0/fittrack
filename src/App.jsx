@@ -10,7 +10,7 @@ import Navbar from "./components/Navbar";
 import HomePage       from "./pages/HomePage";
 import LogWorkoutPage from "./pages/LogWorkoutPage";
 // jawad's Added pages 
-import ExerciseLibrary from "./pages/ExerciseLibrary";
+import ExerciseLibrary from "./pages/exerciseLibrary";
 import ExerciseDetailPage from "./pages/ExerciseDetailPage";
 
 // ── Teammate's pages (Diet Program) ──────────────────────────
