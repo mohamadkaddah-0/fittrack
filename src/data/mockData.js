@@ -559,11 +559,12 @@ export function getUserProfile() {
           p.timeline === "6 months" ? 6  :
           p.timeline === "1 year"   ? 12 :
           p.timeline === "2 years"  ? 24 : null,
-        goal_meal:
-          p.weightGoal === "lose"        ? "lose_weight" :
-          p.weightGoal === "gain"        ? "gain_muscle" :
-          p.weightGoal === "buildMuscle" ? "gain_muscle" :
-          "maintain",
+        goal:
+  p.weightGoal === "lose"        ? "lose" :
+  p.weightGoal === "gain"        ? "gain_muscle" :
+  p.weightGoal === "buildMuscle" ? "gain_muscle" :
+  p.weightGoal === "gain_muscle" ? "gain_muscle" :
+  "maintain",
       };
     }
   } catch (e) {}
