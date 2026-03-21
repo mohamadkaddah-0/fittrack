@@ -177,9 +177,9 @@ export default function DietProgram({
               weekday: "long", year: "numeric", month: "long", day: "numeric"
             })}
           </p>
-          <h1 className="font-black text-4xl md:text-5xl uppercase tracking-tight leading-none">
-            Diet <span className="text-[#C6F135]">Program</span>
-          </h1>
+         <h1 className="font-['Barlow_Condensed'] font-black text-5xl md:text-7xl uppercase tracking-tight leading-none">
+          Diet <span className="text-[#C6F135]">Program</span>
+         </h1>
         </div>
         <div className={`border border-[#C6F135] px-4 py-2 text-right`}>
           <p className={`text-xs tracking-widest uppercase ${muted}`}>{firstName}'s Goal</p>
