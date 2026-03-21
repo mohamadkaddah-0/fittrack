@@ -17,7 +17,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { INGREDIENTS } from "../data/mockData";
 
-//  Food images from Unsplash (matched per ingredient id) 
+//  Food images from Unsplash 
 const INGREDIENT_IMAGES = {
   1:  "https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800&q=80",
   2:  "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=800&q=80",
@@ -72,7 +72,6 @@ const INGREDIENT_IMAGES = {
   51: "https://images.unsplash.com/photo-1593095948071-474c5cc2989d?w=800&q=80",
 };
 
-// Fallback image per category if no specific image
 const CAT_FALLBACK = {
   protein:   "https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800&q=80",
   carbs:     "https://images.unsplash.com/photo-1536304993881-ff86e0c9ef1a?w=800&q=80",
@@ -81,43 +80,43 @@ const CAT_FALLBACK = {
   dairy:     "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=800&q=80",
 };
 
-// Color theme per category
 const CAT_COLORS = {
-  protein:   { text: "text-[#FF2A5E]", border: "border-[#FF2A5E]", hex: "#FF2A5E" },
-  carbs:     { text: "text-[#00E5FF]", border: "border-[#00E5FF]", hex: "#00E5FF" },
-  vegetable: { text: "text-[#C6F135]", border: "border-[#C6F135]", hex: "#C6F135" },
-  fat:       { text: "text-[#FFAA00]", border: "border-[#FFAA00]", hex: "#FFAA00" },
-  dairy:     { text: "text-[#00E5FF]", border: "border-[#00E5FF]", hex: "#00E5FF" },
+  protein:   { text: "text-[#FF2A5E]", border: "border-[#FF2A5E]" },
+  carbs:     { text: "text-[#00E5FF]", border: "border-[#00E5FF]" },
+  vegetable: { text: "text-[#C6F135]", border: "border-[#C6F135]" },
+  fat:       { text: "text-[#FFAA00]", border: "border-[#FFAA00]" },
+  dairy:     { text: "text-[#00E5FF]", border: "border-[#00E5FF]" },
 };
 
-//  Component 
-export default function IngredientDetail({ darkMode }) {
+//  Hardcoded dark theme 
+const bg    = "bg-[#0a0a0a]";
+const bg2   = "bg-[#111]";
+const bg3   = "bg-[#161616]";
+const bdr   = "border-[#222]";
+const txt   = "text-[#e8e8e8]";
+const muted = "text-[#555]";
 
-  const { id }   = useParams();   // ingredient ID from the URL
+export default function IngredientDetail() {
+
+  const { id }   = useParams();
   const navigate = useNavigate();
 
   const [item,     setItem]     = useState(null);
   const [notFound, setNotFound] = useState(false);
-  const [portion,  setPortion]  = useState(100); // grams - adjustable by user
+  const [portion,  setPortion]  = useState(100);
   const [imgError, setImgError] = useState(false);
 
-  // Find the ingredient in the database when the page loads or the ID changes
   useEffect(() => {
     const found = INGREDIENTS.find((i) => i.id === parseInt(id));
-    if (found) {
-      setItem(found);
-      setPortion(100); // reset portion when navigating to a new ingredient
-    } else {
-      setNotFound(true);
-    }
+    if (found) { setItem(found); setPortion(100); }
+    else setNotFound(true);
   }, [id]);
 
-  //  Not found state 
   if (notFound) {
     return (
-      <main className={`${darkMode ? "bg-[#0a0a0a] text-[#e8e8e8]" : "bg-white text-neutral-900"} min-h-screen flex flex-col items-center justify-center gap-4`}>
+      <main className={`${bg} ${txt} min-h-screen flex flex-col items-center justify-center gap-4`}>
         <p className="font-black text-4xl uppercase text-[#FF2A5E]">Not Found</p>
-        <p className={`text-sm ${darkMode ? "text-[#555]" : "text-neutral-400"}`}>No ingredient with ID {id} exists.</p>
+        <p className={`text-sm ${muted}`}>No ingredient with ID {id} exists.</p>
         <Link to="/meal-log" className="text-xs tracking-widest uppercase text-[#C6F135] border-b border-[#C6F135] pb-0.5">
           ← Back to Meal Log
         </Link>
@@ -125,39 +124,27 @@ export default function IngredientDetail({ darkMode }) {
     );
   }
 
-  //  Loading state 
   if (!item) {
     return (
-      <main className={`${darkMode ? "bg-[#0a0a0a] text-[#555]" : "bg-white text-neutral-400"} min-h-screen flex items-center justify-center`}>
+      <main className={`${bg} ${muted} min-h-screen flex items-center justify-center`}>
         <p className="text-xs tracking-widest uppercase">Loading...</p>
       </main>
     );
   }
 
-  //  Scaled nutrition values based on current portion 
-  const ratio = portion / 100;
+  //  Scaled values 
+  const ratio         = portion / 100;
   const scaledKcal    = Math.round(item.kcal    * ratio);
   const scaledProtein = Math.round(item.protein * ratio * 10) / 10;
   const scaledCarbs   = Math.round(item.carbs   * ratio * 10) / 10;
   const scaledFat     = Math.round(item.fat     * ratio * 10) / 10;
-
-  // Largest macro value — used to scale the bar widths relative to each other
-  const maxMacro = Math.max(item.protein, item.carbs, item.fat, 1);
-
-  //  Styling   
-  const bg    = darkMode ? "bg-[#0a0a0a]"   : "bg-white";
-  const bg2   = darkMode ? "bg-[#111]"      : "bg-neutral-50";
-  const bg3   = darkMode ? "bg-[#161616]"   : "bg-neutral-100";
-  const bdr   = darkMode ? "border-[#222]"  : "border-neutral-200";
-  const txt   = darkMode ? "text-[#e8e8e8]" : "text-neutral-900";
-  const muted = darkMode ? "text-[#555]"    : "text-neutral-400";
+  const maxMacro      = Math.max(item.protein, item.carbs, item.fat, 1);
 
   const catStyle = CAT_COLORS[item.cat] || CAT_COLORS.fat;
   const imgSrc   = imgError
     ? CAT_FALLBACK[item.cat]
     : (INGREDIENT_IMAGES[item.id] || CAT_FALLBACK[item.cat]);
 
-  //  Render 
   return (
     <main className={`${bg} ${txt} min-h-screen`}>
 
@@ -172,25 +159,13 @@ export default function IngredientDetail({ darkMode }) {
 
       {/*  Food Photo  */}
       <div className="relative w-full h-56 md:h-72 overflow-hidden">
-        <img
-          src={imgSrc}
-          alt={item.name}
-          onError={() => setImgError(true)}
-          className="w-full h-full object-cover"
-        />
-        {/* Dark gradient overlay at the bottom */}
+        <img src={imgSrc} alt={item.name} onError={() => setImgError(true)}
+          className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-
-        {/* Back button overlaid on image */}
-        <button
-          onClick={() => navigate(-1)}
-          aria-label="Go back"
-          className="absolute top-4 left-6 text-xs tracking-widest uppercase text-white/70 hover:text-white transition-colors border-b border-white/30 pb-0.5"
-        >
+        <button onClick={() => navigate(-1)} aria-label="Go back"
+          className="absolute top-4 left-6 text-xs tracking-widest uppercase text-white/70 hover:text-white transition-colors border-b border-white/30 pb-0.5">
           ← Back
         </button>
-
-        {/* Category badge overlaid on image */}
         <div className="absolute bottom-4 left-6">
           <span className={`inline-block text-xs tracking-widest uppercase px-2 py-1 border font-bold bg-black/40 ${catStyle.text} ${catStyle.border}`}>
             {item.cat}
@@ -200,66 +175,47 @@ export default function IngredientDetail({ darkMode }) {
 
       {/*  Page Title  */}
       <header className={`px-6 md:px-8 pt-5 pb-5 border-b ${bdr}`}>
-        <h1 className="font-black text-4xl md:text-5xl uppercase tracking-tight leading-none">
-          {item.name}
-        </h1>
+        <h1 className="font-black text-4xl md:text-5xl uppercase tracking-tight leading-none">{item.name}</h1>
         <p className={`text-xs tracking-widest uppercase ${muted} mt-2`}>
           All values shown per 100g unless adjusted below
         </p>
       </header>
 
-      {/*  Main Content: Nutrition + Sidebar  */}
+      {/*  Main Content  */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px]">
 
-        {/*  Left: Nutrition Details  */}
+        {/*  Left: Nutrition  */}
         <div className={`border-r ${bdr}`}>
 
           {/* Calorie hero */}
           <section className={`px-6 md:px-8 py-8 border-b ${bdr} text-center ${bg2}`}>
-            <p className={`text-xs tracking-widest uppercase ${muted} mb-2`}>
-              Calories per {portion}g
-            </p>
-            <p className="font-black text-7xl leading-none text-[#C6F135]" aria-live="polite">
-              {scaledKcal}
-            </p>
+            <p className={`text-xs tracking-widest uppercase ${muted} mb-2`}>Calories per {portion}g</p>
+            <p className="font-black text-7xl leading-none text-[#C6F135]" aria-live="polite">{scaledKcal}</p>
             <p className={`text-xs tracking-widest uppercase ${muted} mt-2`}>kcal</p>
           </section>
 
-          {/* Portion size input */}
+          {/* Portion input */}
           <section className={`px-6 md:px-8 py-5 border-b ${bdr} ${bg2}`}>
             <label htmlFor="portionInput" className={`block text-xs tracking-widest uppercase ${muted} mb-3`}>
               Adjust Portion Size
             </label>
             <div className="flex items-center gap-3">
-              <input
-                id="portionInput"
-                type="number"
-                min="1"
-                max="2000"
-                step="10"
-                value={portion}
+              <input id="portionInput" type="number" min="1" max="2000" step="10" value={portion}
                 onChange={(e) => {
                   const val = parseInt(e.target.value);
                   if (!isNaN(val) && val > 0) setPortion(val);
                 }}
                 aria-label="Portion in grams"
-                className={`w-28 ${bg} ${txt} border ${bdr} font-mono text-sm px-3 py-2 outline-none focus:border-[#C6F135] transition-colors text-center`}
-              />
+                className={`w-28 bg-[#0a0a0a] text-[#e8e8e8] border border-[#222] font-mono text-sm px-3 py-2 outline-none focus:border-[#C6F135] transition-colors text-center`} />
               <span className={`text-sm ${muted}`}>grams</span>
-
-              {/* Quick preset buttons */}
               <div className="flex gap-2 ml-auto">
                 {[50, 100, 150, 200].map((g) => (
-                  <button
-                    key={g}
-                    onClick={() => setPortion(g)}
-                    aria-label={`Set portion to ${g}g`}
+                  <button key={g} onClick={() => setPortion(g)} aria-label={`Set portion to ${g}g`}
                     className={`text-xs px-3 py-2 border transition-colors ${
                       portion === g
                         ? "bg-[#C6F135] text-black border-[#C6F135]"
-                        : `${bdr} ${muted} hover:border-[#C6F135] hover:text-[#C6F135]`
-                    }`}
-                  >
+                        : `border-[#222] text-[#555] hover:border-[#C6F135] hover:text-[#C6F135]`
+                    }`}>
                     {g}g
                   </button>
                 ))}
@@ -270,7 +226,6 @@ export default function IngredientDetail({ darkMode }) {
           {/* Macro breakdown bars */}
           <section className={`px-6 md:px-8 py-6 border-b ${bdr}`}>
             <h2 className={`text-xs tracking-widest uppercase ${muted} mb-5`}>Macro Breakdown</h2>
-
             {[
               { label: "Protein",       per100: item.protein, scaled: scaledProtein, color: "#FF2A5E", cls: "text-[#FF2A5E]" },
               { label: "Carbohydrates", per100: item.carbs,   scaled: scaledCarbs,   color: "#00E5FF", cls: "text-[#00E5FF]" },
@@ -285,10 +240,8 @@ export default function IngredientDetail({ darkMode }) {
                     <span className={`text-xs ${muted} ml-2`}>({macro.per100}g / 100g)</span>
                   </div>
                 </div>
-                {/* Bar width is relative to the largest macro */}
-                <div className={`h-2 ${darkMode ? "bg-[#2e2e2e]" : "bg-neutral-200"} rounded-sm overflow-hidden`}>
-                  <div
-                    className="h-full transition-all duration-500 rounded-sm"
+                <div className="h-2 bg-[#2e2e2e] rounded-sm overflow-hidden">
+                  <div className="h-full transition-all duration-500 rounded-sm"
                     style={{
                       width: `${Math.min(100, (macro.per100 / maxMacro) * 100)}%`,
                       background: macro.color,
@@ -301,14 +254,10 @@ export default function IngredientDetail({ darkMode }) {
               </div>
             ))}
           </section>
-
-
         </div>
 
         {/*  Right: Sidebar  */}
         <aside className="flex flex-col">
-
-          {/* Quick stats per 100g */}
           <div className={`px-5 py-5 border-b ${bdr} ${bg2}`}>
             <p className={`text-xs tracking-widest uppercase ${muted} mb-4`}>Quick Stats (per 100g)</p>
             <div className="grid grid-cols-2 gap-2">
@@ -321,16 +270,20 @@ export default function IngredientDetail({ darkMode }) {
                 <div key={stat.label} className={`${bg3} border ${bdr} px-3 py-3`}>
                   <p className={`text-xs ${muted} mb-1`}>{stat.label}</p>
                   <p className={`font-black text-xl leading-none ${stat.cls}`}>
-                    {stat.value}
-                    <span className={`text-xs font-normal ${muted} ml-0.5`}>{stat.unit}</span>
+                    {stat.value}<span className={`text-xs font-normal ${muted} ml-0.5`}>{stat.unit}</span>
                   </p>
                 </div>
               ))}
             </div>
           </div>
 
-
-
+          <div className={`px-5 py-5 border-b ${bdr}`}>
+            <p className={`text-xs tracking-widest uppercase ${muted} mb-3`}>Add to a Meal</p>
+            <Link to="/meal-log"
+              className="block w-full text-center bg-[#C6F135] text-black text-xs font-bold tracking-widest uppercase py-3 hover:bg-[#FF2A5E] hover:text-white transition-colors">
+              + Log This in a Meal
+            </Link>
+          </div>
         </aside>
       </div>
     </main>

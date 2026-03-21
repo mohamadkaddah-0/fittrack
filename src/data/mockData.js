@@ -509,3 +509,251 @@ export const INITIAL_CALENDAR = {
 export function getTodayKey() {
   return new Date().toISOString().split("T")[0];
 }
+// ─────────────────────────────────────────────────────────────
+// ADDED BY JAWAD — Exercise Library
+// ─────────────────────────────────────────────────────────────
+
+// Calories burned — meal planner friend reads this
+// import { dailyCalorieLog } from "../data/mockData"
+// const burned = dailyCalorieLog.filter(e => e.date === today).reduce((sum,e) => sum + e.caloriesBurned, 0)
+export const dailyCalorieLog = [];
+export const workoutLog      = [];
+
+// Read user profile saved by friend's survey
+// Returns fields for both ExerciseLibrary AND DietProgram calcNutritionTargets()
+export function getUserProfile() {
+  try {
+    const saved = localStorage.getItem("userProfile");
+    if (saved) {
+      const p = JSON.parse(saved);
+      return {
+        // For ExerciseLibrary
+        name:         p.name          || "User",
+        gender:       (p.gender       || "male").toLowerCase(),
+        age:          p.age           || 20,
+        weight:       parseFloat(p.weight)       || 70,
+        weightUnit:   p.weightUnit    || "kg",
+        height:       parseFloat(p.height)       || 170,
+        weightGoal:   p.weightGoal    || "maintain",
+        level:        p.fitnessLevel  ? p.fitnessLevel.toLowerCase() : "beginner",
+        limitations:  Array.isArray(p.limitations) ? p.limitations : [],
+        equipment:    Array.isArray(p.equipment)   ? p.equipment   : [],
+        workoutTypes: Array.isArray(p.workoutTypes)? p.workoutTypes : [],
+        goal:
+          p.weightGoal === "lose"        ? "weight loss"     :
+          p.weightGoal === "gain"        ? "muscle gain"     :
+          p.weightGoal === "buildMuscle" ? "muscle gain"     :
+                                          "general fitness",
+        weeklyTarget: p.weeklyRate ? parseFloat(p.weeklyRate) : 0.5,
+        totalGoal:    p.targetWeight && p.weight
+          ? Math.abs(parseFloat(p.targetWeight) - parseFloat(p.weight))
+          : 5,
+        // For DietProgram calcNutritionTargets()
+        currentWeight: parseFloat(p.weight)       || 70,
+        targetWeight:  parseFloat(p.targetWeight) || 70,
+        activityLevel: "moderately_active",
+        isOngoing:     p.timeline === "Ongoing",
+        duration:
+          p.timeline === "1 month"  ? 1  :
+          p.timeline === "3 months" ? 3  :
+          p.timeline === "6 months" ? 6  :
+          p.timeline === "1 year"   ? 12 :
+          p.timeline === "2 years"  ? 24 : null,
+        goal_meal:
+          p.weightGoal === "lose"        ? "lose_weight" :
+          p.weightGoal === "gain"        ? "gain_muscle" :
+          p.weightGoal === "buildMuscle" ? "gain_muscle" :
+                                          "maintain",
+      };
+    }
+  } catch (e) {}
+  return {
+    name: "User", gender: "male", age: 20,
+    weight: 70, weightUnit: "kg", height: 170,
+    weightGoal: "maintain", level: "beginner",
+    limitations: [], equipment: [], workoutTypes: [],
+    goal: "general fitness", weeklyTarget: 0.5, totalGoal: 5,
+    currentWeight: 70, targetWeight: 70,
+    activityLevel: "moderately_active",
+    isOngoing: true, duration: null, goal_meal: "maintain",
+  };
+}
+
+// Exercise list
+export const EXERCISES = [
+  {
+    id: 1, name: "Jump Rope", category: "Cardio", difficulty: "Beginner",
+    logType: "duration", met: 11.8,
+    goals: ["weight loss", "general fitness"],
+    link: "/exercise/1", kcalRange: "70–90", muscles: "Full Body",
+    desc: "A cardio movement for endurance, rhythm, and calorie burn.",
+    limitedFor: ["Knee issues", "Joint pain"],
+  },
+  {
+    id: 2, name: "High Knees", category: "Cardio", difficulty: "Beginner",
+    logType: "reps-cardio", kcalPerRep: 0.5,
+    goals: ["weight loss", "general fitness"],
+    link: "/exercise/2", kcalRange: "60–80", muscles: "Legs, Core",
+    desc: "A fast-paced cardio drill that drives your knees up and spikes your heart rate.",
+    limitedFor: ["Knee issues", "Joint pain"],
+  },
+  {
+    id: 3, name: "Burpees", category: "Cardio", difficulty: "Intermediate",
+    logType: "reps-cardio", kcalPerRep: 1.4,
+    goals: ["weight loss", "general fitness"],
+    link: "/exercise/3", kcalRange: "80–100", muscles: "Full Body",
+    desc: "Full-body cardio combining squat, jump, and plank.",
+    limitedFor: ["Knee issues", "Shoulder injuries", "Back problems", "Joint pain"],
+  },
+  {
+    id: 4, name: "Mountain Climbers", category: "Cardio", difficulty: "Beginner",
+    logType: "duration", met: 8.0,
+    goals: ["weight loss", "general fitness"],
+    link: "/exercise/4", kcalRange: "60–80", muscles: "Core, Shoulders",
+    desc: "Core and cardio movement in a plank position.",
+    limitedFor: ["Shoulder injuries", "Back problems", "Knee issues"],
+  },
+  {
+    id: 5, name: "Jumping Jacks", category: "Cardio", difficulty: "Beginner",
+    logType: "reps-cardio", kcalPerRep: 0.2,
+    goals: ["weight loss", "general fitness"],
+    link: "/exercise/5", kcalRange: "50–70", muscles: "Full Body",
+    desc: "Classic warm-up and fat-loss cardio. No equipment needed.",
+    limitedFor: ["Knee issues", "Joint pain"],
+  },
+  {
+    id: 6, name: "Running in Place", category: "Cardio", difficulty: "Beginner",
+    logType: "duration", met: 8.0,
+    goals: ["weight loss", "general fitness"],
+    link: "/exercise/6", kcalRange: "55–75", muscles: "Legs, Core",
+    desc: "Indoor cardio that builds stamina without any equipment.",
+    limitedFor: ["Knee issues", "Joint pain"],
+  },
+  {
+    id: 7, name: "Cycling", category: "Cardio", difficulty: "Intermediate",
+    logType: "duration", met: 7.5,
+    goals: ["weight loss", "general fitness"],
+    link: "/exercise/7", kcalRange: "60–90", muscles: "Legs, Glutes",
+    desc: "Steady endurance and calorie burn. Low joint impact.",
+    limitedFor: [],
+  },
+  {
+    id: 8, name: "Treadmill Walk", category: "Cardio", difficulty: "Beginner",
+    logType: "duration", met: 3.5,
+    goals: ["weight loss", "general fitness"],
+    link: "/exercise/8", kcalRange: "35–50", muscles: "Legs, Core",
+    desc: "Low-impact cardio suitable for beginners and recovery.",
+    limitedFor: [],
+  },
+  {
+    id: 9, name: "Rowing Machine", category: "Cardio", difficulty: "Intermediate",
+    logType: "duration", met: 7.0,
+    goals: ["weight loss", "general fitness"],
+    link: "/exercise/9", kcalRange: "70–95", muscles: "Back, Arms, Legs",
+    desc: "Full-body cardio engaging back, arms, and legs simultaneously.",
+    limitedFor: ["Back problems", "Shoulder injuries"],
+  },
+  {
+    id: 10, name: "Stair Climber", category: "Cardio", difficulty: "Intermediate",
+    logType: "duration", met: 9.0,
+    goals: ["weight loss", "general fitness"],
+    link: "/exercise/10", kcalRange: "65–85", muscles: "Glutes, Legs",
+    desc: "High glute and leg activation per step.",
+    limitedFor: ["Knee issues", "Joint pain"],
+  },
+  {
+    id: 11, name: "Push Up", category: "Weightlifting", difficulty: "Beginner",
+    logType: "bodyweight", kcalPerRep: 0.32,
+    goals: ["muscle gain", "general fitness"],
+    link: "/exercise/11", kcalRange: "50–65", muscles: "Chest, Triceps, Shoulders",
+    desc: "The most fundamental bodyweight exercise. Zero equipment.",
+    limitedFor: ["Shoulder injuries"],
+  },
+  {
+    id: 12, name: "Bench Press", category: "Weightlifting", difficulty: "Intermediate",
+    logType: "weighted",
+    goals: ["muscle gain"],
+    link: "/exercise/12", kcalRange: "45–65", muscles: "Chest, Triceps, Shoulders",
+    desc: "Upper-body strength and power with a barbell.",
+    limitedFor: ["Shoulder injuries"],
+  },
+  {
+    id: 13, name: "Pull Up", category: "Weightlifting", difficulty: "Intermediate",
+    logType: "bodyweight", kcalPerRep: 0.45,
+    goals: ["muscle gain", "general fitness"],
+    link: "/exercise/13", kcalRange: "50–70", muscles: "Back, Biceps",
+    desc: "Compound back exercise building arms and grip strength.",
+    limitedFor: ["Shoulder injuries"],
+  },
+  {
+    id: 14, name: "Lat Pulldown", category: "Weightlifting", difficulty: "Beginner",
+    logType: "weighted",
+    goals: ["muscle gain", "general fitness"],
+    link: "/exercise/14", kcalRange: "40–55", muscles: "Lats, Upper Back",
+    desc: "Machine-based pulling targeting lats and upper back.",
+    limitedFor: ["Shoulder injuries"],
+  },
+  {
+    id: 15, name: "Squat", category: "Weightlifting", difficulty: "Beginner",
+    logType: "bodyweight", kcalPerRep: 0.32,
+    goals: ["weight loss", "muscle gain", "general fitness"],
+    link: "/exercise/15", kcalRange: "50–70", muscles: "Quads, Glutes, Hamstrings",
+    desc: "King of lower body exercises. Builds raw leg and glute strength.",
+    limitedFor: ["Knee issues", "Back problems", "Joint pain"],
+  },
+  {
+    id: 16, name: "Lunges", category: "Weightlifting", difficulty: "Beginner",
+    logType: "bodyweight", kcalPerRep: 0.28,
+    goals: ["weight loss", "general fitness"],
+    link: "/exercise/16", kcalRange: "45–60", muscles: "Quads, Glutes",
+    desc: "Unilateral leg movement for balance and lower body strength.",
+    limitedFor: ["Knee issues", "Joint pain"],
+  },
+  {
+    id: 17, name: "Deadlift", category: "Weightlifting", difficulty: "Advanced",
+    logType: "weighted",
+    goals: ["muscle gain"],
+    link: "/exercise/17", kcalRange: "60–80", muscles: "Hamstrings, Glutes, Back",
+    desc: "Powerful compound lift targeting the posterior chain.",
+    limitedFor: ["Back problems"],
+  },
+  {
+    id: 18, name: "Leg Press", category: "Weightlifting", difficulty: "Intermediate",
+    logType: "weighted",
+    goals: ["muscle gain", "general fitness"],
+    link: "/exercise/18", kcalRange: "45–60", muscles: "Quads, Glutes",
+    desc: "Machine exercise for quads and glutes.",
+    limitedFor: ["Knee issues", "Joint pain"],
+  },
+  {
+    id: 19, name: "Shoulder Press", category: "Weightlifting", difficulty: "Intermediate",
+    logType: "weighted",
+    goals: ["muscle gain"],
+    link: "/exercise/19", kcalRange: "40–55", muscles: "Shoulders, Triceps",
+    desc: "Pressing movement for strong shoulders and triceps.",
+    limitedFor: ["Shoulder injuries"],
+  },
+  {
+    id: 20, name: "Biceps Curl", category: "Weightlifting", difficulty: "Beginner",
+    logType: "weighted",
+    goals: ["muscle gain", "general fitness"],
+    link: "/exercise/20", kcalRange: "30–45", muscles: "Biceps",
+    desc: "Classic arm isolation for direct biceps growth.",
+    limitedFor: [],
+  },
+];
+
+// Algorithm helpers
+export function getCardioRatio(weightGoal) {
+  if (weightGoal === "lose")        return 0.7;
+  if (weightGoal === "gain")        return 0.3;
+  if (weightGoal === "buildMuscle") return 0.2;
+  if (weightGoal === "maintain")    return 0.5;
+  return 0.5;
+}
+
+export function isRiskyForUser(ex, limitations) {
+  if (!limitations || limitations.length === 0) return false;
+  if (limitations.includes("No limitations")) return false;
+  return ex.limitedFor.some(l => limitations.includes(l));
+}

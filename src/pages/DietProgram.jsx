@@ -2,35 +2,20 @@
 // Page: Personalised Diet Program
 //
 // Features:
-//   - Macro bar showing daily targets (calculated from user profile) vs consumed
-//   - Recommended meals picked by the 3-day rotation recommender
-//   - Category filter tabs (All / Breakfast / Lunch / Dinner / Snack)
-//   - Checkable meals - checking adds to calendar and macro bar
-//   - Clickable meal names - opens ingredient breakdown modal
-//   - Monthly calendar with colored dots per logged meal
-//   - Day detail panel below calendar
-//
+//   - Macro bar: daily targets vs consumed, calculated from user profile
+//   - Recommended meals: 3-day rotation, duration + goal aware
+//   - Category filter tabs
+//   - Checkable meals → updates calendar + macro bar
+//   - Meal ingredient modal
+//   - Monthly calendar with colored dots
+//   - Day detail panel — delete only allowed on today
 //
 // Props:
-//   darkMode       (bool)
-//   currentUser    (object) - used to calculate personalised targets
-//   calendarData   (object) - { "YYYY-MM-DD": [meal entries] }
-//   loggedMeals    (object) - { "YYYY-MM-DD": Set of checked meal ids }
-//   togglePlanMeal (fn)     - called when user checks/unchecks a meal
-//
-// Hooks used: useState
-
-
-// DietProgram.jsx
-// Page: Personalised Diet Program
-//
-// New features:
-//   - Read-only past days - delete button only shown on today
-//   - recommendMeals now receives user for duration-aware meal selection
-//   - Targets now include weeklyRate and durationWeeks, shown in header
-//   - user cannot log in more than 10% of the daily macros
-
- 
+//   currentUser      (object)
+//   calendarData     (object)
+//   loggedMeals      (object)
+//   togglePlanMeal   (fn)
+//   deleteMealFromDay(fn)
 //
 // Hooks used: useState
 
@@ -44,6 +29,7 @@ import {
   getTodayKey,
 } from "../data/mockData";
 
+//  Constants 
 const MONTHS = [
   "January","February","March","April","May","June",
   "July","August","September","October","November","December"
@@ -64,24 +50,31 @@ const CAT_TIMES = {
   snack:     "15:00–17:00",
 };
 
+//  Hardcoded dark theme classes 
+const bg    = "bg-[#0a0a0a]";
+const bg2   = "bg-[#111]";
+const bg3   = "bg-[#161616]";
+const bdr   = "border-[#222]";
+const txt   = "text-[#e8e8e8]";
+const muted = "text-[#555]";
+
+//  Component 
 export default function DietProgram({
-  darkMode, currentUser, calendarData, loggedMeals, togglePlanMeal, deleteMealFromDay
+  currentUser, calendarData, loggedMeals, togglePlanMeal, deleteMealFromDay
 }) {
 
   const today     = getTodayKey();
   const todayDate = new Date();
 
   //  Local state 
-  const [activeFilter,    setActiveFilter]    = useState("all");
-  const [calYear,         setCalYear]         = useState(todayDate.getFullYear());
-  const [calMonth,        setCalMonth]        = useState(todayDate.getMonth());
-  const [selectedDay,     setSelectedDay]     = useState(today);
-  const [mealModal, setMealModal] = useState(null);
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [calYear,      setCalYear]      = useState(todayDate.getFullYear());
+  const [calMonth,     setCalMonth]     = useState(todayDate.getMonth());
+  const [selectedDay,  setSelectedDay]  = useState(today);
+  const [mealModal,    setMealModal]    = useState(null);
 
-  //  Targets - now includes weeklyRate, durationWeeks 
-  const targets = calcNutritionTargets(currentUser);
-
-  // Recommended meals - passes user for duration-aware selection
+  //  Targets + recommendations 
+  const targets          = calcNutritionTargets(currentUser);
   const recommendedMeals = recommendMeals(targets, today, currentUser);
 
   //  Today's consumed totals 
@@ -95,8 +88,7 @@ export default function DietProgram({
   }
 
   const checkedToday = loggedMeals[today] || new Set();
-
-  const mealsToShow = activeFilter === "all"
+  const mealsToShow  = activeFilter === "all"
     ? recommendedMeals
     : recommendedMeals.filter((m) => m.cat === activeFilter);
 
@@ -105,7 +97,7 @@ export default function DietProgram({
     return Math.min(100, Math.round((consumed / target) * 100));
   }
 
-  //  Open meal ingredient modal 
+  //  Open meal ingredient modal  
   function openMealModal(meal) {
     const ingList  = MEAL_INGREDIENTS[meal.id] || [];
     const resolved = [];
@@ -169,14 +161,6 @@ export default function DietProgram({
     return cells;
   }
 
-  //  Styling 
-  const bg    = darkMode ? "bg-[#0a0a0a]"   : "bg-white";
-  const bg2   = darkMode ? "bg-[#111]"      : "bg-neutral-50";
-  const bg3   = darkMode ? "bg-[#161616]"   : "bg-neutral-100";
-  const bdr   = darkMode ? "border-[#222]"  : "border-neutral-200";
-  const txt   = darkMode ? "text-[#e8e8e8]" : "text-neutral-900";
-  const muted = darkMode ? "text-[#555]"    : "text-neutral-400";
-
   const selectedDayEntries = calendarData[selectedDay] || [];
   const firstName          = currentUser?.name?.split(" ")[0] || "You";
   const goalLabel          = currentUser?.goal?.replace(/_/g, " ") || "your plan";
@@ -197,10 +181,9 @@ export default function DietProgram({
             Diet <span className="text-[#C6F135]">Program</span>
           </h1>
         </div>
-        <div className="border border-[#C6F135] px-4 py-2 text-right">
+        <div className={`border border-[#C6F135] px-4 py-2 text-right`}>
           <p className={`text-xs tracking-widest uppercase ${muted}`}>{firstName}'s Goal</p>
           <p className="font-black text-lg uppercase text-[#C6F135]">{goalLabel}</p>
-          {/* Show weekly rate so user knows what they're working with */}
           {targets.weeklyRate > 0 && (
             <p className={`text-xs ${muted} mt-1`}>
               {targets.weeklyRate}kg / week
@@ -318,10 +301,11 @@ export default function DietProgram({
                       <button
                         onClick={() => togglePlanMeal(meal)}
                         aria-pressed={isChecked}
+                        aria-label={isChecked ? `Unmark ${meal.name}` : `Mark ${meal.name} as eaten`}
                         className={`w-6 h-6 border flex items-center justify-center text-xs transition-all ${
                           isChecked
                             ? "border-[#C6F135] text-[#C6F135] bg-[#C6F135]/10"
-                            : `${darkMode ? "border-[#2e2e2e] text-transparent" : "border-neutral-300 text-transparent"} hover:border-[#C6F135] hover:text-[#C6F135]`
+                            : `border-[#2e2e2e] text-transparent hover:border-[#C6F135] hover:text-[#C6F135]`
                         }`}>
                         ✓
                       </button>
@@ -342,6 +326,8 @@ export default function DietProgram({
 
         {/*  Right: Calendar  */}
         <div className="flex flex-col">
+
+          {/* Month navigation */}
           <div className={`flex items-center justify-between px-5 py-3 border-b ${bdr}`}>
             <p className="font-black text-xl uppercase tracking-tight">
               <span className="text-[#C6F135]">{MONTHS[calMonth]}</span>
@@ -359,25 +345,28 @@ export default function DietProgram({
             </div>
           </div>
 
+          {/* Day headers */}
           <div className={`grid grid-cols-7 border-b ${bdr}`}>
             {["Su","Mo","Tu","We","Th","Fr","Sa"].map((d) => (
               <div key={d} className={`py-2 text-center text-xs tracking-widest uppercase ${muted} border-r last:border-r-0 ${bdr}`}>{d}</div>
             ))}
           </div>
 
+          {/* Calendar grid */}
           <div className="grid grid-cols-7">
             {buildCalendarCells().map((cell) => {
               let cellClass = `border-r border-b last:border-r-0 min-h-[44px] p-1 flex flex-col text-left transition-colors ${bdr}`;
               if (cell.isOtherMonth)  cellClass += " opacity-20 cursor-default";
               else                    cellClass += " cursor-pointer";
-              if (cell.isToday)       cellClass += darkMode ? " bg-[#C6F135]/5"  : " bg-[#C6F135]/10";
-              if (cell.isSelected)    cellClass += darkMode ? " bg-[#C6F135]/10 outline outline-1 outline-[#C6F135]/50" : " bg-[#C6F135]/20";
-              if (!cell.isOtherMonth && !cell.isSelected)
-                                      cellClass += darkMode ? " hover:bg-[#111]" : " hover:bg-neutral-50";
+              if (cell.isToday)       cellClass += " bg-[#C6F135]/5";
+              if (cell.isSelected)    cellClass += " bg-[#C6F135]/10 outline outline-1 outline-[#C6F135]/50";
+              if (!cell.isOtherMonth && !cell.isSelected) cellClass += " hover:bg-[#111]";
+
               return (
                 <button key={cell.dateKey}
                   onClick={() => !cell.isOtherMonth && setSelectedDay(cell.dateKey)}
                   disabled={cell.isOtherMonth}
+                  aria-label={`${cell.label}${cell.logs.length ? `, ${cell.logs.length} meals` : ""}`}
                   className={cellClass}>
                   <span className={`text-xs font-bold leading-none mb-1 ${cell.isToday ? "text-[#C6F135]" : ""}`}>
                     {cell.day}
@@ -409,7 +398,6 @@ export default function DietProgram({
               </p>
             </div>
 
-            {/* Past days show a read-only notice */}
             {selectedDay !== today && selectedDayEntries.length > 0 && (
               <p className={`text-xs ${muted} mb-3 italic`}>Past day — read only</p>
             )}
@@ -430,7 +418,6 @@ export default function DietProgram({
                     </div>
                     <div className="flex items-center gap-3">
                       <p className="text-xs font-bold text-[#C6F135]">{entry.kcal} kcal</p>
-                      {/* Delete button only shown for today */}
                       {selectedDay === today && (
                         <button
                           onClick={() => {
@@ -465,11 +452,12 @@ export default function DietProgram({
                 <p className={`text-xs tracking-widest uppercase ${muted} mb-1`}>Meal Breakdown</p>
                 <h2 className="font-black text-xl uppercase tracking-tight">{mealModal.meal.name}</h2>
               </div>
-              <button onClick={() => setMealModal(null)}
+              <button onClick={() => setMealModal(null)} aria-label="Close"
                 className={`w-8 h-8 border ${bdr} ${muted} hover:border-[#FF2A5E] hover:text-[#FF2A5E] transition-colors flex items-center justify-center`}>
                 ✕
               </button>
             </div>
+
             <div className={`grid grid-cols-4 border-b ${bdr}`}>
               {[
                 { label: "Calories", val: mealModal.meal.kcal,    unit: "kcal", cls: "text-[#C6F135]" },
@@ -485,6 +473,7 @@ export default function DietProgram({
                 </div>
               ))}
             </div>
+
             {mealModal.ingredients.length === 0 ? (
               <p className={`px-6 py-8 text-sm ${muted} text-center`}>No ingredient data available.</p>
             ) : (
@@ -493,7 +482,8 @@ export default function DietProgram({
                   <div>Ingredient</div><div>g</div><div>Kcal</div><div>P</div><div>C</div><div>F</div>
                 </div>
                 {mealModal.ingredients.map((entry, i) => (
-                  <div key={i} className={`grid grid-cols-[1fr_60px_auto_auto_auto_auto] items-center gap-3 px-6 py-3 border-b last:border-b-0 ${bdr}`}>
+                  <div key={i}
+                    className={`grid grid-cols-[1fr_60px_auto_auto_auto_auto] items-center gap-3 px-6 py-3 border-b last:border-b-0 ${bdr}`}>
                     <Link to={`/ingredient/${entry.item.id}`} onClick={() => setMealModal(null)}
                       className="text-xs font-bold hover:text-[#C6F135] transition-colors">
                       {entry.item.name} <span className={muted}>→</span>
@@ -507,6 +497,7 @@ export default function DietProgram({
                 ))}
               </>
             )}
+
             <div className={`px-6 py-4 border-t ${bdr} flex justify-between items-center`}>
               <p className={`text-xs ${muted}`}>Click any ingredient for full nutrition details</p>
               <button onClick={() => setMealModal(null)}

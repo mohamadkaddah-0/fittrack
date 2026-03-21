@@ -29,10 +29,9 @@
 //   - Each saved meal shows ingredient breakdown modal (same as Diet Program)
 //
 // Props:
-//   darkMode           (bool)
 //   currentUser        (object)
 //   calendarData       (object)
-//   savedMeals         (array)  — user's custom saved meals
+//   savedMeals         (array)
 //   addMealToCalendar  (fn)
 //   saveCustomMeal     (fn)
 //   deleteSavedMeal    (fn)
@@ -43,6 +42,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { INGREDIENTS, calcNutritionTargets, getTodayKey } from "../data/mockData";
 
+//  Constants 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"];
 const ING_CATS   = ["all", "protein", "carbs", "vegetable", "fat", "dairy"];
 
@@ -53,16 +53,26 @@ const TYPE_COLORS = {
   snack:     { bg: "bg-[#00E5FF]", text: "text-black" },
 };
 
+//  Hardcoded dark theme classes 
+const bg    = "bg-[#0a0a0a]";
+const bg2   = "bg-[#111]";
+const bg3   = "bg-[#161616]";
+const bdr   = "border-[#222]";
+const txt   = "text-[#e8e8e8]";
+const muted = "text-[#555]";
+const inputClass = `w-full bg-[#111] text-[#e8e8e8] border border-[#222] font-mono text-xs px-3 py-2.5 outline-none focus:border-[#C6F135] transition-colors placeholder:text-[#333]`;
+
+//  Component 
 export default function MealLog({
-  darkMode, currentUser, calendarData,
-  savedMeals, addMealToCalendar, saveCustomMeal, deleteSavedMeal
+  currentUser, calendarData, savedMeals,
+  addMealToCalendar, saveCustomMeal, deleteSavedMeal
 }) {
 
   const today     = getTodayKey();
   const todayDate = new Date();
   const targets   = calcNutritionTargets(currentUser);
 
-  //  Active tab: "log" (new meal form) or "saved" (my meals) 
+  //  Tab state 
   const [activeTab, setActiveTab] = useState("log");
 
   //  Form state 
@@ -74,16 +84,16 @@ export default function MealLog({
   const [notes,    setNotes]    = useState("");
 
   //  Ingredient state 
-  const [ingredients, setIngredients] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [catFilter,   setCatFilter]   = useState("all");
-  const [showResults, setShowResults] = useState(false);
+  const [ingredients,  setIngredients]  = useState([]);
+  const [searchQuery,  setSearchQuery]  = useState("");
+  const [catFilter,    setCatFilter]    = useState("all");
+  const [showResults,  setShowResults]  = useState(false);
+  const [savedMealModal, setSavedMealModal] = useState(null);
 
-  //  Validation, toast, warning 
-  const [errors,       setErrors]       = useState({});
-  const [toast,        setToast]        = useState(null);
-  const [showOverLimit, setShowOverLimit] = useState(false); // macro limit warning
-  const [savedMealModal, setSavedMealModal] = useState(null); // ingredient breakdown for saved meals
+  //  Validation + toast + warning 
+  const [errors,        setErrors]        = useState({});
+  const [toast,         setToast]         = useState(null);
+  const [showOverLimit, setShowOverLimit] = useState(false);
 
   const toastTimer = useRef(null);
   const searchRef  = useRef(null);
@@ -112,13 +122,13 @@ export default function MealLog({
   }, []);
 
   //  Already consumed today 
-  const todayEntries   = calendarData[today] || [];
-  let alreadyEatenKcal = 0, alreadyEatenProtein = 0, alreadyEatenCarbs = 0, alreadyEatenFat = 0;
+  const todayEntries = calendarData[today] || [];
+  let alreadyKcal = 0, alreadyProtein = 0, alreadyCarbs = 0, alreadyFat = 0;
   for (const entry of todayEntries) {
-    alreadyEatenKcal    += entry.kcal    || 0;
-    alreadyEatenProtein += entry.protein || 0;
-    alreadyEatenCarbs   += entry.carbs   || 0;
-    alreadyEatenFat     += entry.fat     || 0;
+    alreadyKcal    += entry.kcal    || 0;
+    alreadyProtein += entry.protein || 0;
+    alreadyCarbs   += entry.carbs   || 0;
+    alreadyFat     += entry.fat     || 0;
   }
 
   //  This meal's totals 
@@ -135,15 +145,14 @@ export default function MealLog({
   mealCarbs   = Math.round(mealCarbs);
   mealFat     = Math.round(mealFat);
 
-  const totalAfter = alreadyEatenKcal + mealKcal;
+  const totalAfter = alreadyKcal + mealKcal;
   const remaining  = targets.kcal - totalAfter;
 
-  // Check if logging this meal would exceed any target
   function wouldExceedLimits() {
-    if (alreadyEatenKcal + mealKcal    > targets.kcal    * 1.1) return true;
-    if (alreadyEatenProtein + mealProtein > targets.protein * 1.1) return true;
-    if (alreadyEatenCarbs + mealCarbs   > targets.carbs   * 1.1) return true;
-    if (alreadyEatenFat + mealFat       > targets.fat     * 1.1) return true;
+    if (alreadyKcal    + mealKcal    > targets.kcal    * 1.1) return true;
+    if (alreadyProtein + mealProtein > targets.protein * 1.1) return true;
+    if (alreadyCarbs   + mealCarbs   > targets.carbs   * 1.1) return true;
+    if (alreadyFat     + mealFat     > targets.fat     * 1.1) return true;
     return false;
   }
 
@@ -189,21 +198,14 @@ export default function MealLog({
     toastTimer.current = setTimeout(() => setToast(null), 3000);
   }
 
-  //  Submit — checks macro limits first 
+  //  Submit 
   function handleSubmit(e) {
     e.preventDefault();
     if (!validate()) return;
-
-    // If over limit, show warning instead of logging immediately
-    if (wouldExceedLimits()) {
-      setShowOverLimit(true);
-      return;
-    }
-
+    if (wouldExceedLimits()) { setShowOverLimit(true); return; }
     logTheMeal();
   }
 
-  //  Actually log the meal (used by both form submit and "Log Meal" button in saved meals tab)
   function logTheMeal() {
     const entry = {
       name:    mealName.trim(),
@@ -231,7 +233,7 @@ export default function MealLog({
       carbs:       mealCarbs,
       fat:         mealFat,
       cat:         mealType,
-      ingredients: ingredients, // save the full ingredient list
+      ingredients: ingredients,
     });
     showToastMessage(`"${mealName.trim()}" saved to My Meals`);
     resetForm();
@@ -239,7 +241,7 @@ export default function MealLog({
 
   //  Log a saved meal directly 
   function logSavedMeal(meal) {
-    const entry = {
+    addMealToCalendar(today, {
       name:    meal.name,
       kcal:    meal.kcal,
       protein: meal.protein,
@@ -248,33 +250,17 @@ export default function MealLog({
       cat:     meal.cat || mealType,
       time:    mealTime,
       type:    "meal",
-    };
-    addMealToCalendar(today, entry);
+    });
     showToastMessage(`"${meal.name}" logged — ${meal.kcal} kcal`);
   }
 
   //  Reset form 
   function resetForm() {
-    setMealName("");
-    setNotes("");
-    setServings(1);
-    setMealType("breakfast");
-    setMealDate(today);
-    setMealTime("13:00");
-    setIngredients([]);
-    setErrors({});
-    setSearchQuery("");
-    setCatFilter("all");
+    setMealName(""); setNotes(""); setServings(1);
+    setMealType("breakfast"); setMealDate(today); setMealTime("13:00");
+    setIngredients([]); setErrors({});
+    setSearchQuery(""); setCatFilter("all");
   }
-
-  //  Styling helpers 
-  const bg    = darkMode ? "bg-[#0a0a0a]"   : "bg-white";
-  const bg2   = darkMode ? "bg-[#111]"      : "bg-neutral-50";
-  const bg3   = darkMode ? "bg-[#161616]"   : "bg-neutral-100";
-  const bdr   = darkMode ? "border-[#222]"  : "border-neutral-200";
-  const txt   = darkMode ? "text-[#e8e8e8]" : "text-neutral-900";
-  const muted = darkMode ? "text-[#555]"    : "text-neutral-400";
-  const inputClass = `w-full ${bg2} ${txt} border ${bdr} font-mono text-xs px-3 py-2.5 outline-none focus:border-[#C6F135] transition-colors placeholder:text-[#333]`;
 
   //  Render 
   return (
@@ -296,17 +282,15 @@ export default function MealLog({
         </h1>
       </header>
 
-      {/*  Tab switcher: Log New Meal vs My Meals  */}
+      {/*  Tab switcher  */}
       <div className={`flex border-b ${bdr}`}>
-        <button
-          onClick={() => setActiveTab("log")}
+        <button onClick={() => setActiveTab("log")}
           className={`px-6 py-3 text-xs tracking-widest uppercase border-r transition-all ${bdr} ${
             activeTab === "log" ? "bg-[#C6F135] text-black font-bold" : `${muted} ${bg2} hover:text-[#e8e8e8]`
           }`}>
           + Log New Meal
         </button>
-        <button
-          onClick={() => setActiveTab("saved")}
+        <button onClick={() => setActiveTab("saved")}
           className={`px-6 py-3 text-xs tracking-widest uppercase transition-all ${
             activeTab === "saved" ? "bg-[#C6F135] text-black font-bold" : `${muted} ${bg2} hover:text-[#e8e8e8]`
           }`}>
@@ -315,7 +299,7 @@ export default function MealLog({
       </div>
 
       
-      {/* TAB 1: LOG NEW MEAL FORM  */}
+      {/* TAB 1: LOG NEW MEAL*/}
       
       {activeTab === "log" && (
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px]">
@@ -341,7 +325,7 @@ export default function MealLog({
                 </div>
 
                 <div>
-                  <p id="mealtype-label" className={`text-xs tracking-widest uppercase ${muted} mb-1.5`}>Meal</p>
+                  <p id="mealtype-label" className={`text-xs tracking-widest uppercase ${muted} mb-1.5`}>Meal Type</p>
                   <div className={`flex border ${bdr}`} role="group" aria-labelledby="mealtype-label">
                     {MEAL_TYPES.map((type) => {
                       const isActive = mealType === type;
@@ -361,11 +345,13 @@ export default function MealLog({
                 <div className="grid grid-cols-3 gap-3">
                   <div>
                     <label htmlFor="mealDate" className={`block text-xs tracking-widest uppercase ${muted} mb-1.5`}>Date</label>
-                    <input id="mealDate" type="date" value={mealDate} onChange={(e) => setMealDate(e.target.value)} className={inputClass} />
+                    <input id="mealDate" type="date" value={mealDate}
+                      onChange={(e) => setMealDate(e.target.value)} className={inputClass} />
                   </div>
                   <div>
                     <label htmlFor="mealTime" className={`block text-xs tracking-widest uppercase ${muted} mb-1.5`}>Time</label>
-                    <input id="mealTime" type="time" value={mealTime} onChange={(e) => setMealTime(e.target.value)} className={inputClass} />
+                    <input id="mealTime" type="time" value={mealTime}
+                      onChange={(e) => setMealTime(e.target.value)} className={inputClass} />
                   </div>
                   <div>
                     <label htmlFor="servings" className={`block text-xs tracking-widest uppercase ${muted} mb-1.5`}>Servings</label>
@@ -443,7 +429,7 @@ export default function MealLog({
                   {errors.ingredients && <p role="alert" className="text-xs text-[#FF2A5E] mt-1">{errors.ingredients}</p>}
                 </div>
 
-                {/* Added ingredients table */}
+                {/* Ingredients table */}
                 <div className={`border ${bdr}`}>
                   <div className={`grid grid-cols-[1fr_90px_60px_26px] gap-3 px-4 py-2 ${bg3} border-b ${bdr} text-xs tracking-widest uppercase ${muted}`}>
                     <div>Ingredient</div><div>Portion (g)</div><div className="text-right">Kcal</div><div />
@@ -474,7 +460,7 @@ export default function MealLog({
                           <input type="number" value={portionG} min="1" step="5"
                             onChange={(e) => updatePortion(idx, e.target.value)}
                             aria-label={`Portion of ${item.name} in grams`}
-                            className={`w-full ${bg2} ${txt} border ${bdr} text-xs text-center px-2 py-1.5 outline-none focus:border-[#C6F135] font-mono`} />
+                            className={`w-full bg-[#111] text-[#e8e8e8] border border-[#222] text-xs text-center px-2 py-1.5 outline-none focus:border-[#C6F135] font-mono`} />
                           <p className={`text-xs ${muted} text-center mt-0.5`}>grams</p>
                         </div>
                         <p className="text-right font-black text-base text-[#C6F135]">{rowKcal}</p>
@@ -506,19 +492,17 @@ export default function MealLog({
               </div>
             </section>
 
-            {/* Submit row - Log + Save as Meal */}
+            {/* Submit row */}
             <div className="flex items-center justify-between px-6 py-4 gap-3">
               <button type="button" onClick={resetForm}
                 className={`text-xs tracking-widest uppercase px-5 py-2.5 border ${bdr} ${muted} hover:text-[#e8e8e8] hover:border-[#555] transition-colors`}>
                 Clear
               </button>
               <div className="flex gap-3">
-                {/* Save as Meal - saves without logging */}
                 <button type="button" onClick={handleSaveAsMeal}
-                  className={`text-xs tracking-widest uppercase px-5 py-2.5 border border-[#C6F135] text-[#C6F135] hover:bg-[#C6F135] hover:text-black transition-colors`}>
+                  className="text-xs tracking-widest uppercase px-5 py-2.5 border border-[#C6F135] text-[#C6F135] hover:bg-[#C6F135] hover:text-black transition-colors">
                   Save as Meal
                 </button>
-                {/* Log Meal - logs to calendar */}
                 <button type="submit"
                   className="bg-[#C6F135] text-black text-xs font-bold tracking-widest uppercase px-7 py-2.5 hover:bg-[#FF2A5E] hover:text-white transition-colors">
                   Log Meal ✓
@@ -528,7 +512,7 @@ export default function MealLog({
           </form>
 
           {/* Nutrition Summary Sidebar */}
-          <aside className="flex flex-col">
+          <aside className="flex flex-col" aria-label="Nutrition summary">
             <div className={`px-5 py-3 border-b ${bdr} ${bg2}`}>
               <h2 className="font-black text-lg uppercase tracking-tight">
                 Nutrition <span className="text-[#C6F135]">Summary</span>
@@ -547,7 +531,7 @@ export default function MealLog({
                 Daily target: <span className="text-[#C6F135]">{targets.kcal.toLocaleString()} kcal</span>
               </p>
               <p className={`text-xs ${muted} mt-1`}>
-                Already eaten: <span className="text-[#C6F135]">{alreadyEatenKcal.toLocaleString()} kcal</span>
+                Already eaten: <span className="text-[#C6F135]">{alreadyKcal.toLocaleString()} kcal</span>
               </p>
             </div>
 
@@ -575,8 +559,8 @@ export default function MealLog({
             <div className="px-5 py-4">
               <p className={`text-xs tracking-widest uppercase ${muted} mb-3`}>Daily Budget</p>
               {[
-                { label: "Already consumed", value: `${alreadyEatenKcal.toLocaleString()} kcal`, cls: txt },
-                { label: "This meal",        value: `${mealKcal.toLocaleString()} kcal`,          cls: txt },
+                { label: "Already consumed", value: `${alreadyKcal.toLocaleString()} kcal`,   cls: txt },
+                { label: "This meal",        value: `${mealKcal.toLocaleString()} kcal`,       cls: txt },
                 { label: "Total after",      value: `${totalAfter.toLocaleString()} kcal`,
                   cls: totalAfter > targets.kcal ? "text-[#FF2A5E] font-bold" : "text-[#C6F135] font-bold" },
                 { label: "Remaining",
@@ -594,7 +578,7 @@ export default function MealLog({
       )}
 
       
-      {/* TAB 2: MY MEALS  */}
+      {/* TAB 2: MY MEALS */}
       
       {activeTab === "saved" && (
         <div className="px-6 md:px-8 py-6">
@@ -613,26 +597,21 @@ export default function MealLog({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {savedMeals.map((meal) => (
                 <div key={meal.id} className={`border ${bdr} ${bg2}`}>
-
-                  {/* Meal header */}
                   <div className={`px-5 py-4 border-b ${bdr}`}>
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-black text-lg uppercase tracking-tight">{meal.name}</p>
                         <p className={`text-xs ${muted} mt-1 capitalize`}>{meal.cat}</p>
                       </div>
-                      {/* Delete saved meal */}
                       <button onClick={() => deleteSavedMeal(meal.id)}
                         aria-label={`Delete ${meal.name}`}
                         className={`w-7 h-7 border ${bdr} ${muted} hover:border-[#FF2A5E] hover:text-[#FF2A5E] flex items-center justify-center text-xs transition-colors flex-shrink-0`}>
                         ✕
                       </button>
                     </div>
-
-                    {/* Macro summary */}
                     <div className="grid grid-cols-4 gap-2 mt-3">
                       {[
-                        { label: "Kcal", val: meal.kcal,    cls: "text-[#C6F135]" },
+                        { label: "Kcal", val: meal.kcal,         cls: "text-[#C6F135]" },
                         { label: "P",    val: `${meal.protein}g`, cls: "text-[#FF2A5E]" },
                         { label: "C",    val: `${meal.carbs}g`,   cls: "text-[#00E5FF]" },
                         { label: "F",    val: `${meal.fat}g`,     cls: "text-[#FFAA00]" },
@@ -644,18 +623,12 @@ export default function MealLog({
                       ))}
                     </div>
                   </div>
-
-                  {/* Actions */}
                   <div className={`flex border-t ${bdr}`}>
-                    {/* View ingredients */}
-                    <button
-                      onClick={() => setSavedMealModal(meal)}
+                    <button onClick={() => setSavedMealModal(meal)}
                       className={`flex-1 py-3 text-xs tracking-widest uppercase ${muted} border-r ${bdr} hover:text-[#C6F135] transition-colors`}>
                       View Ingredients
                     </button>
-                    {/* Log directly */}
-                    <button
-                      onClick={() => logSavedMeal(meal)}
+                    <button onClick={() => logSavedMeal(meal)}
                       className="flex-1 py-3 text-xs font-bold tracking-widest uppercase bg-[#C6F135] text-black hover:bg-[#FF2A5E] hover:text-white transition-colors">
                       Log Now
                     </button>
@@ -667,8 +640,7 @@ export default function MealLog({
         </div>
       )}
 
-      {/*  Saved Meal Ingredient Modal */}
-      {/* Same layout as the Diet Program ingredient modal */}
+      {/*  Saved Meal Ingredient Modal  */}
       {savedMealModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           role="dialog" aria-modal="true"
@@ -679,13 +651,11 @@ export default function MealLog({
                 <p className={`text-xs tracking-widest uppercase ${muted} mb-1`}>My Meal — Breakdown</p>
                 <h2 className="font-black text-xl uppercase tracking-tight">{savedMealModal.name}</h2>
               </div>
-              <button onClick={() => setSavedMealModal(null)}
+              <button onClick={() => setSavedMealModal(null)} aria-label="Close"
                 className={`w-8 h-8 border ${bdr} ${muted} hover:border-[#FF2A5E] hover:text-[#FF2A5E] transition-colors flex items-center justify-center`}>
                 ✕
               </button>
             </div>
-
-            {/* Totals */}
             <div className={`grid grid-cols-4 border-b ${bdr}`}>
               {[
                 { label: "Calories", val: savedMealModal.kcal,    unit: "kcal", cls: "text-[#C6F135]" },
@@ -701,8 +671,6 @@ export default function MealLog({
                 </div>
               ))}
             </div>
-
-            {/* Ingredient rows */}
             {(!savedMealModal.ingredients || savedMealModal.ingredients.length === 0) ? (
               <p className={`px-6 py-8 text-sm ${muted} text-center`}>No ingredient data available.</p>
             ) : (
@@ -729,7 +697,6 @@ export default function MealLog({
                 })}
               </>
             )}
-
             <div className={`px-6 py-4 border-t ${bdr} flex justify-end`}>
               <button onClick={() => setSavedMealModal(null)}
                 className="bg-[#C6F135] text-black text-xs font-bold tracking-widest uppercase px-5 py-2 hover:bg-[#FF2A5E] hover:text-white transition-colors">
@@ -741,7 +708,6 @@ export default function MealLog({
       )}
 
       {/*  Macro Limit Warning Modal  */}
-      {/* Shows when logging would exceed daily targets by more than 10% */}
       {showOverLimit && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           role="alertdialog" aria-modal="true">
@@ -751,7 +717,7 @@ export default function MealLog({
             </div>
             <div className="px-6 py-5">
               <p className={`text-sm leading-relaxed mb-4 ${txt}`}>
-                Logging this meal will put you over your daily target. Are you sure you want to continue?
+                Logging this meal will put you over your daily target. Are you sure?
               </p>
               <div className="flex gap-3">
                 <button onClick={() => setShowOverLimit(false)}
@@ -768,7 +734,7 @@ export default function MealLog({
         </div>
       )}
 
-      {/* Toast */}
+      {/*  Toast  */}
       <div role="status" aria-live="polite"
         className={`fixed bottom-6 right-6 z-50 bg-[#C6F135] text-black text-xs font-bold tracking-widest uppercase px-5 py-3 transition-all duration-300 ${
           toast ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
