@@ -99,7 +99,7 @@ export default function App() {
   };
 
   return (
-    <div className="bg-[#080808] text-[#ECECEC] min-h-screen font-['JetBrains_Mono'] overflow-x-hidden">
+    <div className="bg-[#080808] text-[#ECECEC] min-h-screen font-['JetBrains_Mono']">
       <BrowserRouter>
 
         {/* Shared navbar appears on every page */}
