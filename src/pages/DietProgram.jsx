@@ -227,7 +227,7 @@ export default function DietProgram({
         <div className={`border-r ${bdr}`}>
 
           {/* Category filter tabs */}
-          <div className={`flex border-b ${bdr}`} role="tablist">
+          <div className={`flex border-b ${bdr} overflow-x-auto`} role="tablist">
             {["all","breakfast","lunch","dinner","snack"].map((cat) => (
               <button key={cat} role="tab" aria-selected={activeFilter === cat}
                 onClick={() => setActiveFilter(cat)}
