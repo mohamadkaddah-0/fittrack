@@ -150,41 +150,6 @@ const Navigation = ({ toggleTheme }) => {
   // Check if current path is login, register, OR profile
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/profile';
   
-  // On auth pages AND profile page, show logo AND home button
-  if (isAuthPage) {
-    return (
-      <nav>
-        <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-          <div className="nav-logo" onClick={toggleTheme} style={{ cursor: 'pointer' }}>
-            FitTrack<sup>™</sup>
-          </div>
-          
-          {/* Simple home button */}
-          <Link 
-            to="/Home" 
-            style={{ 
-              marginLeft: '24px',
-              fontSize: '12px',
-              letterSpacing: '0.18em',
-              textTransform: 'uppercase',
-              color: 'var(--dim)',
-              textDecoration: 'none',
-              borderLeft: '1px solid var(--line)',
-              paddingLeft: '24px',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              transition: 'color 0.2s'
-            }}
-            onMouseEnter={(e) => e.target.style.color = 'var(--text)'}
-            onMouseLeave={(e) => e.target.style.color = 'var(--dim)'}
-          >
-            HOME
-          </Link>
-        </div>
-      </nav>
-    );
-  }
   
   
   return (
