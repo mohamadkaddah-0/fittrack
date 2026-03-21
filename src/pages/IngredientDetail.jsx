@@ -208,7 +208,7 @@ export default function IngredientDetail() {
                 aria-label="Portion in grams"
                 className={`w-28 bg-[#0a0a0a] text-[#e8e8e8] border border-[#222] font-mono text-sm px-3 py-2 outline-none focus:border-[#C6F135] transition-colors text-center`} />
               <span className={`text-sm ${muted}`}>grams</span>
-              <div className="flex gap-2 ml-auto">
+              <div className="flex flex-wrap gap-2 mt-2">
                 {[50, 100, 150, 200].map((g) => (
                   <button key={g} onClick={() => setPortion(g)} aria-label={`Set portion to ${g}g`}
                     className={`text-xs px-3 py-2 border transition-colors ${
