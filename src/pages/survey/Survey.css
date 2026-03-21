@@ -578,3 +578,80 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Activity Level Styles - Matching your existing design */
+.activity-level-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.activity-button {
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  border-radius: 4px;
+  width: 100%;
+}
+
+.activity-button:hover {
+  border-color: var(--lime);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(198, 241, 53, 0.15);
+}
+
+.activity-button.selected {
+  background: var(--lime);
+  border-color: var(--lime);
+  color: #000;
+  box-shadow: 0 0 15px rgba(198, 241, 53, 0.3);
+}
+
+.activity-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.activity-button.selected .activity-label {
+  color: #000;
+  font-weight: 700;
+}
+
+.activity-description {
+  font-size: 11px;
+  color: var(--dim);
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+}
+
+.activity-button.selected .activity-description {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+/* Hint text styling - matching existing */
+.hint {
+  display: block;
+  margin-top: 8px;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: var(--dim);
+  line-height: 1.4;
+}
+
+.warning-message {
+  display: block;
+  margin-top: 8px;
+  font-size: 10px;
+  color: var(--hot);
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
