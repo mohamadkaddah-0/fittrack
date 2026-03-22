@@ -176,7 +176,7 @@ export default function App() {
     if (foundUser) {
       setCurrentUser({ name: foundUser.name, email: foundUser.email });
       setMessage({ text: `Welcome back, ${foundUser.name}!`, type: "success" });
-      setTimeout(() => { window.location.href = "/surveys"; }, 1000);
+      setTimeout(() => { window.location.href = "/ready-survey"; }, 1000);
     } else {
       setMessage({ text: "Invalid email or password", type: "error" });
     }
