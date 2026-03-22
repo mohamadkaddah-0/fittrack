@@ -450,9 +450,22 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
   }
 
   function toggleExerciseDone(day, exerciseId) {
-    const key = `${day}-${exerciseId}`;
-    setCompletedPlanItems(prev => ({ ...prev, [key]: !prev[key] }));
+  const key    = `${day}-${exerciseId}`;
+  const isDone = !completedPlanItems[key];
+  setCompletedPlanItems(prev => ({ ...prev, [key]: isDone }));
+
+  if (isDone && addWorkoutToCalendar) {
+    const ex    = exercises.find(e => e.id === exerciseId);
+    const today = getTodayKey();
+    addWorkoutToCalendar(today, {
+      name:     ex?.name     || "Exercise",
+      category: ex?.category || "Cardio",
+      kcal:     0,
+      cat:      ex?.category === "Cardio" ? "cardio" : "strength",
+      type:     "workout",
+    });
   }
+}
 
   function handlePlanContinue() {
     const levels = ["beginner", "intermediate", "advanced", "athlete"];
