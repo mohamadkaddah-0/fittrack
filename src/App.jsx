@@ -23,17 +23,18 @@ import IngredientDetail from "./pages/IngredientDetail";
 import { getUserProfile, INITIAL_CALENDAR, getTodayKey } from "./data/mockData";
 
 // ── Mohammad Moghnieh's pages ─────────────────────────────────
-import Register        from "./Register";
-import UserProfile     from "./userProfile";
-import Survey          from "./Surveys";
-import Terms           from "./Terms";
-import Privacy         from "./Privacy";
-import Support         from "./Support";
-import API             from "./API";
-import ReadySurvey     from "./readySurvey";
-import Welcome         from "./Welcome";
-import ForgotPassword  from "./ForgotPassword";
-import ResetPassword   from "./ResetPassword";
+import Register       from "./pages/Register/Register";
+import UserProfile    from "./pages/UserProfile/UserProfile";
+import Survey         from "./pages/survey/Survey";
+import Terms          from "./pages/Terms/Terms";
+import Privacy        from "./pages/Terms/Privacy";
+import Support        from "./pages/Terms/Support";
+import ReadySurvey    from "./pages/survey/ReadySurvey";
+import Welcome        from "./pages/WelcomePage/WelcomePage";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword  from "./pages/ResetPassword";
+//import API             from "./API";
+
 
 // ── Other teammates — uncomment when ready ────────────────────
 // import ListViewPage    from "./pages/ListViewPage";
@@ -206,7 +207,7 @@ export default function App() {
           <Route path="/privacy"        element={<Privacy />} />
           <Route path="/surveys"        element={<Survey />} />
           <Route path="/support"        element={<Support />} />
-          <Route path="/api"            element={<API />} />
+          {/* <Route path="/api"            element={<API />} /> */}
           <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* ── Other teammates — uncomment when ready ── */}
