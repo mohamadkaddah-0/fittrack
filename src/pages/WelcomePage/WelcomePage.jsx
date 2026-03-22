@@ -5,6 +5,15 @@ import './WelcomePage.css';
 const Welcome = () => {
   return (
     <section className="welcome-section">
+      <div className="absolute top-8 left-8 z-50">
+        <Link 
+          to="/" 
+          className="font-['Barlow_Condensed'] font-black tracking-wider uppercase text-[#C6F135] no-underline hover:opacity-80 transition-opacity"
+          style={{ fontSize: '40px' }}
+        >
+          FitTrack<sup className="text-base">™</sup>
+        </Link>
+      </div>
       {/* Hero Section */}
       <div className="welcome-hero">
         <div className="welcome-grid">
