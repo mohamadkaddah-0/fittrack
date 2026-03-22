@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Survey.css';
+import { getUserProfile } from "../../data/mockData";
 
-const Surveys = () => {
+const Surveys = ({ setCurrentUser }) => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [surveyData, setSurveyData] = useState({
@@ -467,6 +468,9 @@ const Surveys = () => {
       };
       
       localStorage.setItem('userProfile', JSON.stringify(userProfile));
+      if (setCurrentUser) {
+        setCurrentUser(getUserProfile());
+      }
       navigate('/profile');
     } else {
       setErrors(stepErrors);
