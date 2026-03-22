@@ -58,11 +58,15 @@ const ReadySurvey = () => {
               </button>
             </Link>
             
-            <Link to="/login">
-              <button className="ready-btn later-btn">
-                NOT NOW, TAKE ME HOME
-              </button>
-            </Link>
+            <Link 
+  to="/login" 
+  state={{ from: "/ready-survey" }}
+  onClick={() => window.scrollTo(0, 0)}
+>
+  <button className="ready-btn later-btn">
+    NOT NOW, TAKE ME HOME
+  </button>
+</Link>
           </div>
 
           <p className="ready-note">
