@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Register.css';
 
+
 const Register = () => {
   const navigate = useNavigate();
   
@@ -248,8 +249,18 @@ const Register = () => {
     }
   };
 
+const navigate = useNavigate();
+  
   return (
     <section className="login-section">
+      <div className="absolute top-6 left-6 z-10">
+      <button
+        onClick={() => navigate("/")}
+        className="font-['Barlow_Condensed'] text-2xl font-black tracking-wider uppercase text-[#C6F135] bg-transparent border-none cursor-pointer"
+      >
+        FitTrack<sup className="text-xs">™</sup>
+      </button>
+    </div>
       <div className="login-card">
         <div className="login-ghost">//</div>
         
