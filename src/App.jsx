@@ -204,8 +204,7 @@ export default function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password"  element={<ResetPassword />} />
             <Route path="/ready-survey"    element={<ReadySurvey />} />
-            <Route path="/surveys"         element={<Survey />} />
-
+           <Route path="/surveys" element={<Survey setCurrentUser={setCurrentUser} />} />
             {/* ── App pages (navbar shown) ── */}
 
             {/* Mohamad Kaddah */}
