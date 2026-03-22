@@ -14,6 +14,19 @@ const Welcome = () => {
           FitTrack<sup className="text-base">™</sup>
         </Link>
       </div>
+      <div className="absolute top-8 left-0 right-0 z-40 flex justify-center pointer-events-none">
+        <div className="text-center">
+          <span className="text-[10px] tracking-[0.3em] uppercase text-[#555] font-['JetBrains_Mono']">
+            WELCOME TO
+          </span>
+          <h1 className="text-5xl md:text-7xl font-['Barlow_Condensed'] font-black uppercase tracking-tight text-white mt-2">
+            FITTRACK
+          </h1>
+          <p className="text-sm md:text-base text-[#888] mt-4 max-w-2xl mx-auto">
+            Your ultimate fitness companion for tracking workouts, monitoring progress, and achieving your goals.
+          </p>
+        </div>
+      </div>
       {/* Hero Section */}
       <div className="welcome-hero">
         <div className="welcome-grid">
