@@ -5,7 +5,7 @@ import './WelcomePage.css';
 const Welcome = () => {
   return (
     <section className="welcome-section">
-      <div className="absolute top-8 left-8 z-50">
+      <div className="absolute top-8 left-8 z-50 flex items-center gap-4">
         <Link 
           to="/" 
           className="font-['Barlow_Condensed'] font-black tracking-wider uppercase text-[#C6F135] no-underline hover:opacity-80 transition-opacity"
@@ -13,20 +13,12 @@ const Welcome = () => {
         >
           FitTrack<sup className="text-base">™</sup>
         </Link>
-      </div>
-
-      {/* Welcome Text - Centered */}
-      <div className="absolute top-8 left-0 right-0 z-40 flex justify-center pointer-events-none">
-        <div className="text-center">
-          <span className="text-[10px] tracking-[0.3em] uppercase text-[#555] font-['JetBrains_Mono']">
-            WELCOME TO
+        
+        {/* Short welcome text next to logo */}
+        <div className="hidden md:block border-l border-[#1E1E1E] pl-5 ml-2">
+          <span className="text-sm tracking-[0.15em] uppercase text-[#555] font-['JetBrains_Mono']">
+            WELCOME
           </span>
-          <h1 className="text-5xl md:text-7xl font-['Barlow_Condensed'] font-black uppercase tracking-tight text-white mt-2">
-            FITTRACK
-          </h1>
-          <p className="text-sm md:text-base text-[#888] mt-4 max-w-2xl mx-auto">
-            Your ultimate fitness companion for tracking workouts, monitoring progress, and achieving your goals.
-          </p>
         </div>
       </div>
       {/* Hero Section */}
