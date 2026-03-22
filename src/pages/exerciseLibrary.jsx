@@ -10,7 +10,6 @@ import {
   isRiskyForUser,
 } from "../data/mockData";
 
-const mockUser  = getUserProfile();
 const exercises = EXERCISES;
 
 function getCatColor(category) {
