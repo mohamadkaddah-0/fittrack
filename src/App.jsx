@@ -20,13 +20,7 @@ import LogWorkoutPage from "./pages/LogWorkoutPage";
 import DietProgram      from "./pages/DietProgram";
 import MealLog          from "./pages/MealLog";
 import IngredientDetail from "./pages/IngredientDetail";
-<<<<<<< HEAD
-import { MOCK_USERS, INITIAL_CALENDAR, getTodayKey } from "./data/mockData";
-=======
-
-// ── Mock data (teammate's) ────────────────────────────────────
 import { getUserProfile, INITIAL_CALENDAR, getTodayKey } from "./data/mockData";
->>>>>>> ede17e6bf4ab3a4247e2d449f11c51b81265b9d6
 
 // ── Mohammad Moghnieh's pages ─────────────────────────────────
 import Register        from "./Register";
@@ -106,13 +100,8 @@ const Login = ({ email, setEmail, password, setPassword, rememberMe, setRemember
 // MAIN APP
 // ─────────────────────────────────────────────────────────────
 export default function App() {
-
-<<<<<<< HEAD
-  // ── Diet teammate's shared state ─────────────────────────────
-=======
-  // ── Shared state (Diet Program) ──────────────────────────────
+  //shared state
   const [currentUser, setCurrentUser] = useState(getUserProfile());
->>>>>>> ede17e6bf4ab3a4247e2d449f11c51b81265b9d6
   const [calendarData, setCalendarData] = useState(INITIAL_CALENDAR);
   const [loggedMeals,  setLoggedMeals]  = useState({});
   const [savedMeals,   setSavedMeals]   = useState([]);
@@ -158,7 +147,7 @@ export default function App() {
   const [rememberMe,    setRememberMe]     = useState(false);
   const [message,       setMessage]        = useState({ text: "", type: "info" });
   const [showExtraInfo, setShowExtraInfo]  = useState(false);
-  const [currentUser,   setCurrentUser]    = useState(null);
+
 
   const mockUsers = [
     { email: "demo@fittrack.io", password: "demo123", name: "Demo User" },
@@ -194,13 +183,13 @@ export default function App() {
         <Routes>
 
           {/* ── Mohamad Kaddah ── */}
-          <Route path="/"    element={<HomePage />} />
+          <Route path="/"    element={<HomePage calendarData={calendarData} currentUser={currentUser} />} />
           <Route path="/log" element={<LogWorkoutPage />} />
 
           {/* ── Diet teammate ── */}
-          <Route path="/diet" element={<DietProgram currentUser={MOCK_USERS[0]} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} />} />
-          <Route path="/diet-program" element={<DietProgram currentUser={MOCK_USERS[0]} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} />} />
-          <Route path="/meal-log" element={<MealLog currentUser={MOCK_USERS[0]} calendarData={calendarData} savedMeals={savedMeals} addMealToCalendar={addMealToCalendar} saveCustomMeal={saveCustomMeal} deleteSavedMeal={deleteSavedMeal} />} />
+          <Route path="/diet" element={<DietProgram currentUser={currentUser} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} />} />
+          <Route path="/diet-program" element={<DietProgram currentUser={currentUser} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} />} />
+          <Route path="/meal-log" element={<MealLog currentUser={currentUser} calendarData={calendarData} savedMeals={savedMeals} addMealToCalendar={addMealToCalendar} saveCustomMeal={saveCustomMeal} deleteSavedMeal={deleteSavedMeal} />} />
           <Route path="/ingredient/:id" element={<IngredientDetail />} />
 
           {/* ── Mohammad Moghnieh ── */}
