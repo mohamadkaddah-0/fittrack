@@ -7,8 +7,7 @@
 //   - Category filter tabs
 //   - Checkable meals → updates calendar + macro bar
 //   - Meal ingredient modal
-//   - Monthly calendar with colored dots
-//   - Day detail panel — delete only allowed on today
+//   - Calendar moved to HomePage
 //
 // Props:
 //   currentUser      (object)
@@ -30,12 +29,6 @@ import {
 } from "../data/mockData";
 
 //  Constants 
-const MONTHS = [
-  "January","February","March","April","May","June",
-  "July","August","September","October","November","December"
-];
-const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-
 const CAT_COLORS = {
   breakfast: "#FFAA00",
   lunch:     "#C6F135",
@@ -68,9 +61,6 @@ export default function DietProgram({
 
   //  Local state 
   const [activeFilter, setActiveFilter] = useState("all");
-  const [calYear,      setCalYear]      = useState(todayDate.getFullYear());
-  const [calMonth,     setCalMonth]     = useState(todayDate.getMonth());
-  const [selectedDay,  setSelectedDay]  = useState(today);
   const [mealModal,    setMealModal]    = useState(null);
 
   //  Targets + recommendations 
@@ -97,7 +87,7 @@ export default function DietProgram({
     return Math.min(100, Math.round((consumed / target) * 100));
   }
 
-  //  Open meal ingredient modal  
+  //  Open meal ingredient modal 
   function openMealModal(meal) {
     const ingList  = MEAL_INGREDIENTS[meal.id] || [];
     const resolved = [];
@@ -116,54 +106,8 @@ export default function DietProgram({
     setMealModal({ meal, ingredients: resolved });
   }
 
-  //  Calendar helpers 
-  function changeMonth(direction) {
-    let newMonth = calMonth + direction;
-    if (newMonth < 0)  { setCalYear(calYear - 1); newMonth = 11; }
-    if (newMonth > 11) { setCalYear(calYear + 1); newMonth = 0;  }
-    setCalMonth(newMonth);
-  }
-
-  function buildCalendarCells() {
-    const firstWeekday = new Date(calYear, calMonth, 1).getDay();
-    const daysInMonth  = new Date(calYear, calMonth + 1, 0).getDate();
-    const daysInPrev   = new Date(calYear, calMonth, 0).getDate();
-    const totalCells   = firstWeekday + daysInMonth;
-    const gridSize     = totalCells + (7 - (totalCells % 7)) % 7;
-    const cells        = [];
-
-    for (let i = 0; i < gridSize; i++) {
-      let day, month = calMonth, year = calYear, isOtherMonth = false;
-
-      if (i < firstWeekday) {
-        day = daysInPrev - (firstWeekday - 1 - i);
-        month = calMonth - 1;
-        if (month < 0) { month = 11; year = calYear - 1; }
-        isOtherMonth = true;
-      } else if (i >= firstWeekday + daysInMonth) {
-        day = i - firstWeekday - daysInMonth + 1;
-        month = calMonth + 1;
-        if (month > 11) { month = 0; year = calYear + 1; }
-        isOtherMonth = true;
-      } else {
-        day = i - firstWeekday + 1;
-      }
-
-      const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-      cells.push({
-        day, dateKey, isOtherMonth,
-        isToday:    dateKey === today,
-        isSelected: dateKey === selectedDay,
-        logs:       calendarData[dateKey] || [],
-        label:      `${MONTHS_SHORT[month]} ${day}, ${year}`,
-      });
-    }
-    return cells;
-  }
-
-  const selectedDayEntries = calendarData[selectedDay] || [];
-  const firstName          = currentUser?.name?.split(" ")[0] || "You";
-  const goalLabel          = currentUser?.goal?.replace(/_/g, " ") || "your plan";
+  const firstName = currentUser?.name?.split(" ")[0] || "You";
+  const goalLabel = currentUser?.goal?.replace(/_/g, " ") || "your plan";
 
   //  Render 
   return (
@@ -177,9 +121,9 @@ export default function DietProgram({
               weekday: "long", year: "numeric", month: "long", day: "numeric"
             })}
           </p>
-         <h1 className="font-['Barlow_Condensed'] font-black text-5xl md:text-7xl uppercase tracking-tight leading-none">
-          Diet <span className="text-[#C6F135]">Program</span>
-         </h1>
+          <h1 className="font-black text-4xl md:text-5xl uppercase tracking-tight leading-none">
+            Diet <span className="text-[#C6F135]">Program</span>
+          </h1>
         </div>
         <div className={`border border-[#C6F135] px-4 py-2 text-right`}>
           <p className={`text-xs tracking-widest uppercase ${muted}`}>{firstName}'s Goal</p>
@@ -220,224 +164,104 @@ export default function DietProgram({
         ))}
       </section>
 
-      {/*  Main Grid  */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px]">
+      {/*  Meal List  */}
+      <div>
 
-        {/*  Left: Meal List  */}
-        <div className={`border-r ${bdr}`}>
-
-          {/* Category filter tabs */}
-          <div className={`flex border-b ${bdr} overflow-x-auto`} role="tablist">
-            {["all","breakfast","lunch","dinner","snack"].map((cat) => (
-              <button key={cat} role="tab" aria-selected={activeFilter === cat}
-                onClick={() => setActiveFilter(cat)}
-                className={`px-4 py-3 text-xs tracking-widest uppercase border-r last:border-r-0 transition-all ${bdr} ${
-                  activeFilter === cat ? "bg-[#C6F135] text-black font-bold" : `${muted} ${bg2} hover:text-[#e8e8e8]`
-                }`}>
-                {cat}
-              </button>
-            ))}
-          </div>
-
-          {/* Recommended label */}
-          <div className={`px-6 py-4 border-b ${bdr} ${bg2}`}>
-            <p className={`text-xs tracking-widest uppercase ${muted} mb-1`}>Today's recommended meals</p>
-            <p className="font-black text-2xl md:text-3xl uppercase tracking-tight leading-tight">
-              Meal Plan for <span className="text-[#C6F135]">{firstName}</span>
-            </p>
-            <p className={`text-sm ${muted} mt-1`}>
-              {goalLabel} · {targets.kcal.toLocaleString()} kcal · {targets.protein}g protein · {targets.carbs}g carbs · {targets.fat}g fat
-            </p>
-            <p className={`text-xs mt-1 ${muted} opacity-60`}>Meals rotate every 3 days</p>
-          </div>
-
-          {/* Meals grouped by category */}
-          {["breakfast","lunch","dinner","snack"].map((cat) => {
-            const meals = mealsToShow.filter((m) => m.cat === cat);
-            if (meals.length === 0) return null;
-            return (
-              <div key={cat}>
-                <div className={`flex items-center gap-3 px-6 py-2 ${bg3} border-b ${bdr}`}>
-                  <span className="text-xs tracking-widest uppercase px-2 py-1 border font-bold"
-                    style={{ color: CAT_COLORS[cat], borderColor: CAT_COLORS[cat] }}>
-                    {cat}
-                  </span>
-                  <span className={`text-xs ${muted}`}>{CAT_TIMES[cat]}</span>
-                  <span className={`text-xs ${muted} ml-auto`}>
-                    {meals.reduce((sum, m) => sum + m.kcal, 0)} kcal
-                  </span>
-                </div>
-
-                {meals.map((meal, i) => {
-                  const isChecked      = checkedToday.has(meal.id);
-                  const hasIngredients = !!MEAL_INGREDIENTS[meal.id];
-                  return (
-                    <div key={meal.id}
-                      className={`grid grid-cols-[20px_1fr_auto_auto] items-center gap-4 px-6 py-3 border-b ${bdr} relative ${isChecked ? "opacity-60" : ""}`}>
-                      {isChecked && <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#C6F135]" />}
-                      <span className={`text-xs ${muted}`}>{String(i + 1).padStart(2, "0")}</span>
-                      <div>
-                        <button
-                          onClick={() => hasIngredients && openMealModal(meal)}
-                          className={`font-bold text-sm uppercase tracking-wide text-left transition-colors ${
-                            hasIngredients ? "hover:text-[#C6F135] cursor-pointer" : "cursor-default"
-                          }`}>
-                          {meal.name}
-                          {hasIngredients && (
-                            <span className={`ml-2 text-xs font-normal ${muted} normal-case tracking-normal`}>
-                              view ingredients →
-                            </span>
-                          )}
-                        </button>
-                        <div className="flex gap-2 mt-1">
-                          <span className="text-xs text-[#FF2A5E]">{meal.protein}g P</span>
-                          <span className="text-xs text-[#00E5FF]">{meal.carbs}g C</span>
-                          <span className="text-xs text-[#FFAA00]">{meal.fat}g F</span>
-                        </div>
-                      </div>
-                      <p className="font-black text-lg text-[#C6F135] whitespace-nowrap">
-                        {meal.kcal}<span className={`text-xs ${muted} ml-1`}>kcal</span>
-                      </p>
-                      <button
-                        onClick={() => togglePlanMeal(meal)}
-                        aria-pressed={isChecked}
-                        aria-label={isChecked ? `Unmark ${meal.name}` : `Mark ${meal.name} as eaten`}
-                        className={`w-6 h-6 border flex items-center justify-center text-xs transition-all ${
-                          isChecked
-                            ? "border-[#C6F135] text-[#C6F135] bg-[#C6F135]/10"
-                            : `border-[#2e2e2e] text-transparent hover:border-[#C6F135] hover:text-[#C6F135]`
-                        }`}>
-                        ✓
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })}
-
-          <div className={`flex justify-end px-6 py-4 border-t ${bdr}`}>
-            <Link to="/meal-log"
-              className="bg-[#C6F135] text-black text-xs font-bold tracking-widest uppercase px-6 py-3 hover:bg-[#FF2A5E] hover:text-white transition-colors">
-              + Log New Meal
-            </Link>
-          </div>
+        {/* Category filter tabs */}
+        <div className={`flex border-b ${bdr} overflow-x-auto`} role="tablist">
+          {["all","breakfast","lunch","dinner","snack"].map((cat) => (
+            <button key={cat} role="tab" aria-selected={activeFilter === cat}
+              onClick={() => setActiveFilter(cat)}
+              className={`px-4 py-3 text-xs tracking-widest uppercase border-r last:border-r-0 transition-all ${bdr} ${
+                activeFilter === cat ? "bg-[#C6F135] text-black font-bold" : `${muted} ${bg2} hover:text-[#e8e8e8]`
+              }`}>
+              {cat}
+            </button>
+          ))}
         </div>
 
-        {/*  Right: Calendar  */}
-        <div className="flex flex-col">
+        {/* Recommended label */}
+        <div className={`px-6 py-4 border-b ${bdr} ${bg2}`}>
+          <p className={`text-xs tracking-widest uppercase ${muted} mb-1`}>Today's recommended meals</p>
+          <p className="font-black text-2xl md:text-3xl uppercase tracking-tight leading-tight">
+            Meal Plan for <span className="text-[#C6F135]">{firstName}</span>
+          </p>
+          <p className={`text-sm ${muted} mt-1`}>
+            {goalLabel} · {targets.kcal.toLocaleString()} kcal · {targets.protein}g protein · {targets.carbs}g carbs · {targets.fat}g fat
+          </p>
+          <p className={`text-xs mt-1 ${muted} opacity-60`}>Meals rotate every 3 days</p>
+        </div>
 
-          {/* Month navigation */}
-          <div className={`flex items-center justify-between px-5 py-3 border-b ${bdr}`}>
-            <p className="font-black text-xl uppercase tracking-tight">
-              <span className="text-[#C6F135]">{MONTHS[calMonth]}</span>
-              <span className={`text-base ${muted} ml-2`}>{calYear}</span>
-            </p>
-            <div className="flex">
-              <button onClick={() => changeMonth(-1)} aria-label="Previous month"
-                className={`w-8 h-8 border border-r-0 text-sm flex items-center justify-center transition-colors ${bdr} ${muted} hover:bg-[#C6F135] hover:text-black`}>
-                ‹
-              </button>
-              <button onClick={() => changeMonth(1)} aria-label="Next month"
-                className={`w-8 h-8 border text-sm flex items-center justify-center transition-colors ${bdr} ${muted} hover:bg-[#C6F135] hover:text-black`}>
-                ›
-              </button>
-            </div>
-          </div>
+        {/* Meals grouped by category */}
+        {["breakfast","lunch","dinner","snack"].map((cat) => {
+          const meals = mealsToShow.filter((m) => m.cat === cat);
+          if (meals.length === 0) return null;
+          return (
+            <div key={cat}>
+              <div className={`flex items-center gap-3 px-6 py-2 ${bg3} border-b ${bdr}`}>
+                <span className="text-xs tracking-widest uppercase px-2 py-1 border font-bold"
+                  style={{ color: CAT_COLORS[cat], borderColor: CAT_COLORS[cat] }}>
+                  {cat}
+                </span>
+                <span className={`text-xs ${muted}`}>{CAT_TIMES[cat]}</span>
+                <span className={`text-xs ${muted} ml-auto`}>
+                  {meals.reduce((sum, m) => sum + m.kcal, 0)} kcal
+                </span>
+              </div>
 
-          {/* Day headers */}
-          <div className={`grid grid-cols-7 border-b ${bdr}`}>
-            {["Su","Mo","Tu","We","Th","Fr","Sa"].map((d) => (
-              <div key={d} className={`py-2 text-center text-xs tracking-widest uppercase ${muted} border-r last:border-r-0 ${bdr}`}>{d}</div>
-            ))}
-          </div>
-
-          {/* Calendar grid */}
-          <div className="grid grid-cols-7">
-            {buildCalendarCells().map((cell) => {
-              let cellClass = `border-r border-b last:border-r-0 min-h-[44px] p-1 flex flex-col text-left transition-colors ${bdr}`;
-              if (cell.isOtherMonth)  cellClass += " opacity-20 cursor-default";
-              else                    cellClass += " cursor-pointer";
-              if (cell.isToday)       cellClass += " bg-[#C6F135]/5";
-              if (cell.isSelected)    cellClass += " bg-[#C6F135]/10 outline outline-1 outline-[#C6F135]/50";
-              if (!cell.isOtherMonth && !cell.isSelected) cellClass += " hover:bg-[#111]";
-
-              return (
-                <button key={cell.dateKey}
-                  onClick={() => !cell.isOtherMonth && setSelectedDay(cell.dateKey)}
-                  disabled={cell.isOtherMonth}
-                  aria-label={`${cell.label}${cell.logs.length ? `, ${cell.logs.length} meals` : ""}`}
-                  className={cellClass}>
-                  <span className={`text-xs font-bold leading-none mb-1 ${cell.isToday ? "text-[#C6F135]" : ""}`}>
-                    {cell.day}
-                  </span>
-                  <div className="flex flex-wrap gap-[2px]">
-                    {cell.logs.slice(0, 4).map((log, i) => (
-                      <div key={i} className="w-[4px] h-[4px] rounded-full"
-                        style={{ background: CAT_COLORS[log.cat] || "#555" }}
-                        title={log.name}
-                      />
-                    ))}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Selected day detail */}
-          <div className={`border-t ${bdr} p-4 flex-1`} aria-live="polite">
-            <div className={`flex items-center justify-between mb-3 pb-3 border-b ${bdr}`}>
-              <p className="text-xs tracking-widest uppercase text-[#FF2A5E]">
-                {MONTHS_SHORT[parseInt(selectedDay.split("-")[1]) - 1]}{" "}
-                {parseInt(selectedDay.split("-")[2])},{" "}
-                {selectedDay.split("-")[0]}
-              </p>
-              <p className="font-black text-lg text-[#C6F135]">
-                {selectedDayEntries.reduce((sum, e) => sum + (e.kcal || 0), 0).toLocaleString()}
-                <span className={`text-xs font-normal ${muted} ml-1`}>kcal</span>
-              </p>
-            </div>
-
-            {selectedDay !== today && selectedDayEntries.length > 0 && (
-              <p className={`text-xs ${muted} mb-3 italic`}>Past day — read only</p>
-            )}
-
-            {selectedDayEntries.length === 0 ? (
-              <p className={`text-xs ${muted}`}>No meals logged this day.</p>
-            ) : (
-              <ul>
-                {selectedDayEntries.map((entry, i) => (
-                  <li key={i} className={`flex items-center justify-between py-2 border-b last:border-b-0 ${bdr}`}>
-                    <div className="flex items-center gap-2">
-                      <div className="w-[6px] h-[6px] rounded-full flex-shrink-0"
-                        style={{ background: CAT_COLORS[entry.cat] || "#555" }} />
-                      <div>
-                        <p className="text-xs font-bold">{entry.name}</p>
-                        <p className={`text-xs ${muted}`}>{entry.cat}</p>
+              {meals.map((meal, i) => {
+                const isChecked      = checkedToday.has(meal.id);
+                const hasIngredients = !!MEAL_INGREDIENTS[meal.id];
+                return (
+                  <div key={meal.id}
+                    className={`grid grid-cols-[20px_1fr_auto_auto] items-center gap-4 px-6 py-3 border-b ${bdr} relative ${isChecked ? "opacity-60" : ""}`}>
+                    {isChecked && <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#C6F135]" />}
+                    <span className={`text-xs ${muted}`}>{String(i + 1).padStart(2, "0")}</span>
+                    <div>
+                      <button
+                        onClick={() => hasIngredients && openMealModal(meal)}
+                        className={`font-bold text-sm uppercase tracking-wide text-left transition-colors ${
+                          hasIngredients ? "hover:text-[#C6F135] cursor-pointer" : "cursor-default"
+                        }`}>
+                        {meal.name}
+                        {hasIngredients && (
+                          <span className={`ml-2 text-xs font-normal ${muted} normal-case tracking-normal`}>
+                            view ingredients →
+                          </span>
+                        )}
+                      </button>
+                      <div className="flex gap-2 mt-1">
+                        <span className="text-xs text-[#FF2A5E]">{meal.protein}g P</span>
+                        <span className="text-xs text-[#00E5FF]">{meal.carbs}g C</span>
+                        <span className="text-xs text-[#FFAA00]">{meal.fat}g F</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <p className="text-xs font-bold text-[#C6F135]">{entry.kcal} kcal</p>
-                      {selectedDay === today && (
-                        <button
-                          onClick={() => {
-                            deleteMealFromDay(selectedDay, i);
-                            const matched = recommendedMeals.find((m) => m.name === entry.name);
-                            if (matched && checkedToday.has(matched.id)) {
-                              togglePlanMeal(matched);
-                            }
-                          }}
-                          aria-label={`Delete ${entry.name}`}
-                          className={`w-6 h-6 border ${bdr} ${muted} hover:border-[#FF2A5E] hover:text-[#FF2A5E] flex items-center justify-center text-xs transition-colors`}>
-                          ✕
-                        </button>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+                    <p className="font-black text-lg text-[#C6F135] whitespace-nowrap">
+                      {meal.kcal}<span className={`text-xs ${muted} ml-1`}>kcal</span>
+                    </p>
+                    <button
+                      onClick={() => togglePlanMeal(meal)}
+                      aria-pressed={isChecked}
+                      aria-label={isChecked ? `Unmark ${meal.name}` : `Mark ${meal.name} as eaten`}
+                      className={`w-6 h-6 border flex items-center justify-center text-xs transition-all ${
+                        isChecked
+                          ? "border-[#C6F135] text-[#C6F135] bg-[#C6F135]/10"
+                          : `border-[#2e2e2e] text-transparent hover:border-[#C6F135] hover:text-[#C6F135]`
+                      }`}>
+                      ✓
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+
+        <div className={`flex justify-end px-6 py-4 border-t ${bdr}`}>
+          <Link to="/meal-log"
+            className="bg-[#C6F135] text-black text-xs font-bold tracking-widest uppercase px-6 py-3 hover:bg-[#FF2A5E] hover:text-white transition-colors">
+            + Log New Meal
+          </Link>
         </div>
       </div>
 

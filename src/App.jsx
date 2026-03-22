@@ -14,20 +14,27 @@ import LogWorkoutPage from "./pages/LogWorkoutPage";
 import DietProgram      from "./pages/DietProgram";
 import MealLog          from "./pages/MealLog";
 import IngredientDetail from "./pages/IngredientDetail";
+<<<<<<< HEAD
 import { MOCK_USERS, INITIAL_CALENDAR, getTodayKey } from "./data/mockData";
+=======
+
+// ── Mock data (teammate's) ────────────────────────────────────
+import { getUserProfile, INITIAL_CALENDAR, getTodayKey } from "./data/mockData";
+>>>>>>> ede17e6bf4ab3a4247e2d449f11c51b81265b9d6
 
 // ── Mohammad Moghnieh's pages ─────────────────────────────────
-import Register        from "./Register";
-import UserProfile     from "./userProfile";
-import Survey          from "./Surveys";
-import Terms           from "./Terms";
-import Privacy         from "./Privacy";
-import Support         from "./Support";
-import API             from "./API";
-import ReadySurvey     from "./readySurvey";
-import Welcome         from "./Welcome";
-import ForgotPassword  from "./ForgotPassword";
-import ResetPassword   from "./ResetPassword";
+import Register       from "./pages/Register/Register";
+import UserProfile    from "./pages/UserProfile/UserProfile";
+import Survey         from "./pages/survey/Survey";
+import Terms          from "./pages/Terms/Terms";
+import Privacy        from "./pages/Terms/Privacy";
+import Support        from "./pages/Terms/Support";
+import ReadySurvey    from "./pages/survey/ReadySurvey";
+import Welcome        from "./pages/WelcomePage/WelcomePage";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword  from "./pages/ResetPassword";
+//import API             from "./API";
+
 
 // ── Other teammates — uncomment when ready ────────────────────
 // import ListViewPage    from "./pages/ListViewPage";
@@ -95,7 +102,12 @@ const Login = ({ email, setEmail, password, setPassword, rememberMe, setRemember
 // ─────────────────────────────────────────────────────────────
 export default function App() {
 
+<<<<<<< HEAD
   // ── Diet teammate's shared state ─────────────────────────────
+=======
+  // ── Shared state (Diet Program) ──────────────────────────────
+  const [currentUser, setCurrentUser] = useState(getUserProfile());
+>>>>>>> ede17e6bf4ab3a4247e2d449f11c51b81265b9d6
   const [calendarData, setCalendarData] = useState(INITIAL_CALENDAR);
   const [loggedMeals,  setLoggedMeals]  = useState({});
   const [savedMeals,   setSavedMeals]   = useState([]);
@@ -141,7 +153,7 @@ export default function App() {
   const [rememberMe,    setRememberMe]     = useState(false);
   const [message,       setMessage]        = useState({ text: "", type: "info" });
   const [showExtraInfo, setShowExtraInfo]  = useState(false);
-  const [currentUser,   setCurrentUser]    = useState(null);
+
 
   const mockUsers = [
     { email: "demo@fittrack.io", password: "demo123", name: "Demo User" },
@@ -177,13 +189,13 @@ export default function App() {
         <Routes>
 
           {/* ── Mohamad Kaddah ── */}
-          <Route path="/"    element={<HomePage calendarData={calendarData} currentUser={MOCK_USERS[0]} />} />
+          <Route path="/"    element={<HomePage />} />
           <Route path="/log" element={<LogWorkoutPage />} />
 
           {/* ── Diet teammate ── */}
-          <Route path="/diet" element={<DietProgram currentUser={MOCK_USERS[0]} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} />} />
-          <Route path="/diet-program" element={<DietProgram currentUser={MOCK_USERS[0]} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} />} />
-          <Route path="/meal-log" element={<MealLog currentUser={MOCK_USERS[0]} calendarData={calendarData} savedMeals={savedMeals} addMealToCalendar={addMealToCalendar} saveCustomMeal={saveCustomMeal} deleteSavedMeal={deleteSavedMeal} />} />
+          <Route path="/diet" element={<DietProgram currentUser={currentUser} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} />} />
+          <Route path="/diet-program" element={<DietProgram currentUser={currentUser} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} />} />
+          <Route path="/meal-log" element={<MealLog currentUser={currentUser} calendarData={calendarData} savedMeals={savedMeals} addMealToCalendar={addMealToCalendar} saveCustomMeal={saveCustomMeal} deleteSavedMeal={deleteSavedMeal} />} />
           <Route path="/ingredient/:id" element={<IngredientDetail />} />
 
           {/* ── Mohammad Moghnieh ── */}
@@ -200,7 +212,7 @@ export default function App() {
           <Route path="/privacy"        element={<Privacy />} />
           <Route path="/surveys"        element={<Survey />} />
           <Route path="/support"        element={<Support />} />
-          <Route path="/api"            element={<API />} />
+          {/* <Route path="/api"            element={<API />} /> */}
           <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* ── Other teammates — uncomment when ready ── */}
