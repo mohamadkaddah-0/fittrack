@@ -14,6 +14,8 @@ const Welcome = () => {
           FitTrack<sup className="text-base">™</sup>
         </Link>
       </div>
+
+      {/* Welcome Text - Centered */}
       <div className="absolute top-8 left-0 right-0 z-40 flex justify-center pointer-events-none">
         <div className="text-center">
           <span className="text-[10px] tracking-[0.3em] uppercase text-[#555] font-['JetBrains_Mono']">
