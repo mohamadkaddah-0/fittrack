@@ -58,7 +58,7 @@ const ReadySurvey = () => {
               </button>
             </Link>
             
-            <Link to="..">
+            <Link to="/home">
               <button className="ready-btn later-btn">
                 NOT NOW, TAKE ME HOME
               </button>
