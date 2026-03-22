@@ -34,7 +34,6 @@ import ResetPassword  from "./pages/ResetPassword";
 
 // ── Pages that should NOT show the navbar ─────────────────────
 const NO_NAVBAR_ROUTES = [
-  "/",
   "/welcome",
   "/login",
   "/register",
