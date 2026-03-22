@@ -222,7 +222,7 @@ const Register = () => {
         // Redirect to readySurvey after 2 seconds
         setTimeout(() => {
           window.scrollTo(0, 0);
-          navigate('/ready-survey');
+          navigate('/login');
         }, 2000);
       }
     } catch (error) {
