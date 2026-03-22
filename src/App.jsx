@@ -169,18 +169,22 @@ export default function App() {
   ];
 
   const handleLogin = async (e) => {
-    e.preventDefault();
-    setMessage({ text: "", type: "info" });
-    await new Promise((r) => setTimeout(r, 1000));
-    const foundUser = mockUsers.find((u) => u.email === email && u.password === password);
-    if (foundUser) {
-      setCurrentUser({ name: foundUser.name, email: foundUser.email });
-      setMessage({ text: `Welcome back, ${foundUser.name}!`, type: "success" });
-      setTimeout(() => { window.location.href = "/ready-survey"; }, 1000);
-    } else {
-      setMessage({ text: "Invalid email or password", type: "error" });
-    }
-  };
+  e.preventDefault();
+  setMessage({ text: "", type: "info" });
+  await new Promise((r) => setTimeout(r, 1000));
+  
+  // Check both mock users and registered users
+  const registeredUsers = JSON.parse(localStorage.getItem('fittrack_logins') || '[]');
+  const foundUser = registeredUsers.find((u) => u.email === email && u.password === password);
+  
+  if (foundUser) {
+    setCurrentUser({ name: foundUser.name, email: foundUser.email });
+    setMessage({ text: `Welcome back, ${foundUser.name}!`, type: "success" });
+    setTimeout(() => { window.location.href = "/ready-survey"; }, 1000);
+  } else {
+    setMessage({ text: "Invalid email or password", type: "error" });
+  }
+};
 
   const isFormValid = () => email.includes("@") && email.includes(".") && password.length >= 3;
 
