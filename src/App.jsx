@@ -217,6 +217,10 @@ export default function App() {
             <Route path="/diet-program"   element={<DietProgram currentUser={currentUser} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} />} />
             <Route path="/meal-log"       element={<MealLog currentUser={currentUser} calendarData={calendarData} savedMeals={savedMeals} addMealToCalendar={addMealToCalendar} saveCustomMeal={saveCustomMeal} deleteSavedMeal={deleteSavedMeal} />} />
             <Route path="/ingredient/:id" element={<IngredientDetail />} />
+            
+            {/* Jawad */}
+            <Route path="/exercises"    element={<ExerciseLibrary calendarData={calendarData} addWorkoutToCalendar={addWorkoutToCalendar} currentUser={currentUser} />} />   
+            <Route path="/exercise/:id" element={<ExerciseDetail />} />
 
             {/* Mohammad Moghnieh */}
             <Route path="/profile"         element={<UserProfile user={currentUser} />} />
