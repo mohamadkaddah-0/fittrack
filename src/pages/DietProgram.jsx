@@ -111,7 +111,7 @@ export default function DietProgram({
 
   //  Render 
   return (
-    <main className={`${bg} ${txt} min-h-screen`}>
+    <main className={`${bg} ${txt} min-h-screen font-sans`}>
 
       {/*  Page Header  */}
       <header className={`flex flex-wrap items-end justify-between gap-4 px-6 md:px-8 pt-6 pb-5 border-b ${bdr}`}>
@@ -121,7 +121,7 @@ export default function DietProgram({
               weekday: "long", year: "numeric", month: "long", day: "numeric"
             })}
           </p>
-          <h1 className="font-black text-4xl md:text-5xl uppercase tracking-tight leading-none">
+          <h1 className="font-['Barlow_Condensed'] font-black text-4xl md:text-5xl uppercase tracking-tight leading-none">
             Diet <span className="text-[#C6F135]">Program</span>
           </h1>
         </div>
