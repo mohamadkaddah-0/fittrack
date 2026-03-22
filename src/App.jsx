@@ -1,10 +1,4 @@
-// App.jsx
-// Root component — merges all team members' routes and shared state.
-//
-// Team:
-//   Mohamad Kaddah     — HomePage, LogWorkoutPage
-//   Teammate (Diet)    — DietProgram, MealLog, IngredientDetail
-//   Mohammad Moghnieh  — Welcome, Login, Register, UserProfile, Dashboard, etc.
+
 
 import { useState } from "react";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
@@ -20,13 +14,7 @@ import LogWorkoutPage from "./pages/LogWorkoutPage";
 import DietProgram      from "./pages/DietProgram";
 import MealLog          from "./pages/MealLog";
 import IngredientDetail from "./pages/IngredientDetail";
-<<<<<<< HEAD
 import { MOCK_USERS, INITIAL_CALENDAR, getTodayKey } from "./data/mockData";
-=======
-
-// ── Mock data (teammate's) ────────────────────────────────────
-import { getUserProfile, INITIAL_CALENDAR, getTodayKey } from "./data/mockData";
->>>>>>> ede17e6bf4ab3a4247e2d449f11c51b81265b9d6
 
 // ── Mohammad Moghnieh's pages ─────────────────────────────────
 import Register        from "./Register";
@@ -107,12 +95,7 @@ const Login = ({ email, setEmail, password, setPassword, rememberMe, setRemember
 // ─────────────────────────────────────────────────────────────
 export default function App() {
 
-<<<<<<< HEAD
   // ── Diet teammate's shared state ─────────────────────────────
-=======
-  // ── Shared state (Diet Program) ──────────────────────────────
-  const [currentUser, setCurrentUser] = useState(getUserProfile());
->>>>>>> ede17e6bf4ab3a4247e2d449f11c51b81265b9d6
   const [calendarData, setCalendarData] = useState(INITIAL_CALENDAR);
   const [loggedMeals,  setLoggedMeals]  = useState({});
   const [savedMeals,   setSavedMeals]   = useState([]);
@@ -194,7 +177,7 @@ export default function App() {
         <Routes>
 
           {/* ── Mohamad Kaddah ── */}
-          <Route path="/"    element={<HomePage />} />
+          <Route path="/"    element={<HomePage calendarData={calendarData} currentUser={MOCK_USERS[0]} />} />
           <Route path="/log" element={<LogWorkoutPage />} />
 
           {/* ── Diet teammate ── */}

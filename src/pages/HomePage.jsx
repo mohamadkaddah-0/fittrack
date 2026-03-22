@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getTodayKey } from "../data/mockData";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIGURATION
@@ -23,6 +24,21 @@ const ACHIEVEMENTS = [
   { emoji: "🔥", name: "Weekly Streak",            sub: "5 Days in a Row - Active",       color: "#FF2A5E", locked: false },
   { emoji: "🎯", name: "25 Workouts",              sub: "1 more session to go - Locked",  color: "#555",    locked: true  },
 ];
+
+// Calendar color config
+const MEAL_CAT_COLORS = {
+  breakfast: "#FFAA00",
+  lunch:     "#C6F135",
+  dinner:    "#FF2A5E",
+  snack:     "#00E5FF",
+};
+const WORKOUT_COLOR = "#a78bfa";
+
+const MONTHS = [
+  "January","February","March","April","May","June",
+  "July","August","September","October","November","December"
+];
+const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SMALL REUSABLE COMPONENTS
@@ -105,9 +121,10 @@ function EditableStatCard({ label, value, unit, goal, color, onSave }) {
 // MAIN PAGE COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function HomePage() {
+export default function HomePage({ calendarData = {}, currentUser }) {
   const navigate = useNavigate();
 
+  // Stats state — all start at 0
   const [caloriesIntake, setCaloriesIntake] = useState(0);
   const [caloriesBurnt,  setCaloriesBurnt]  = useState(0);
   const [waterIntake,    setWaterIntake]     = useState(0);
@@ -115,19 +132,74 @@ export default function HomePage() {
   const [steps,          setSteps]           = useState(0);
   const [daysCompleted,  setDaysCompleted]   = useState(0);
 
+  // Calendar state
+  const today      = getTodayKey();
+  const todayDate  = new Date();
+  const [calYear,     setCalYear]     = useState(todayDate.getFullYear());
+  const [calMonth,    setCalMonth]    = useState(todayDate.getMonth());
+  const [selectedDay, setSelectedDay] = useState(today);
+
   const planProgress = Math.round((daysCompleted / CURRENT_PLAN.totalDays) * 100);
 
+  // Calendar helpers
+  function changeMonth(direction) {
+    let newMonth = calMonth + direction;
+    if (newMonth < 0)  { setCalYear(calYear - 1); newMonth = 11; }
+    if (newMonth > 11) { setCalYear(calYear + 1); newMonth = 0;  }
+    setCalMonth(newMonth);
+  }
+
+  function buildCalendarCells() {
+    const firstWeekday = new Date(calYear, calMonth, 1).getDay();
+    const daysInMonth  = new Date(calYear, calMonth + 1, 0).getDate();
+    const daysInPrev   = new Date(calYear, calMonth, 0).getDate();
+    const totalCells   = firstWeekday + daysInMonth;
+    const gridSize     = totalCells + (7 - (totalCells % 7)) % 7;
+    const cells        = [];
+
+    for (let i = 0; i < gridSize; i++) {
+      let day, month = calMonth, year = calYear, isOtherMonth = false;
+
+      if (i < firstWeekday) {
+        day = daysInPrev - (firstWeekday - 1 - i);
+        month = calMonth - 1;
+        if (month < 0) { month = 11; year = calYear - 1; }
+        isOtherMonth = true;
+      } else if (i >= firstWeekday + daysInMonth) {
+        day = i - firstWeekday - daysInMonth + 1;
+        month = calMonth + 1;
+        if (month > 11) { month = 0; year = calYear + 1; }
+        isOtherMonth = true;
+      } else {
+        day = i - firstWeekday + 1;
+      }
+
+      const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      cells.push({
+        day, dateKey, isOtherMonth,
+        isToday:    dateKey === today,
+        isSelected: dateKey === selectedDay,
+        logs:       calendarData[dateKey] || [],
+      });
+    }
+    return cells;
+  }
+
+  const selectedDayEntries = calendarData[selectedDay] || [];
+  const selectedMeals      = selectedDayEntries.filter((e) => e.type === "meal");
+  const selectedWorkouts   = selectedDayEntries.filter((e) => e.type === "workout");
+
+  // ─────────────────────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────────────────────
   return (
     <div>
 
       {/* SECTION 1 — Today's Stats */}
       <div className="border-b border-[#1E1E1E]">
-
         <div className="flex flex-col sm:flex-row sm:items-end justify-between px-6 md:px-14 pt-10 pb-8 border-b border-[#1E1E1E] gap-4">
           <div>
-            <div className="text-[8px] tracking-[0.25em] uppercase text-[#FF2A5E] mb-2">
-              // 001 - Workout Dashboard
-            </div>
+            <div className="text-[8px] tracking-[0.25em] uppercase text-[#FF2A5E] mb-2">// 001 - Workout Dashboard</div>
             <h1 className="font-['Barlow_Condensed'] font-black text-5xl md:text-6xl uppercase leading-none tracking-tight">
               Today's <em className="not-italic text-[#C6F135]">Stats</em>
             </h1>
@@ -151,7 +223,6 @@ export default function HomePage() {
             const parsed = parseInt(val);
             if (!isNaN(parsed) && parsed >= 0) setSteps(parsed);
           }}
-          title="Click to update steps"
         >
           <span className="text-[8px] tracking-[0.22em] uppercase text-[#555] shrink-0">Steps Taken</span>
           <div className="flex-1 bg-[#1E1E1E] h-[6px] overflow-hidden">
@@ -165,12 +236,9 @@ export default function HomePage() {
 
       {/* SECTION 2 — Plan Progress + Achievements */}
       <div className="border-b border-[#1E1E1E]">
-
         <div className="flex items-end justify-between px-6 md:px-14 pt-10 pb-8 border-b border-[#1E1E1E]">
           <div>
-            <div className="text-[8px] tracking-[0.25em] uppercase text-[#FF2A5E] mb-2">
-              // 002 - Plan and Achievements
-            </div>
+            <div className="text-[8px] tracking-[0.25em] uppercase text-[#FF2A5E] mb-2">// 002 - Plan and Achievements</div>
             <h2 className="font-['Barlow_Condensed'] font-black text-4xl md:text-5xl uppercase leading-none tracking-tight">
               Your <em className="not-italic text-[#C6F135]">Progress</em>
             </h2>
@@ -178,12 +246,9 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2">
-
-          {/* Plan progress */}
           <div className="px-6 md:px-14 py-10 border-b lg:border-b-0 lg:border-r border-[#1E1E1E]">
             <div className="text-[8px] tracking-[0.2em] uppercase text-[#555] mb-2">Current Plan</div>
             <div className="font-['Barlow_Condensed'] font-bold text-2xl uppercase mb-8">{CURRENT_PLAN.name}</div>
-
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-8 mb-8">
               <RingProgress value={daysCompleted} max={CURRENT_PLAN.totalDays} color="#C6F135" size={120} stroke={8}>
                 <span className="font-['Barlow_Condensed'] font-black text-3xl text-[#C6F135] leading-none">{planProgress}%</span>
@@ -206,7 +271,6 @@ export default function HomePage() {
                 <div className="text-[9px] tracking-widest text-[#555]">{daysCompleted} / {CURRENT_PLAN.totalDays} Days Completed</div>
               </div>
             </div>
-
             <div className="border border-[#1E1E1E] p-4">
               <div className="flex justify-between items-center mb-3">
                 <span className="text-[8px] tracking-[0.2em] uppercase text-[#555]">Completion</span>
@@ -218,7 +282,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Achievements */}
           <div className="px-6 md:px-14 py-10">
             <div className="font-['Barlow_Condensed'] font-black text-4xl uppercase mb-6">
               Achieve<em className="not-italic text-[#C6F135]">ments</em>
@@ -226,22 +289,157 @@ export default function HomePage() {
             <div className="border border-[#1E1E1E]">
               {ACHIEVEMENTS.map((a, i) => (
                 <div key={i}
-                  className={`flex items-center gap-5 px-6 py-5 border-b border-[#1E1E1E] last:border-b-0 transition-all duration-200 cursor-default hover:bg-[#111] hover:pl-8 ${a.locked ? "opacity-40" : ""}`}
-                >
+                  className={`flex items-center gap-5 px-6 py-5 border-b border-[#1E1E1E] last:border-b-0 transition-all duration-200 cursor-default hover:bg-[#111] hover:pl-8 ${a.locked ? "opacity-40" : ""}`}>
                   <div className="w-10 h-10 border flex items-center justify-center text-lg flex-shrink-0"
-                    style={{ borderColor: a.locked ? "#333" : a.color }}>
-                    {a.emoji}
-                  </div>
+                    style={{ borderColor: a.locked ? "#333" : a.color }}>{a.emoji}</div>
                   <div>
                     <div className="text-sm font-bold tracking-wide">{a.name}</div>
                     <div className="text-[9px] text-[#555] tracking-widest mt-1">{a.sub}</div>
                   </div>
-                  {!a.locked && (
-                    <div className="ml-auto text-[8px] tracking-widest uppercase" style={{ color: a.color }}>OK</div>
-                  )}
+                  {!a.locked && <div className="ml-auto text-[8px] tracking-widest uppercase" style={{ color: a.color }}>OK</div>}
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* SECTION 3 — Activity Calendar */}
+      <div className="border-b border-[#1E1E1E]">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between px-6 md:px-14 pt-10 pb-8 border-b border-[#1E1E1E] gap-4">
+          <div>
+            <div className="text-[8px] tracking-[0.25em] uppercase text-[#FF2A5E] mb-2">// 003 - Activity Log</div>
+            <h2 className="font-['Barlow_Condensed'] font-black text-4xl md:text-5xl uppercase leading-none tracking-tight">
+              Activity <em className="not-italic text-[#C6F135]">Calendar</em>
+            </h2>
+          </div>
+          <div className="flex flex-wrap gap-4 text-[8px] tracking-widest uppercase text-[#555]">
+            <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{ background: "#FFAA00" }} /> Breakfast</div>
+            <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{ background: "#C6F135" }} /> Lunch</div>
+            <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{ background: "#FF2A5E" }} /> Dinner</div>
+            <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{ background: "#00E5FF" }} /> Snack</div>
+            <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-sm" style={{ background: WORKOUT_COLOR }} /> Workout</div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px]">
+          <div className="border-r border-[#1E1E1E]">
+            <div className="flex items-center justify-between px-6 py-3 border-b border-[#1E1E1E]">
+              <p className="font-['Barlow_Condensed'] font-black text-xl uppercase tracking-tight">
+                <span className="text-[#C6F135]">{MONTHS[calMonth]}</span>
+                <span className="text-base text-[#555] ml-2">{calYear}</span>
+              </p>
+              <div className="flex">
+                <button onClick={() => changeMonth(-1)} className="w-8 h-8 border border-r-0 border-[#222] text-sm text-[#555] flex items-center justify-center hover:bg-[#C6F135] hover:text-black transition-colors">
+                  &lsaquo;
+                </button>
+                <button onClick={() => changeMonth(1)} className="w-8 h-8 border border-[#222] text-sm text-[#555] flex items-center justify-center hover:bg-[#C6F135] hover:text-black transition-colors">
+                  &rsaquo;
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-7 border-b border-[#1E1E1E]">
+              {["Su","Mo","Tu","We","Th","Fr","Sa"].map((d) => (
+                <div key={d} className="py-2 text-center text-[8px] tracking-widest uppercase text-[#555] border-r last:border-r-0 border-[#1E1E1E]">{d}</div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7">
+              {buildCalendarCells().map((cell) => {
+                let cellClass = "border-r border-b last:border-r-0 border-[#1E1E1E] min-h-[52px] p-1 flex flex-col text-left transition-colors";
+                if (cell.isOtherMonth)  cellClass += " opacity-20 cursor-default";
+                else                    cellClass += " cursor-pointer";
+                if (cell.isToday)       cellClass += " bg-[#C6F135]/5";
+                if (cell.isSelected)    cellClass += " bg-[#C6F135]/10 outline outline-1 outline-[#C6F135]/50";
+                if (!cell.isOtherMonth && !cell.isSelected) cellClass += " hover:bg-[#111]";
+                const mealLogs    = cell.logs.filter((l) => l.type === "meal");
+                const workoutLogs = cell.logs.filter((l) => l.type === "workout");
+                return (
+                  <button key={cell.dateKey}
+                    onClick={() => !cell.isOtherMonth && setSelectedDay(cell.dateKey)}
+                    disabled={cell.isOtherMonth}
+                    className={cellClass}>
+                    <span className={`text-xs font-bold leading-none mb-1 ${cell.isToday ? "text-[#C6F135]" : "text-[#e8e8e8]"}`}>{cell.day}</span>
+                    <div className="flex flex-wrap gap-[2px]">
+                      {mealLogs.slice(0, 3).map((log, i) => (
+                        <div key={`m${i}`} className="w-[4px] h-[4px] rounded-full" style={{ background: MEAL_CAT_COLORS[log.cat] || "#555" }} />
+                      ))}
+                      {workoutLogs.slice(0, 2).map((log, i) => (
+                        <div key={`w${i}`} className="w-[4px] h-[4px] rounded-sm" style={{ background: WORKOUT_COLOR }} />
+                      ))}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex flex-col p-4" aria-live="polite">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#1E1E1E]">
+              <p className="text-xs tracking-widest uppercase text-[#FF2A5E]">
+                {MONTHS_SHORT[parseInt(selectedDay.split("-")[1]) - 1]}{" "}
+                {parseInt(selectedDay.split("-")[2])},{" "}
+                {selectedDay.split("-")[0]}
+              </p>
+              <div className="text-right">
+                <p className="font-['Barlow_Condensed'] font-black text-lg text-[#C6F135]">
+                  {selectedMeals.reduce((sum, e) => sum + (e.kcal || 0), 0).toLocaleString()}
+                  <span className="text-xs font-normal text-[#555] ml-1">kcal eaten</span>
+                </p>
+                {selectedWorkouts.length > 0 && (
+                  <p className="font-['Barlow_Condensed'] font-black text-lg" style={{ color: WORKOUT_COLOR }}>
+                    {selectedWorkouts.reduce((sum, e) => sum + (e.caloriesBurned || 0), 0).toLocaleString()}
+                    <span className="text-xs font-normal text-[#555] ml-1">kcal burned</span>
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {selectedDayEntries.length === 0 ? (
+              <p className="text-xs text-[#555]">No activity logged this day.</p>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {selectedMeals.length > 0 && (
+                  <div>
+                    <p className="text-[8px] tracking-widest uppercase text-[#555] mb-2">Meals</p>
+                    <ul>
+                      {selectedMeals.map((entry, i) => (
+                        <li key={i} className="flex items-center justify-between py-2 border-b last:border-b-0 border-[#1E1E1E]">
+                          <div className="flex items-center gap-2">
+                            <div className="w-[6px] h-[6px] rounded-full flex-shrink-0" style={{ background: MEAL_CAT_COLORS[entry.cat] || "#555" }} />
+                            <div>
+                              <p className="text-xs font-bold text-[#e8e8e8]">{entry.name}</p>
+                              <p className="text-xs text-[#555] capitalize">{entry.cat}</p>
+                            </div>
+                          </div>
+                          <p className="text-xs font-bold text-[#C6F135]">{entry.kcal} kcal</p>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {selectedWorkouts.length > 0 && (
+                  <div>
+                    <p className="text-[8px] tracking-widest uppercase text-[#555] mb-2">Workouts</p>
+                    <ul>
+                      {selectedWorkouts.map((entry, i) => (
+                        <li key={i} className="flex items-center justify-between py-2 border-b last:border-b-0 border-[#1E1E1E]">
+                          <div className="flex items-center gap-2">
+                            <div className="w-[6px] h-[6px] rounded-sm flex-shrink-0" style={{ background: WORKOUT_COLOR }} />
+                            <div>
+                              <p className="text-xs font-bold text-[#e8e8e8]">{entry.name}</p>
+                              <p className="text-xs text-[#555] capitalize">{entry.cat || "workout"}</p>
+                            </div>
+                          </div>
+                          <p className="text-xs font-bold" style={{ color: WORKOUT_COLOR }}>{entry.caloriesBurned || 0} kcal burned</p>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
