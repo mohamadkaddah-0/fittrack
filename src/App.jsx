@@ -60,9 +60,9 @@ function AppLayout({ children }) {
 const Login = ({ email, setEmail, password, setPassword, rememberMe, setRememberMe, message, showExtraInfo, setShowExtraInfo, handleLogin, isFormValid }) => {
   return (
     <section className="login-section">
-      <div className="login-logo">
-        <Link to="/" className="text-2xl font-black text-[#C6F135] no-underline">
-          FitTrack<sup>™</sup>
+      <div className="absolute top-6 left-6 z-10">
+        <Link to="/" className="font-['Barlow_Condensed'] text-2xl font-black uppercase text-[#C6F135] no-underline">
+          FitTrack<sup className="text-xs">™</sup>
         </Link>
       </div>
       <div className="login-card">
