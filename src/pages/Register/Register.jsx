@@ -6,6 +6,7 @@ import './Register.css';
 const Register = () => {
   const navigate = useNavigate();
   
+  
   // State for form inputs
   const [formData, setFormData] = useState({
     firstName: '',
@@ -249,7 +250,6 @@ const Register = () => {
     }
   };
 
-const navigate = useNavigate();
   
   return (
     <section className="login-section">
