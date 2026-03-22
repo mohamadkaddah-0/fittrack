@@ -77,13 +77,24 @@ export default function Navbar() {
       <nav className="sticky top-0 z-50 border-b border-[#1E1E1E] bg-[rgba(8,8,8,0.92)] backdrop-blur-xl">
         <div className="h-[60px] flex items-center justify-between px-6">
 
-          {/* Logo */}
-          <button
-            onClick={() => navigate("/")}
-            className="font-['Barlow_Condensed'] text-2xl font-black tracking-wider uppercase text-[#C6F135] bg-transparent border-none cursor-pointer"
-          >
-            FitTrack
-          </button>
+          {/* Logo with Welcome Text */}
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate("/")}
+              className="font-['Barlow_Condensed'] text-2xl font-black tracking-wider uppercase text-[#C6F135] bg-transparent border-none cursor-pointer"
+            >
+              FitTrack<sup className="text-xs">™</sup>
+            </button>
+            
+            {/* Welcome message - only on homepage */}
+            {location.pathname === "/" && (
+              <div className="hidden md:block border-l border-[#1E1E1E] pl-4 ml-2">
+                <span className="text-xs tracking-[0.2em] uppercase text-[#555] font-['JetBrains_Mono']">
+                  WELCOME TO FITTRACK
+                </span>
+              </div>
+            )}
+          </div>
 
           {/* Desktop nav links */}
           <ul className="hidden md:flex items-center gap-8 list-none">
