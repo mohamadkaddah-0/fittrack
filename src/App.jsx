@@ -220,7 +220,7 @@ export default function App() {
             
             {/* Jawad */}
             <Route path="/exercises"    element={<ExerciseLibrary calendarData={calendarData} addWorkoutToCalendar={addWorkoutToCalendar} currentUser={currentUser} />} />   
-            <Route path="/exercise/:id" element={<ExerciseDetail />} />
+            <Route path="/exercise/:id" element={<ExerciseDetailPage />} />
 
             {/* Mohammad Moghnieh */}
             <Route path="/profile"         element={<UserProfile user={currentUser} />} />
