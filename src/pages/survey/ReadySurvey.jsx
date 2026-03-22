@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import './readySurvey.css';
-
+import "./ReadySurvey.css";
 const ReadySurvey = () => {
   return (
     <section className="ready-section">
