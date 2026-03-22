@@ -5,6 +5,7 @@ import './WelcomePage.css';
 const Welcome = () => {
   return (
     <section className="welcome-section">
+      {/* Logo with Welcome Text */}
       <div className="absolute top-8 left-8 z-50 flex items-center gap-4">
         <Link 
           to="/" 
@@ -14,12 +15,17 @@ const Welcome = () => {
           FitTrack<sup className="text-base">™</sup>
         </Link>
         
-        {/* Short welcome text next to logo */}
         <div className="hidden md:block border-l border-[#1E1E1E] pl-5 ml-2">
           <span className="text-sm tracking-[0.15em] uppercase text-[#555] font-['JetBrains_Mono']">
             WELCOME
           </span>
         </div>
+      </div>
+
+      <div className="absolute top-24 left-8 z-50">
+        <p className="text-xs tracking-[0.2em] uppercase text-[#C6F135] font-['JetBrains_Mono']">
+          YOUR JOURNEY STARTS HERE
+        </p>
       </div>
       {/* Hero Section */}
       <div className="welcome-hero">
