@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Register.css';
 
+
 const Register = () => {
   const navigate = useNavigate();
+  
   
   // State for form inputs
   const [formData, setFormData] = useState({
@@ -248,8 +250,17 @@ const Register = () => {
     }
   };
 
+  
   return (
     <section className="login-section">
+      <div className="absolute top-6 left-6 z-50">
+      <button
+        onClick={() => navigate("/")}
+        className="font-['Barlow_Condensed'] text-2xl font-black tracking-wider uppercase text-[#C6F135] bg-transparent border-none cursor-pointer hover:opacity-80 transition-opacity"
+      >
+        FitTrack<sup className="text-xs">™</sup>
+      </button>
+    </div>
       <div className="login-card">
         <div className="login-ghost">//</div>
         

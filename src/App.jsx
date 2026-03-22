@@ -61,6 +61,14 @@ function AppLayout({ children }) {
 const Login = ({ email, setEmail, password, setPassword, rememberMe, setRememberMe, message, showExtraInfo, setShowExtraInfo, handleLogin, isFormValid }) => {
   return (
     <section className="login-section">
+      <div className="absolute top-6 left-6 z-10">
+        <button
+          onClick={() => window.location.href = "/"}
+          className="font-['Barlow_Condensed'] text-2xl font-black tracking-wider uppercase text-[#C6F135] bg-transparent border-none cursor-pointer"
+        >
+          FitTrack<sup className="text-xs">™</sup>
+        </button>
+      </div>
       <div className="login-card">
         <div className="login-ghost">//</div>
         <div className="login-header">
@@ -185,7 +193,7 @@ export default function App() {
   if (foundUser) {
     setCurrentUser({ name: foundUser.name, email: foundUser.email });
     setMessage({ text: `Welcome back, ${foundUser.name}!`, type: "success" });
-    setTimeout(() => { window.location.href = "/ready-survey"; }, 1000);
+    setTimeout(() => { window.location.href = "/surveys"; }, 1000);
   } else {
     setMessage({ text: "Invalid email or password", type: "error" });
   }
