@@ -1,5 +1,3 @@
-
-
 import { useState } from "react";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 
@@ -14,13 +12,7 @@ import LogWorkoutPage from "./pages/LogWorkoutPage";
 import DietProgram      from "./pages/DietProgram";
 import MealLog          from "./pages/MealLog";
 import IngredientDetail from "./pages/IngredientDetail";
-<<<<<<< HEAD
-import { MOCK_USERS, INITIAL_CALENDAR, getTodayKey } from "./data/mockData";
-=======
-
-// ── Mock data (teammate's) ────────────────────────────────────
 import { getUserProfile, INITIAL_CALENDAR, getTodayKey } from "./data/mockData";
->>>>>>> ede17e6bf4ab3a4247e2d449f11c51b81265b9d6
 
 // ── Mohammad Moghnieh's pages ─────────────────────────────────
 import Register       from "./pages/Register/Register";
@@ -33,12 +25,8 @@ import ReadySurvey    from "./pages/survey/ReadySurvey";
 import Welcome        from "./pages/WelcomePage/WelcomePage";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword  from "./pages/ResetPassword";
-//import API             from "./API";
 
 
-// ── Other teammates — uncomment when ready ────────────────────
-// import ListViewPage    from "./pages/ListViewPage";
-// import DetailView1Page from "./pages/DetailView1Page";
 
 // ── Mohammad Moghnieh — Dashboard placeholder ─────────────────
 const Dashboard = () => (
@@ -64,12 +52,14 @@ const Login = ({ email, setEmail, password, setPassword, rememberMe, setRemember
           <form onSubmit={handleLogin}>
             <div className="field">
               <label className="field-label" htmlFor="email">EMAIL ADDRESS</label>
-              <input type="email" id="email" className="field-input bg-[var(--bg)] text-[var(--text)] border border-[var(--line)] font-['JetBrains_Mono'] text-xs p-[13px_16px] outline-none transition-colors duration-200 focus:border-[var(--cyan)]"
+              <input type="email" id="email"
+                className="field-input bg-[var(--bg)] text-[var(--text)] border border-[var(--line)] font-['JetBrains_Mono'] text-xs p-[13px_16px] outline-none transition-colors duration-200 focus:border-[var(--cyan)]"
                 placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
             <div className="field">
               <label className="field-label" htmlFor="password">PASSWORD</label>
-              <input type="password" id="password" className="field-input bg-[var(--bg)] text-[var(--text)] border border-[var(--line)] font-['JetBrains_Mono'] text-xs p-[13px_16px] outline-none transition-colors duration-200 focus:border-[var(--cyan)]"
+              <input type="password" id="password"
+                className="field-input bg-[var(--bg)] text-[var(--text)] border border-[var(--line)] font-['JetBrains_Mono'] text-xs p-[13px_16px] outline-none transition-colors duration-200 focus:border-[var(--cyan)]"
                 placeholder="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength="3" />
             </div>
             <div className="login-options">
@@ -102,12 +92,8 @@ const Login = ({ email, setEmail, password, setPassword, rememberMe, setRemember
 // ─────────────────────────────────────────────────────────────
 export default function App() {
 
-<<<<<<< HEAD
   // ── Diet teammate's shared state ─────────────────────────────
-=======
-  // ── Shared state (Diet Program) ──────────────────────────────
-  const [currentUser, setCurrentUser] = useState(getUserProfile());
->>>>>>> ede17e6bf4ab3a4247e2d449f11c51b81265b9d6
+  const [currentUser,  setCurrentUser]  = useState(getUserProfile());
   const [calendarData, setCalendarData] = useState(INITIAL_CALENDAR);
   const [loggedMeals,  setLoggedMeals]  = useState({});
   const [savedMeals,   setSavedMeals]   = useState([]);
@@ -148,12 +134,11 @@ export default function App() {
   const deleteSavedMeal = (mealId) => setSavedMeals(savedMeals.filter((m) => m.id !== mealId));
 
   // ── Mohammad Moghnieh's shared state ─────────────────────────
-  const [email,         setEmail]         = useState("");
-  const [password,      setPassword]      = useState("");
-  const [rememberMe,    setRememberMe]     = useState(false);
-  const [message,       setMessage]        = useState({ text: "", type: "info" });
-  const [showExtraInfo, setShowExtraInfo]  = useState(false);
-
+  const [email,         setEmail]        = useState("");
+  const [password,      setPassword]     = useState("");
+  const [rememberMe,    setRememberMe]   = useState(false);
+  const [message,       setMessage]      = useState({ text: "", type: "info" });
+  const [showExtraInfo, setShowExtraInfo] = useState(false);
 
   const mockUsers = [
     { email: "demo@fittrack.io", password: "demo123", name: "Demo User" },
@@ -189,31 +174,30 @@ export default function App() {
         <Routes>
 
           {/* ── Mohamad Kaddah ── */}
-          <Route path="/"    element={<HomePage />} />
+          <Route path="/"    element={<HomePage calendarData={calendarData} currentUser={currentUser} />} />
           <Route path="/log" element={<LogWorkoutPage />} />
 
-          {/* ── Diet teammate ── */}
+          {/* ── Sara Ibrahim ── */}
           <Route path="/diet" element={<DietProgram currentUser={currentUser} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} />} />
           <Route path="/diet-program" element={<DietProgram currentUser={currentUser} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} />} />
           <Route path="/meal-log" element={<MealLog currentUser={currentUser} calendarData={calendarData} savedMeals={savedMeals} addMealToCalendar={addMealToCalendar} saveCustomMeal={saveCustomMeal} deleteSavedMeal={deleteSavedMeal} />} />
           <Route path="/ingredient/:id" element={<IngredientDetail />} />
 
           {/* ── Mohammad Moghnieh ── */}
-          <Route path="/welcome"        element={<Welcome />} />
-          <Route path="/ready-survey"   element={<ReadySurvey />} />
-          <Route path="/login"          element={<Login email={email} setEmail={setEmail} password={password} setPassword={setPassword} rememberMe={rememberMe} setRememberMe={setRememberMe} message={message} setMessage={setMessage} showExtraInfo={showExtraInfo} setShowExtraInfo={setShowExtraInfo} handleLogin={handleLogin} isFormValid={isFormValid} />} />
-          <Route path="/register"       element={<Register />} />
-          <Route path="/dashboard"      element={<Dashboard />} />
-          <Route path="/profile"        element={<UserProfile user={currentUser} />} />
-          <Route path="/profile/:userId"element={<UserProfile />} />
-          <Route path="/forgot-password"element={<ForgotPassword />} />
-          <Route path="/get-started"    element={<Welcome />} />
-          <Route path="/terms"          element={<Terms />} />
-          <Route path="/privacy"        element={<Privacy />} />
-          <Route path="/surveys"        element={<Survey />} />
-          <Route path="/support"        element={<Support />} />
-          {/* <Route path="/api"            element={<API />} /> */}
-          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/welcome"         element={<Welcome />} />
+          <Route path="/ready-survey"    element={<ReadySurvey />} />
+          <Route path="/login"           element={<Login email={email} setEmail={setEmail} password={password} setPassword={setPassword} rememberMe={rememberMe} setRememberMe={setRememberMe} message={message} setMessage={setMessage} showExtraInfo={showExtraInfo} setShowExtraInfo={setShowExtraInfo} handleLogin={handleLogin} isFormValid={isFormValid} />} />
+          <Route path="/register"        element={<Register />} />
+          <Route path="/dashboard"       element={<Dashboard />} />
+          <Route path="/profile"         element={<UserProfile user={currentUser} />} />
+          <Route path="/profile/:userId" element={<UserProfile />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/get-started"     element={<Welcome />} />
+          <Route path="/terms"           element={<Terms />} />
+          <Route path="/privacy"         element={<Privacy />} />
+          <Route path="/surveys"         element={<Survey />} />
+          <Route path="/support"         element={<Support />} />
+          <Route path="/reset-password"  element={<ResetPassword />} />
 
           {/* ── Other teammates — uncomment when ready ── */}
           {/* <Route path="/exercises"    element={<ListViewPage />} /> */}
