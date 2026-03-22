@@ -8,7 +8,6 @@ import {
   EXERCISES,
   getCardioRatio,
   isRiskyForUser,
-  INITIAL_CALENDAR,
 } from "../data/mockData";
 
 const mockUser  = getUserProfile();
