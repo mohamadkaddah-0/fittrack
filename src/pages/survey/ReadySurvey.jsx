@@ -59,8 +59,7 @@ const ReadySurvey = () => {
             </Link>
             
             <Link 
-              to="/dashboard" 
-              state={{ from: "/ready-survey" }}
+              to="/login"
               onClick={() => window.scrollTo(0, 0)}
             >
               <button className="ready-btn later-btn">
