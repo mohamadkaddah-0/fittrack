@@ -16,17 +16,12 @@ const Welcome = () => {
         </Link>
         
         <div className="hidden md:block border-l border-[#1E1E1E] pl-5 ml-2">
-          <span className="text-sm tracking-[0.15em] uppercase text-[#555] font-['JetBrains_Mono']">
-            WELCOME
-          </span>
+          <span className="text-xs tracking-[0.2em] uppercase text-[#C6F135] font-['JetBrains_Mono']">
+          WELCOME, YOUR JOURNEY STARTS HERE
+        </span>
         </div>
       </div>
 
-      <div className="absolute top-24 left-8 z-50">
-        <p className="text-xs tracking-[0.2em] uppercase text-[#C6F135] font-['JetBrains_Mono']">
-          YOUR JOURNEY STARTS HERE
-        </p>
-      </div>
       {/* Hero Section */}
       <div className="welcome-hero">
         <div className="welcome-grid">
