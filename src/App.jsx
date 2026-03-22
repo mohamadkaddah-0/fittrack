@@ -7,7 +7,9 @@ import Navbar from "./components/Navbar";
 // ── Mohamad Kaddah's pages ────────────────────────────────────
 import HomePage       from "./pages/HomePage";
 import LogWorkoutPage from "./pages/LogWorkoutPage";
-
+// ── Jawad's pages ────────────────────────────────────
+import exerciseLibrary from "./pages/exerciseLibrary";
+import ExerciseDetailPage  from "./pages/ExerciseDetailPage";
 // ── Diet teammate's pages ─────────────────────────────────────
 import DietProgram      from "./pages/DietProgram";
 import MealLog          from "./pages/MealLog";
