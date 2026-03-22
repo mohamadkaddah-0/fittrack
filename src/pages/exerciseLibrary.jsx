@@ -402,7 +402,8 @@ function WorkoutCalendar({ completedPlanItems, planDays }) {
   );
 }
 
-export default function ExerciseLibrary() {
+export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalendar, currentUser }) {
+  const mockUser = currentUser || getUserProfile();
   const [search,     setSearch]     = useState("");
   const [filterCat,  setFilterCat]  = useState("All");
   const [filterDiff, setFilterDiff] = useState("All");
