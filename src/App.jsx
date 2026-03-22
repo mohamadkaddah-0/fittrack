@@ -173,9 +173,14 @@ export default function App() {
   setMessage({ text: "", type: "info" });
   await new Promise((r) => setTimeout(r, 1000));
   
-  // Check both mock users and registered users
-  const registeredUsers = JSON.parse(localStorage.getItem('fittrack_logins') || '[]');
-  const foundUser = registeredUsers.find((u) => u.email === email && u.password === password);
+  // First check mock users (demo accounts)
+  let foundUser = mockUsers.find((u) => u.email === email && u.password === password);
+  
+  // If not found in mock users, check registered users from localStorage
+  if (!foundUser) {
+    const registeredUsers = JSON.parse(localStorage.getItem('fittrack_logins') || '[]');
+    foundUser = registeredUsers.find((u) => u.email === email && u.password === password);
+  }
   
   if (foundUser) {
     setCurrentUser({ name: foundUser.name, email: foundUser.email });
