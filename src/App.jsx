@@ -119,6 +119,11 @@ export default function App() {
     setCalendarData({ ...calendarData, [dateKey]: [...existing, entry] });
   };
 
+  const addWorkoutToCalendar = (dateKey, entry) => {
+  const existing = calendarData[dateKey] || [];
+  setCalendarData({ ...calendarData, [dateKey]: [...existing, { ...entry, type: "workout" }] });
+  };
+
   const deleteMealFromDay = (dateKey, index) => {
     const existing    = calendarData[dateKey] || [];
     const updated     = existing.filter((_, i) => i !== index);
