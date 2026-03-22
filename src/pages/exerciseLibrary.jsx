@@ -68,7 +68,7 @@ function PulseDot() {
   );
 }
 
-function ExerciseCard({ ex }) {
+function ExerciseCard({ ex, mockUser }) {
   const catColor   = getCatColor(ex.category);
   const diffColor  = getDiffColor(ex.difficulty);
   const hasWarning = isRiskyForUser(ex, mockUser.limitations);
@@ -249,13 +249,13 @@ function PlanCompleteModal({ userLevel, intensityBoostCount, onContinue, onClose
   );
 }
 
-function WorkoutCalendar({ completedPlanItems, planDays }) {
+function WorkoutCalendar({ completedPlanItems, planDays, calendarData }) {
   const todayKey  = getTodayKey();
   const todayDate = new Date();
   const [calYear,  setCalYear]  = useState(todayDate.getFullYear());
   const [calMonth, setCalMonth] = useState(todayDate.getMonth());
   const [selected, setSelected] = useState(todayKey);
-  const mealCalendar = INITIAL_CALENDAR || {};
+  const mealCalendar = calendarData || {};
 
   function changeMonth(dir) {
     setCalMonth(prev => {
@@ -450,22 +450,22 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
   }
 
   function toggleExerciseDone(day, exerciseId) {
-  const key    = `${day}-${exerciseId}`;
-  const isDone = !completedPlanItems[key];
-  setCompletedPlanItems(prev => ({ ...prev, [key]: isDone }));
+    const key    = `${day}-${exerciseId}`;
+    const isDone = !completedPlanItems[key];
+    setCompletedPlanItems(prev => ({ ...prev, [key]: isDone }));
 
-  if (isDone && addWorkoutToCalendar) {
-    const ex    = exercises.find(e => e.id === exerciseId);
-    const today = getTodayKey();
-    addWorkoutToCalendar(today, {
-      name:     ex?.name     || "Exercise",
-      category: ex?.category || "Cardio",
-      kcal:     0,
-      cat:      ex?.category === "Cardio" ? "cardio" : "strength",
-      type:     "workout",
-    });
+    if (isDone && addWorkoutToCalendar) {
+      const ex    = exercises.find(e => e.id === exerciseId);
+      const today = getTodayKey();
+      addWorkoutToCalendar(today, {
+        name:     ex?.name     || "Exercise",
+        category: ex?.category || "Cardio",
+        kcal:     0,
+        cat:      ex?.category === "Cardio" ? "cardio" : "strength",
+        type:     "workout",
+      });
+    }
   }
-}
 
   function handlePlanContinue() {
     const levels = ["beginner", "intermediate", "advanced", "athlete"];
@@ -568,7 +568,11 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
 
           <hr style={{ borderColor: "#1E1E1E", marginBottom: "64px" }} />
 
-          <WorkoutCalendar completedPlanItems={completedPlanItems} planDays={planDaysRef.current} />
+          <WorkoutCalendar
+            completedPlanItems={completedPlanItems}
+            planDays={planDaysRef.current}
+            calendarData={calendarData}
+          />
 
           <hr style={{ borderColor: "#1E1E1E", marginBottom: "64px" }} />
 
@@ -607,7 +611,7 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {filtered.map(ex => <ExerciseCard key={ex.id} ex={ex} />)}
+              {filtered.map(ex => <ExerciseCard key={ex.id} ex={ex} mockUser={mockUser} />)}
             </div>
           )}
 
