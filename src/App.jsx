@@ -26,18 +26,9 @@ import Welcome        from "./pages/WelcomePage/WelcomePage";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword  from "./pages/ResetPassword";
 
-
-
-// ── Mohammad Moghnieh — Dashboard placeholder ─────────────────
-const Dashboard = () => (
-  <section className="login-section">
-    <div className="login-card">
-      <div className="login-header">
-        <div className="login-title">dashboard<em>overview</em></div>
-      </div>
-    </div>
-  </section>
-);
+// ── Other teammates — uncomment when ready ────────────────────
+// import ListViewPage    from "./pages/ListViewPage";
+// import DetailView1Page from "./pages/DetailView1Page";
 
 // ── Mohammad Moghnieh — Login component ──────────────────────
 const Login = ({ email, setEmail, password, setPassword, rememberMe, setRememberMe, message, showExtraInfo, setShowExtraInfo, handleLogin, isFormValid }) => {
@@ -153,7 +144,7 @@ export default function App() {
     if (foundUser) {
       setCurrentUser({ name: foundUser.name, email: foundUser.email });
       setMessage({ text: `Welcome back, ${foundUser.name}!`, type: "success" });
-      setTimeout(() => { window.location.href = "/login"; }, 1000);
+      setTimeout(() => { window.location.href = "/surveys"; }, 1000);
     } else {
       setMessage({ text: "Invalid email or password", type: "error" });
     }
@@ -173,14 +164,18 @@ export default function App() {
 
         <Routes>
 
+          {/* ── Default route — Welcome page ── */}
+          <Route path="/"            element={<Welcome />} />
+          <Route path="/get-started" element={<Welcome />} />
+
           {/* ── Mohamad Kaddah ── */}
-          <Route path="/"    element={<HomePage calendarData={calendarData} currentUser={currentUser} />} />
-          <Route path="/log" element={<LogWorkoutPage />} />
+          <Route path="/dashboard" element={<HomePage calendarData={calendarData} currentUser={currentUser} />} />
+          <Route path="/log"       element={<LogWorkoutPage />} />
 
           {/* ── Sara Ibrahim ── */}
-          <Route path="/diet" element={<DietProgram currentUser={currentUser} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} />} />
-          <Route path="/diet-program" element={<DietProgram currentUser={currentUser} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} />} />
-          <Route path="/meal-log" element={<MealLog currentUser={currentUser} calendarData={calendarData} savedMeals={savedMeals} addMealToCalendar={addMealToCalendar} saveCustomMeal={saveCustomMeal} deleteSavedMeal={deleteSavedMeal} />} />
+          <Route path="/diet"          element={<DietProgram currentUser={currentUser} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} />} />
+          <Route path="/diet-program"  element={<DietProgram currentUser={currentUser} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} />} />
+          <Route path="/meal-log"      element={<MealLog currentUser={currentUser} calendarData={calendarData} savedMeals={savedMeals} addMealToCalendar={addMealToCalendar} saveCustomMeal={saveCustomMeal} deleteSavedMeal={deleteSavedMeal} />} />
           <Route path="/ingredient/:id" element={<IngredientDetail />} />
 
           {/* ── Mohammad Moghnieh ── */}
@@ -188,11 +183,9 @@ export default function App() {
           <Route path="/ready-survey"    element={<ReadySurvey />} />
           <Route path="/login"           element={<Login email={email} setEmail={setEmail} password={password} setPassword={setPassword} rememberMe={rememberMe} setRememberMe={setRememberMe} message={message} setMessage={setMessage} showExtraInfo={showExtraInfo} setShowExtraInfo={setShowExtraInfo} handleLogin={handleLogin} isFormValid={isFormValid} />} />
           <Route path="/register"        element={<Register />} />
-          <Route path="/dashboard"       element={<Dashboard />} />
           <Route path="/profile"         element={<UserProfile user={currentUser} />} />
           <Route path="/profile/:userId" element={<UserProfile />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/get-started"     element={<Welcome />} />
           <Route path="/terms"           element={<Terms />} />
           <Route path="/privacy"         element={<Privacy />} />
           <Route path="/surveys"         element={<Survey />} />
