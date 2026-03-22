@@ -61,9 +61,12 @@ const Login = ({ email, setEmail, password, setPassword, rememberMe, setRemember
   return (
     <section className="login-section">
       <div className="absolute top-6 left-6 z-10">
-        <Link to="/" className="font-['Barlow_Condensed'] text-2xl font-black uppercase text-[#C6F135] no-underline">
+        <button
+          onClick={() => window.location.href = "/"}
+          className="font-['Barlow_Condensed'] text-2xl font-black tracking-wider uppercase text-[#C6F135] bg-transparent border-none cursor-pointer"
+        >
           FitTrack<sup className="text-xs">™</sup>
-        </Link>
+        </button>
       </div>
       <div className="login-card">
         <div className="login-ghost">//</div>
