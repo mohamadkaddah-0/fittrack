@@ -10,18 +10,31 @@ import {
   isRiskyForUser,
 } from "../data/mockData";
 
+// I store the exercises list from the shared mock data file here so
+// every component in this file can access it without re-importing
 const exercises = EXERCISES;
 
+// ─── Colour helpers ───────────────────────────────────────────────────────────
+
+// I use two distinct colours to help the user instantly tell apart
+// cardio exercises from weightlifting ones across all cards and plan cards
 function getCatColor(category) {
   return category === "Cardio" ? "#FF2A5E" : "#C6F135";
 }
 
+// Each difficulty level gets its own colour so the user can immediately
+// see how challenging an exercise is without reading the label
 function getDiffColor(d) {
   if (d === "Beginner")     return "#C6F135";
   if (d === "Intermediate") return "#FFAA00";
   return "#FF2A5E";
 }
 
+// ─── Utility functions ────────────────────────────────────────────────────────
+
+// I wrote this helper to pick n unique random exercises from a pool
+// without repeating any. I use it when building each day in the 14-day plan
+// so the user gets a varied workout every day
 function pickRandom(array, n) {
   const copy   = [...array];
   const result = [];
@@ -33,6 +46,13 @@ function pickRandom(array, n) {
   return result;
 }
 
+// This is my core exercise matching algorithm.
+// It reads the user's fitness level from the survey to filter by difficulty,
+// then applies a cardio-to-strength ratio based on their weight goal.
+// Lose weight  → 70% cardio, 30% strength  (burn more calories)
+// Gain muscle  → 30% cardio, 70% strength  (build more mass)
+// Maintain     → 50% cardio, 50% strength  (balanced)
+// The ratio logic lives in getCardioRatio() in mockData.js
 function getMatchingExercises(goal, level, weightGoal) {
   const levelLower = (level || "beginner").toLowerCase();
   const byLevel = exercises.filter((ex) => {
@@ -53,14 +73,28 @@ function getMatchingExercises(goal, level, weightGoal) {
   ];
 }
 
+// Returns today's date as YYYY-MM-DD which I use as the key
+// for calendar entries and to identify which plan day is today
 function getTodayKey() {
   return new Date().toISOString().split("T")[0];
 }
 
-const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const MONTHS_FULL  = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-const CAT_COLORS   = { breakfast: "#FFAA00", lunch: "#C6F135", snack: "#00E5FF", dinner: "#FF2A5E" };
+// ─── Constants ────────────────────────────────────────────────────────────────
 
+const MONTHS_SHORT  = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const MONTHS_FULL   = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+// These colours match Sara's (diet page) category colours exactly
+// so the calendar dots look consistent across both pages
+const CAT_COLORS    = { breakfast: "#FFAA00", lunch: "#C6F135", snack: "#00E5FF", dinner: "#FF2A5E" };
+
+// I use lime green for exercise dots to distinguish them from meal dots
+const WORKOUT_COLOR = "#C6F135";
+
+// ─── Small reusable components ────────────────────────────────────────────────
+
+// A small animated pulsing dot I use in the hero greeting
+// to give a live / active feel to the page
 function PulseDot() {
   return (
     <span className="inline-block w-2 h-2 rounded-full flex-shrink-0"
@@ -68,12 +102,20 @@ function PulseDot() {
   );
 }
 
+// ─── Exercise card ────────────────────────────────────────────────────────────
+
+// Renders a single exercise in the ALL EXERCISES grid.
+// I pass mockUser as a prop so each card can check the user's
+// physical limitations from the survey and show a caution warning
+// if the exercise conflicts with their reported condition.
+// I also handle image loading errors gracefully — if the Unsplash
+// photo fails to load the card shows the exercise initials instead
 function ExerciseCard({ ex, mockUser }) {
   const catColor   = getCatColor(ex.category);
   const diffColor  = getDiffColor(ex.difficulty);
   const hasWarning = isRiskyForUser(ex, mockUser.limitations);
-  const [imgErr,   setImgErr]   = useState(false);
-  const initials = ex.name.split(" ").map(w => w[0]).join("").slice(0, 2);
+  const [imgErr, setImgErr] = useState(false);
+  const initials   = ex.name.split(" ").map(w => w[0]).join("").slice(0, 2);
 
   return (
     <article
@@ -97,6 +139,7 @@ function ExerciseCard({ ex, mockUser }) {
             style={{ color: diffColor, borderColor: diffColor + "66", background: "rgba(0,0,0,0.7)" }}>
             {ex.difficulty}
           </span>
+          {/* I show this caution badge when the exercise is risky for the user's limitations */}
           {hasWarning && (
             <span className="absolute top-2 left-2 text-[9px] font-bold tracking-widest uppercase px-2 py-1 rounded"
               style={{ background: "#FFAA00", color: "#080808" }}>
@@ -105,6 +148,7 @@ function ExerciseCard({ ex, mockUser }) {
           )}
         </div>
         <div className="p-4">
+          {/* Warning message shown inside the card body for users with limitations */}
           {hasWarning && (
             <div className="rounded-lg px-3 py-2 mb-3 text-xs leading-5"
               style={{ background: "rgba(255,170,0,0.1)", border: "1px solid rgba(255,170,0,0.4)", color: "#FFAA00" }}>
@@ -131,9 +175,20 @@ function ExerciseCard({ ex, mockUser }) {
   );
 }
 
-function PlanDayCard({ day, isRest, picks, isDay14, onDay14Click, intensityBoostCount, completedPlanItems, onToggleDone }) {
-  const allDone = !isRest && picks.length > 0 && picks.every(ex => completedPlanItems[`${day}-${ex.id}`]);
+// ─── Plan day card ────────────────────────────────────────────────────────────
 
+// Renders one day card in the 14-day plan grid.
+// Each card shows the exercises for that day with a tick button.
+// I only show the tick button on today's plan day — the user cannot
+// mark exercises as done on past or future days, which makes the
+// tracking accurate and prevents cheating the plan.
+// When all exercises on a day are ticked a "Day Complete" badge appears.
+function PlanDayCard({ day, isRest, picks, isDay14, onDay14Click, intensityBoostCount, completedPlanItems, onToggleDone, todayPlanDay }) {
+  const allDone = !isRest && picks.length > 0 && picks.every(ex => completedPlanItems[`${day}-${ex.id}`]);
+  const isToday = day === todayPlanDay;
+
+  // If the user completed the plan with intensity boosts I scale
+  // the calorie range shown on each exercise by 15% per boost
   function getBoostedRange(r) {
     if (intensityBoostCount === 0) return r;
     const p = r.split("–");
@@ -144,24 +199,41 @@ function PlanDayCard({ day, isRest, picks, isDay14, onDay14Click, intensityBoost
 
   return (
     <div className="rounded-xl p-3 transition-all duration-200"
-      style={{ background: "#0D0D0D", border: allDone || isDay14 ? "1px solid #C6F135" : "1px solid #1E1E1E", cursor: isDay14 ? "pointer" : "default" }}
+      style={{
+        background: "#0D0D0D",
+        // Today's card gets a cyan border so it stands out from the rest
+        border: allDone ? "1px solid #C6F135" : isDay14 ? "1px solid #C6F135" : isToday ? "1px solid #00E5FF" : "1px solid #1E1E1E",
+        cursor: isDay14 ? "pointer" : "default",
+      }}
       onClick={isDay14 ? onDay14Click : undefined}
       onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; }}
       onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; }}>
-      <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: "30px", lineHeight: 1, color: "#2A2A2A", marginBottom: "8px" }}>
+
+      <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: "30px", lineHeight: 1, color: isToday ? "#00E5FF" : "#2A2A2A", marginBottom: "8px" }}>
         {String(day).padStart(2, "0")}
       </p>
+
+      {/* I highlight today's day number so the user knows where they are in the plan */}
+      {isToday && !allDone && (
+        <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#00E5FF", marginBottom: "6px" }}>Today</p>
+      )}
+
+      {/* Day complete badge — appears when every exercise on this day is ticked */}
       {allDone && (
         <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px", padding: "4px 8px", background: "rgba(198,241,53,0.1)", border: "1px solid rgba(198,241,53,0.4)", borderRadius: "6px" }}>
           <span style={{ color: "#C6F135", fontSize: "11px", fontWeight: 700 }}>✓</span>
           <span style={{ color: "#C6F135", fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>Day Complete</span>
         </div>
       )}
+
       {isRest ? (
         <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#333333" }}>Rest Day</p>
       ) : (
         picks.map(ex => {
-          const done = completedPlanItems[`${day}-${ex.id}`];
+          const done    = completedPlanItems[`${day}-${ex.id}`];
+          // The tick button only renders on today's plan day
+          // Past and future days are read-only
+          const canTick = isToday;
           return (
             <div key={ex.id} style={{ marginBottom: "6px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginBottom: "2px" }}>
@@ -174,10 +246,15 @@ function PlanDayCard({ day, isRest, picks, isDay14, onDay14Click, intensityBoost
                     {ex.name}
                   </Link>
                 </div>
-                <button onClick={e => { e.stopPropagation(); onToggleDone(day, ex.id); }}
-                  style={{ width: "18px", height: "18px", borderRadius: "50%", border: `1px solid ${done ? "#C6F135" : "#555555"}`, background: done ? "#C6F135" : "transparent", color: done ? "#080808" : "#555555", fontSize: "11px", fontWeight: "bold", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer" }}>
-                  {done ? "✓" : ""}
-                </button>
+                {/* Tick button — only visible and active on today's day */}
+                {canTick && (
+                  <button
+                    onClick={e => { e.stopPropagation(); onToggleDone(day, ex.id); }}
+                    aria-label={done ? `Mark ${ex.name} as not done` : `Mark ${ex.name} as done`}
+                    style={{ width: "18px", height: "18px", borderRadius: "50%", border: `1px solid ${done ? "#C6F135" : "#555555"}`, background: done ? "#C6F135" : "transparent", color: done ? "#080808" : "#555555", fontSize: "11px", fontWeight: "bold", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer" }}>
+                    {done ? "✓" : ""}
+                  </button>
+                )}
               </div>
               <p style={{ fontSize: "9px", color: intensityBoostCount > 0 ? "#FFAA00" : "#555555", marginLeft: "11px", textDecoration: done ? "line-through" : "none", opacity: done ? 0.7 : 1 }}>
                 {getBoostedRange(ex.kcalRange)} kcal/10min
@@ -186,6 +263,8 @@ function PlanDayCard({ day, isRest, picks, isDay14, onDay14Click, intensityBoost
           );
         })
       )}
+
+      {/* Tap to Finish label on day 14 prompts the user to open the plan complete modal */}
       {isDay14 && !allDone && (
         <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#C6F135", marginTop: "8px" }}>
           Tap to Finish
@@ -195,28 +274,44 @@ function PlanDayCard({ day, isRest, picks, isDay14, onDay14Click, intensityBoost
   );
 }
 
+// ─── Plan complete modal ──────────────────────────────────────────────────────
+
+// This modal opens when the user taps the Day 14 card.
+// It shows their stats and gives them three options:
+// 1. Continue at the same level with +15% reps (up to 3 times)
+// 2. Advance to the next fitness level after 3 boosts
+// 3. Update their profile to generate a completely fresh plan
 function PlanCompleteModal({ userLevel, intensityBoostCount, onContinue, onClose }) {
   const totalKcal = workoutLog.reduce((sum, e) => sum + (e.caloriesBurned || 0), 0);
   const levels    = ["beginner", "intermediate", "advanced", "athlete"];
   const idx       = levels.indexOf(userLevel);
+
   function getBtnLabel() {
     if (intensityBoostCount < 3) return `Continue — Same Level, +15% Reps (${3 - intensityBoostCount} boosts left) →`;
     if (idx < levels.length - 1) return `Advance to ${levels[idx + 1].charAt(0).toUpperCase() + levels[idx + 1].slice(1)} Level →`;
     return "Continue — Max Level (+15% More Reps) →";
   }
+
   function getBtnColor() {
     if (intensityBoostCount < 3) return "#C6F135";
     if (idx < levels.length - 1) return "#00E5FF";
     return "#FF2A5E";
   }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-6" style={{ background: "rgba(0,0,0,0.85)" }}>
       <div className="rounded-2xl w-full max-w-lg p-8" style={{ background: "#0D0D0D", border: "1px solid #1E1E1E" }}>
-        <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: "rgba(198,241,53,0.1)", border: "2px solid #C6F135" }}>
+        <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6"
+          style={{ background: "rgba(198,241,53,0.1)", border: "2px solid #C6F135" }}>
           <span className="text-2xl font-bold" style={{ color: "#C6F135" }}>✓</span>
         </div>
-        <h2 className="text-4xl text-center mb-2" style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, color: "#ECECEC" }}>PLAN COMPLETE</h2>
-        <p className="text-xs font-bold tracking-widest uppercase text-center mb-8" style={{ color: "#555555" }}>14 days finished</p>
+        <h2 className="text-4xl text-center mb-2"
+          style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, color: "#ECECEC" }}>
+          PLAN COMPLETE
+        </h2>
+        <p className="text-xs font-bold tracking-widest uppercase text-center mb-8" style={{ color: "#555555" }}>
+          14 days finished
+        </p>
         <div className="grid grid-cols-3 gap-px rounded-xl overflow-hidden mb-8" style={{ background: "#1E1E1E" }}>
           {[
             { label: "Workouts Logged", value: workoutLog.length,                  color: "#C6F135" },
@@ -225,11 +320,15 @@ function PlanCompleteModal({ userLevel, intensityBoostCount, onContinue, onClose
           ].map(stat => (
             <div key={stat.label} className="px-4 py-5 text-center" style={{ background: "#111111" }}>
               <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: "#555555" }}>{stat.label}</p>
-              <p className="font-bold" style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: "32px", lineHeight: 1, color: stat.color }}>{stat.value}</p>
+              <p className="font-bold" style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: "32px", lineHeight: 1, color: stat.color }}>
+                {stat.value}
+              </p>
             </div>
           ))}
         </div>
-        <p className="text-sm text-center leading-7 mb-6" style={{ color: "#555555" }}>Great work finishing your 14-day plan.<br />What would you like to do next?</p>
+        <p className="text-sm text-center leading-7 mb-6" style={{ color: "#555555" }}>
+          Great work finishing your 14-day plan.<br />What would you like to do next?
+        </p>
         <div className="flex flex-col gap-3">
           <button onClick={onContinue} className="w-full text-xs font-bold tracking-widest uppercase py-4 rounded-xl"
             style={{ background: getBtnColor(), color: getBtnColor() === "#FF2A5E" ? "#ECECEC" : "#080808", border: 0 }}>
@@ -249,13 +348,34 @@ function PlanCompleteModal({ userLevel, intensityBoostCount, onContinue, onClose
   );
 }
 
+// ─── Workout calendar ─────────────────────────────────────────────────────────
+
+// I built this calendar to show both exercises and meals in one place.
+// The calendarData prop comes from App.jsx and is the same shared state
+// that Sara's diet page writes meals into — so I read her meals here
+// without writing any meal logic myself.
+//
+// Each day cell shows:
+//   - Coloured dots for meals (amber=breakfast, lime=lunch, cyan=snack, pink=dinner)
+//   - Lime green dots for exercises the user ticked that day
+//
+// When the user clicks a day the side panel shows:
+//   - Meals logged that day (from Sara's diet page)
+//   - Exercises completed that day (from the tick system)
+//
+// I separate meals from exercises by checking the "type" field —
+// Sara's meals do not have type:"workout" so they are always treated as meals
 function WorkoutCalendar({ completedPlanItems, planDays, calendarData }) {
   const todayKey  = getTodayKey();
   const todayDate = new Date();
   const [calYear,  setCalYear]  = useState(todayDate.getFullYear());
   const [calMonth, setCalMonth] = useState(todayDate.getMonth());
   const [selected, setSelected] = useState(todayKey);
-  const mealCalendar = calendarData || {};
+
+  // I read from the shared calendarData passed from App.jsx
+  // not from a static local copy — this way the calendar updates
+  // live when Sara logs a meal or I tick an exercise
+  const allCalendar = calendarData || {};
 
   function changeMonth(dir) {
     setCalMonth(prev => {
@@ -266,6 +386,8 @@ function WorkoutCalendar({ completedPlanItems, planDays, calendarData }) {
     });
   }
 
+  // Builds the grid of day cells for the current month view
+  // including overflow days from the previous and next months
   function buildCells() {
     const firstDay   = new Date(calYear, calMonth, 1).getDay();
     const daysInMon  = new Date(calYear, calMonth + 1, 0).getDate();
@@ -273,6 +395,7 @@ function WorkoutCalendar({ completedPlanItems, planDays, calendarData }) {
     const total      = firstDay + daysInMon;
     const gridSize   = total + (7 - (total % 7)) % 7;
     const cells      = [];
+
     for (let i = 0; i < gridSize; i++) {
       let day, month = calMonth, year = calYear, other = false;
       if (i < firstDay) {
@@ -288,28 +411,73 @@ function WorkoutCalendar({ completedPlanItems, planDays, calendarData }) {
       } else {
         day = i - firstDay + 1;
       }
+
       const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-      const meals   = mealCalendar[dateKey] || [];
-      cells.push({ day, dateKey, other, isToday: dateKey === todayKey, isSelected: dateKey === selected, meals });
+      const entries = allCalendar[dateKey] || [];
+
+      // I separate meals from workouts so their dots appear correctly
+      const meals    = entries.filter(e => e.type !== "workout");
+      const workouts = entries.filter(e => e.type === "workout");
+
+      // For today I count ticked exercises from the plan instead of
+      // relying on calendarData since the tick is the source of truth
+      const isThisToday = dateKey === todayKey;
+      const tickedCount = isThisToday
+        ? planDays
+            .filter(pd => !pd.isRest)
+            .flatMap(pd => pd.picks.filter(ex => completedPlanItems[`${pd.day}-${ex.id}`]))
+            .length
+        : workouts.length;
+
+      cells.push({
+        day, dateKey, other,
+        isToday:    dateKey === todayKey,
+        isSelected: dateKey === selected,
+        meals,
+        workouts,
+        tickedCount,
+      });
     }
     return cells;
   }
 
   const cells         = buildCells();
-  const selectedMeals = mealCalendar[selected] || [];
-  const doneToday     = planDays
-    .filter(pd => !pd.isRest)
-    .flatMap(pd => pd.picks.filter(ex => completedPlanItems[`${pd.day}-${ex.id}`]).map(ex => ({ name: ex.name, category: ex.category })));
+  const selectedEntry = allCalendar[selected] || [];
+
+  // For the side panel I separate what to show under Meals vs Exercises
+  const selectedMeals = selectedEntry.filter(e => e.type !== "workout");
+
+  // For today I read from completedPlanItems (the ticks) for accuracy
+  // For other days I read from calendarData workouts
+  const selectedWorkouts = selected === todayKey
+    ? planDays
+        .filter(pd => !pd.isRest)
+        .flatMap(pd =>
+          pd.picks
+            .filter(ex => completedPlanItems[`${pd.day}-${ex.id}`])
+            .map(ex => ({ name: ex.name, category: ex.category, type: "workout" }))
+        )
+    : selectedEntry.filter(e => e.type === "workout");
 
   return (
     <section className="mb-16">
       <div className="flex flex-wrap items-baseline gap-3 mb-6">
-        <h2 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: "36px", color: "#ECECEC" }}>CALENDAR</h2>
-        <span className="text-xs font-bold tracking-widest uppercase" style={{ color: "#333333" }}>exercises + meals</span>
+        <h2 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: "36px", color: "#ECECEC" }}>
+          CALENDAR
+        </h2>
+        <span className="text-xs font-bold tracking-widest uppercase" style={{ color: "#333333" }}>
+          exercises + meals
+        </span>
       </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-4">
+
+        {/* Calendar grid */}
         <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #1E1E1E" }}>
-          <div className="flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: "#1E1E1E", background: "#0D0D0D" }}>
+
+          {/* Month navigation header */}
+          <div className="flex items-center justify-between px-5 py-3 border-b"
+            style={{ borderColor: "#1E1E1E", background: "#0D0D0D" }}>
             <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: "20px" }}>
               <span style={{ color: "#C6F135" }}>{MONTHS_FULL[calMonth]}</span>
               <span style={{ color: "#555555", fontSize: "16px", marginLeft: "8px" }}>{calYear}</span>
@@ -326,23 +494,44 @@ function WorkoutCalendar({ completedPlanItems, planDays, calendarData }) {
               ))}
             </div>
           </div>
+
+          {/* Day of week headers */}
           <div className="grid grid-cols-7 border-b" style={{ borderColor: "#1E1E1E" }}>
             {["Su","Mo","Tu","We","Th","Fr","Sa"].map(d => (
               <div key={d} className="py-2 text-center text-xs tracking-widest uppercase border-r last:border-r-0"
-                style={{ color: "#555555", borderColor: "#1E1E1E" }}>{d}</div>
+                style={{ color: "#555555", borderColor: "#1E1E1E" }}>
+                {d}
+              </div>
             ))}
           </div>
+
+          {/* Day cells — each cell shows meal dots and exercise dots */}
           <div className="grid grid-cols-7" style={{ background: "#080808" }}>
             {cells.map(cell => (
               <button key={cell.dateKey}
                 disabled={cell.other}
                 onClick={() => !cell.other && setSelected(cell.dateKey)}
                 className="border-r border-b last:border-r-0 min-h-[44px] p-1 flex flex-col text-left transition-colors"
-                style={{ borderColor: "#1E1E1E", background: cell.isSelected ? "rgba(198,241,53,0.1)" : cell.isToday ? "rgba(198,241,53,0.05)" : "transparent", opacity: cell.other ? 0.2 : 1, cursor: cell.other ? "default" : "pointer" }}>
-                <span className="text-xs font-bold leading-none mb-1" style={{ color: cell.isToday ? "#C6F135" : "#ECECEC" }}>{cell.day}</span>
+                style={{
+                  borderColor: "#1E1E1E",
+                  background: cell.isSelected ? "rgba(198,241,53,0.1)" : cell.isToday ? "rgba(198,241,53,0.05)" : "transparent",
+                  opacity: cell.other ? 0.2 : 1,
+                  cursor:  cell.other ? "default" : "pointer",
+                }}>
+                <span className="text-xs font-bold leading-none mb-1"
+                  style={{ color: cell.isToday ? "#C6F135" : "#ECECEC" }}>
+                  {cell.day}
+                </span>
                 <div className="flex flex-wrap gap-[2px]">
-                  {cell.meals.slice(0, 4).map((m, i) => (
-                    <div key={i} className="w-[4px] h-[4px] rounded-full" style={{ background: CAT_COLORS[m.cat] || "#555" }} title={m.name} />
+                  {/* Meal dots from Sara's diet page — max 3 shown */}
+                  {cell.meals.slice(0, 3).map((m, i) => (
+                    <div key={`m-${i}`} className="w-[4px] h-[4px] rounded-full"
+                      style={{ background: CAT_COLORS[m.cat] || "#555" }} title={m.name} />
+                  ))}
+                  {/* Exercise dots — one lime dot per ticked exercise, max 3 shown */}
+                  {cell.tickedCount > 0 && Array.from({ length: Math.min(cell.tickedCount, 3) }).map((_, i) => (
+                    <div key={`w-${i}`} className="w-[4px] h-[4px] rounded-full"
+                      style={{ background: WORKOUT_COLOR }} title="Exercise done" />
                   ))}
                 </div>
               </button>
@@ -350,16 +539,26 @@ function WorkoutCalendar({ completedPlanItems, planDays, calendarData }) {
           </div>
         </div>
 
-        <div className="rounded-xl p-4 flex flex-col gap-3" style={{ background: "#0D0D0D", border: "1px solid #1E1E1E" }}>
+        {/* Side panel — shows details for the selected day */}
+        <div className="rounded-xl p-4 flex flex-col gap-3"
+          style={{ background: "#0D0D0D", border: "1px solid #1E1E1E" }}>
+
+          {/* Selected date label */}
           <p className="text-xs font-bold tracking-widest uppercase" style={{ color: "#FF2A5E" }}>
-            {MONTHS_SHORT[parseInt(selected.split("-")[1]) - 1]} {parseInt(selected.split("-")[2])}, {selected.split("-")[0]}
+            {MONTHS_SHORT[parseInt(selected.split("-")[1]) - 1]}{" "}
+            {parseInt(selected.split("-")[2])},{" "}
+            {selected.split("-")[0]}
           </p>
+
+          {/* Meals section — data comes from Sara's diet page via calendarData */}
           {selectedMeals.length > 0 && (
             <div>
               <p className="text-[9px] font-bold tracking-widest uppercase mb-2" style={{ color: "#555555" }}>Meals</p>
               {selectedMeals.map((m, i) => (
-                <div key={i} className="flex items-center gap-2 py-1 border-b last:border-b-0" style={{ borderColor: "#1E1E1E" }}>
-                  <div className="w-[6px] h-[6px] rounded-full flex-shrink-0" style={{ background: CAT_COLORS[m.cat] || "#555" }} />
+                <div key={i} className="flex items-center gap-2 py-1 border-b last:border-b-0"
+                  style={{ borderColor: "#1E1E1E" }}>
+                  <div className="w-[6px] h-[6px] rounded-full flex-shrink-0"
+                    style={{ background: CAT_COLORS[m.cat] || "#555" }} />
                   <div>
                     <p className="text-xs font-bold" style={{ color: "#ECECEC" }}>{m.name}</p>
                     <p className="text-[10px]" style={{ color: "#555555" }}>{m.cat} · {m.kcal} kcal</p>
@@ -368,20 +567,29 @@ function WorkoutCalendar({ completedPlanItems, planDays, calendarData }) {
               ))}
             </div>
           )}
-          {selected === todayKey && doneToday.length > 0 && (
+
+          {/* Exercises section — shown after meals, always separate */}
+          {selectedWorkouts.length > 0 && (
             <div>
-              <p className="text-[9px] font-bold tracking-widest uppercase mb-2" style={{ color: "#555555" }}>Exercises Done Today</p>
-              {doneToday.map((ex, i) => (
-                <div key={i} className="flex items-center gap-2 py-1 border-b last:border-b-0" style={{ borderColor: "#1E1E1E" }}>
-                  <div className="w-[6px] h-[6px] rounded-full flex-shrink-0" style={{ background: getCatColor(ex.category) }} />
+              <p className="text-[9px] font-bold tracking-widest uppercase mb-2" style={{ color: "#555555" }}>
+                Exercises Done
+              </p>
+              {selectedWorkouts.map((ex, i) => (
+                <div key={i} className="flex items-center gap-2 py-1 border-b last:border-b-0"
+                  style={{ borderColor: "#1E1E1E" }}>
+                  <div className="w-[6px] h-[6px] rounded-full flex-shrink-0"
+                    style={{ background: getCatColor(ex.category) }} />
                   <p className="text-xs font-bold" style={{ color: "#C6F135" }}>✓ {ex.name}</p>
                 </div>
               ))}
             </div>
           )}
-          {selectedMeals.length === 0 && !(selected === todayKey && doneToday.length > 0) && (
+
+          {selectedMeals.length === 0 && selectedWorkouts.length === 0 && (
             <p className="text-xs" style={{ color: "#333333" }}>Nothing logged this day.</p>
           )}
+
+          {/* Colour legend so the user knows what each dot means */}
           <div className="mt-2 pt-3 border-t" style={{ borderColor: "#1E1E1E" }}>
             <div className="flex flex-wrap gap-3">
               {Object.entries(CAT_COLORS).map(([cat, color]) => (
@@ -391,7 +599,7 @@ function WorkoutCalendar({ completedPlanItems, planDays, calendarData }) {
                 </div>
               ))}
               <div className="flex items-center gap-1">
-                <div className="w-[6px] h-[6px] rounded-full" style={{ background: "#C6F135" }} />
+                <div className="w-[6px] h-[6px] rounded-full" style={{ background: WORKOUT_COLOR }} />
                 <span className="text-[9px] uppercase tracking-widest" style={{ color: "#555555" }}>exercise</span>
               </div>
             </div>
@@ -402,29 +610,57 @@ function WorkoutCalendar({ completedPlanItems, planDays, calendarData }) {
   );
 }
 
+// ─── Main page component ──────────────────────────────────────────────────────
+
+// This is the main Exercise Library page.
+// It receives three props from App.jsx:
+//   calendarData          — the shared calendar state Sara's diet page also uses
+//   addWorkoutToCalendar  — function to add an exercise entry to the calendar
+//   currentUser           — the user profile read from localStorage after survey
 export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalendar, currentUser }) {
+
+  // I use the currentUser passed from App.jsx which already read the survey.
+  // If for any reason it is not passed I fall back to reading it myself
   const mockUser = currentUser || getUserProfile();
+
+  // State for the search and filter controls in the ALL EXERCISES section
   const [search,     setSearch]     = useState("");
   const [filterCat,  setFilterCat]  = useState("All");
   const [filterDiff, setFilterDiff] = useState("All");
+
+  // The user's current fitness level — starts from survey, can advance after completing plan
   const [userLevel,  setUserLevel]  = useState(mockUser.level);
+
+  // Counts how many times the user boosted intensity after finishing the plan
   const [boostCount, setBoostCount] = useState(0);
+
+  // Controls whether the plan complete modal is open
   const [planOpen,   setPlanOpen]   = useState(false);
+
+  // Toast notification state for brief feedback messages
   const [toastMsg,   setToastMsg]   = useState(null);
+
+  // I store which exercises the user has ticked in localStorage so
+  // the ticks persist if the user refreshes the page
   const [completedPlanItems, setCompletedPlanItems] = useState(() => {
     try { return JSON.parse(localStorage.getItem("completedPlanItems")) || {}; }
     catch { return {}; }
   });
 
+  // Keep localStorage in sync whenever ticks change
   useEffect(() => {
     localStorage.setItem("completedPlanItems", JSON.stringify(completedPlanItems));
   }, [completedPlanItems]);
 
+  // I use a ref to store the plan days so they do not re-randomise
+  // on every render — the plan only rebuilds when the level changes
   const planDaysRef = useRef(null);
   if (!planDaysRef.current) planDaysRef.current = buildPlanDays(userLevel);
-
   useEffect(() => { planDaysRef.current = buildPlanDays(userLevel); }, [userLevel, boostCount]);
 
+  // Builds the 14-day plan using my exercise matching algorithm.
+  // Every 4th day is a rest day. Days with 3 exercises happen every 3rd day.
+  // I use a 3-day repeat rule so the same exercise does not appear too often
   function buildPlanDays(level) {
     const pool = getMatchingExercises(mockUser.goal, level, mockUser.weightGoal);
     const lastUsed = {};
@@ -444,12 +680,38 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
     return days;
   }
 
+  // Figures out which plan day number corresponds to today by
+  // calculating how many days have passed since the plan started.
+  // The start date is saved to localStorage when the user first opens the page
+  function getTodayPlanDay() {
+    try {
+      const startStr = localStorage.getItem("planStartDate");
+      if (!startStr) {
+        localStorage.setItem("planStartDate", getTodayKey());
+        return 1;
+      }
+      const start    = new Date(startStr);
+      const today    = new Date(getTodayKey());
+      const diffDays = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+      const dayNum   = diffDays + 1;
+      return dayNum >= 1 && dayNum <= 14 ? dayNum : null;
+    } catch { return null; }
+  }
+
+  const todayPlanDay = getTodayPlanDay();
+
+  // Shows a brief toast notification at the bottom of the screen
   function showToast(text, color = "#C6F135") {
     setToastMsg({ text, color });
     setTimeout(() => setToastMsg(null), 3500);
   }
 
+  // Toggles an exercise tick on or off.
+  // I only allow ticking on today's plan day — past and future days are locked.
+  // When an exercise is ticked I push it to the shared calendarData via
+  // addWorkoutToCalendar so it appears as a dot on today's calendar cell
   function toggleExerciseDone(day, exerciseId) {
+    if (day !== todayPlanDay) return;
     const key    = `${day}-${exerciseId}`;
     const isDone = !completedPlanItems[key];
     setCompletedPlanItems(prev => ({ ...prev, [key]: isDone }));
@@ -467,6 +729,10 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
     }
   }
 
+  // Handles the plan continuation after Day 14.
+  // First 3 completions: same level with +15% reps each time.
+  // After 3 boosts: advance to the next fitness level.
+  // At max level: keep adding reps indefinitely
   function handlePlanContinue() {
     const levels = ["beginner", "intermediate", "advanced", "athlete"];
     const idx    = levels.indexOf(userLevel);
@@ -486,13 +752,16 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
     setPlanOpen(false);
   }
 
+  // Filters the all-exercises grid based on search text, category, and difficulty
   const filtered = exercises.filter(ex =>
     ex.name.toLowerCase().includes(search.toLowerCase()) &&
     (filterCat  === "All" || ex.category   === filterCat) &&
     (filterDiff === "All" || ex.difficulty === filterDiff)
   );
 
-  const weeks = Math.ceil(mockUser.totalGoal / mockUser.weeklyTarget);
+  // I read the timeline directly from the survey instead of
+  // calculating weeks — this shows exactly what the user chose (e.g. "3 months")
+  const timelineLabel = mockUser.timeline || "Ongoing";
 
   return (
     <>
@@ -510,8 +779,10 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
 
       <div style={{ background: "#080808", color: "#ECECEC", minHeight: "100vh", overflowX: "hidden" }}>
         <Navbar />
+
         <main className="max-w-6xl mx-auto px-6 md:px-10 py-12">
 
+          {/* ── Hero section ─────────────────────────────────────────── */}
           <header className="relative mb-14">
             <span aria-hidden="true" style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: "clamp(90px,20vw,200px)", color: "transparent", WebkitTextStroke: "1px #1E1E1E", lineHeight: 1, userSelect: "none", pointerEvents: "none", position: "absolute", top: "-10px", left: "-5px", zIndex: 0 }}>EX</span>
             <div className="relative z-10">
@@ -528,6 +799,8 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
             </div>
           </header>
 
+          {/* ── Plan summary ─────────────────────────────────────────── */}
+          {/* I display the user's goal, level, and weekly target from the survey */}
           <section className="a3 mb-10">
             <h2 className="mb-6" style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: "36px", color: "#ECECEC" }}>YOUR PLAN</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-px rounded-xl overflow-hidden mb-4" style={{ background: "#1E1E1E" }}>
@@ -544,30 +817,44 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
             </div>
             <p className="text-xs mb-6" style={{ color: "#333333" }}>
               Not your info?{" "}
-              <Link to="/profile" className="no-underline border-b" style={{ color: "#555555", borderColor: "#333333" }}>Update your profile →</Link>
+              <Link to="/profile" className="no-underline border-b" style={{ color: "#555555", borderColor: "#333333" }}>
+                Update your profile →
+              </Link>
             </p>
           </section>
 
+          {/* ── 14-day plan grid ─────────────────────────────────────── */}
+          {/* The timeline label reads from the survey instead of being hardcoded */}
           <section className="mb-16">
             <div className="flex flex-wrap items-baseline gap-3 mb-6">
               <h2 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: "36px", color: "#ECECEC" }}>14-DAY PLAN</h2>
               <span className="text-xs font-bold tracking-widest uppercase" style={{ color: "#333333" }}>
-                {mockUser.goal} · {userLevel} · {weeks} weeks total
+                {mockUser.goal} · {userLevel} · {timelineLabel}
               </span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
               {planDaysRef.current.map(({ day, isRest, picks }) => (
-                <PlanDayCard key={day} day={day} isRest={isRest} picks={picks}
-                  isDay14={day === 14} onDay14Click={() => setPlanOpen(true)}
+                <PlanDayCard
+                  key={day}
+                  day={day}
+                  isRest={isRest}
+                  picks={picks}
+                  isDay14={day === 14}
+                  onDay14Click={() => setPlanOpen(true)}
                   intensityBoostCount={boostCount}
                   completedPlanItems={completedPlanItems}
-                  onToggleDone={toggleExerciseDone} />
+                  onToggleDone={toggleExerciseDone}
+                  todayPlanDay={todayPlanDay}
+                />
               ))}
             </div>
           </section>
 
           <hr style={{ borderColor: "#1E1E1E", marginBottom: "64px" }} />
 
+          {/* ── Calendar ─────────────────────────────────────────────── */}
+          {/* I pass the shared calendarData from App.jsx so the calendar
+              shows Sara's meals and my exercise ticks in one place */}
           <WorkoutCalendar
             completedPlanItems={completedPlanItems}
             planDays={planDaysRef.current}
@@ -576,6 +863,7 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
 
           <hr style={{ borderColor: "#1E1E1E", marginBottom: "64px" }} />
 
+          {/* ── All exercises with search and filter ─────────────────── */}
           <section className="mb-6">
             <div className="flex flex-wrap items-baseline gap-3 mb-6">
               <h2 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: "36px", color: "#ECECEC" }}>ALL EXERCISES</h2>
@@ -583,8 +871,10 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
                 {filtered.length} exercise{filtered.length !== 1 ? "s" : ""}
               </span>
             </div>
-            <div className="rounded-xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6" style={{ background: "#0D0D0D", border: "1px solid #1E1E1E" }}>
-              <input type="text" placeholder="Search by name…" value={search} onChange={e => setSearch(e.target.value)}
+            <div className="rounded-xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6"
+              style={{ background: "#0D0D0D", border: "1px solid #1E1E1E" }}>
+              <input type="text" placeholder="Search by name…" value={search}
+                onChange={e => setSearch(e.target.value)}
                 className="rounded-lg px-4 py-3 text-sm focus:outline-none font-mono"
                 style={{ background: "#080808", border: "1px solid #2A2A2A", color: "#ECECEC" }} />
               <select value={filterCat} onChange={e => setFilterCat(e.target.value)}
@@ -605,9 +895,12 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
             </div>
           </section>
 
+          {/* Exercise cards grid — responsive from 1 to 4 columns */}
           {filtered.length === 0 ? (
             <div className="py-20 text-center">
-              <p className="text-xs font-bold tracking-widest uppercase" style={{ color: "#333333" }}>No exercises match your filters</p>
+              <p className="text-xs font-bold tracking-widest uppercase" style={{ color: "#333333" }}>
+                No exercises match your filters
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
@@ -617,18 +910,26 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
 
         </main>
 
+        {/* Plan complete modal */}
         {planOpen && (
-          <PlanCompleteModal userLevel={userLevel} intensityBoostCount={boostCount}
-            onContinue={handlePlanContinue} onClose={() => setPlanOpen(false)} />
+          <PlanCompleteModal
+            userLevel={userLevel}
+            intensityBoostCount={boostCount}
+            onContinue={handlePlanContinue}
+            onClose={() => setPlanOpen(false)}
+          />
         )}
 
+        {/* Toast notification — brief feedback at bottom left */}
         {toastMsg && (
           <div className="fixed bottom-6 left-6 z-[999] rounded-xl px-5 py-3 text-sm font-mono"
             style={{ background: "#0D0D0D", border: `1px solid ${toastMsg.color}`, color: "#ECECEC" }}>
             {toastMsg.text}
           </div>
         )}
+
       </div>
     </>
   );
 }
+
