@@ -10,7 +10,7 @@ import HomePage       from "./pages/HomePage";
 // ── Jawad's pages ─────────────────────────────────────────────
 import ExerciseLibrary    from "./pages/exerciseLibrary";
 import ExerciseDetailPage from "./pages/ExerciseDetailPage";
-import LogWorkoutPage from "./pages/LogWorkout";
+import LogWorkout from "./pages/LogWorkout";
 
 
 // ── Sara pages ─────────────────────────────────────
