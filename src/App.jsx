@@ -107,18 +107,6 @@ const Login = ({ email, setEmail, password, setPassword, rememberMe, setRemember
             no credentials? <Link to="/register" onClick={() => window.scrollTo(0, 0)}>join now</Link>
           </div>
 
-          {/* Demo credentials hint */}
-          <div style={{ marginTop: "20px", padding: "12px 16px", border: "1px solid #2A2A2A", background: "#0D0D0D" }}>
-            <div style={{ fontSize: "8px", letterSpacing: "0.2em", textTransform: "uppercase", color: "#555", marginBottom: "8px" }}>
-              // Demo Credentials
-            </div>
-            <div style={{ fontSize: "10px", color: "#C6F135", fontFamily: "JetBrains Mono, monospace" }}>
-              demo@fittrack.io
-            </div>
-            <div style={{ fontSize: "10px", color: "#555", fontFamily: "JetBrains Mono, monospace" }}>
-              demo123
-            </div>
-          </div>
         </div>
       </div>
     </section>
