@@ -6,11 +6,12 @@ import Navbar from "./components/Navbar";
 
 // ── Mohamad Kaddah's pages ────────────────────────────────────
 import HomePage       from "./pages/HomePage";
-import LogWorkoutPage from "./pages/LogWorkoutPage";
 
 // ── Jawad's pages ─────────────────────────────────────────────
 import ExerciseLibrary    from "./pages/exerciseLibrary";
 import ExerciseDetailPage from "./pages/ExerciseDetailPage";
+import LogWorkoutPage from "./pages/LogWorkout";
+
 
 // ── Sara pages ─────────────────────────────────────
 import DietProgram      from "./pages/DietProgram";
@@ -238,7 +239,6 @@ export default function App() {
 
             {/* Mohamad Kaddah */}
             <Route path="/dashboard" element={<HomePage calendarData={calendarData} currentUser={currentUser} deleteMealFromDay={deleteMealFromDay} togglePlanMeal={togglePlanMeal} loggedMeals={loggedMeals} />} />
-            <Route path="/log"       element={<LogWorkoutPage addWorkoutToCalendar={addWorkoutToCalendar} />} />
 
             {/* Sara Ibrahim */}
             <Route path="/diet"           element={<DietProgram currentUser={currentUser} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} />} />
@@ -249,6 +249,7 @@ export default function App() {
             {/* Jawad */}
             <Route path="/exercises"    element={<ExerciseLibrary calendarData={calendarData} addWorkoutToCalendar={addWorkoutToCalendar} currentUser={currentUser} />} />
             <Route path="/exercise/:id" element={<ExerciseDetailPage />} />
+            <Route path="/log" element={<LogWorkoutPage addWorkoutToCalendar={addWorkoutToCalendar} />} />
 
             {/* Mohammad Moghnieh */}
             <Route path="/profile"         element={<UserProfile user={currentUser} />} />
