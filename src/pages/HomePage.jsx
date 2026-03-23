@@ -13,10 +13,18 @@ const GOALS = {
   steps:     10000,
 };
 
-const CURRENT_PLAN = {
-  name:      "Hypertrophy Block - Week 3",
-  totalDays: 7,
+// Maps user's survey goal to a plan name
+const GOAL_TO_PLAN = {
+  gain_muscle:    "Hypertrophy Block",
+  gain:           "Muscle Gain Program",
+  lose_weight:    "Fat Loss Program",
+  lose:           "Fat Loss Program",
+  improve_cardio: "Cardio Endurance Plan",
+  stay_healthy:   "General Fitness Plan",
+  maintain:       "Maintenance Program",
 };
+
+const PLAN_TOTAL_DAYS = 7;
 
 const ACHIEVEMENTS = [
   { emoji: "🏆", name: "First Workout Completed", sub: "Your journey begins - Unlocked", color: "#C6F135", locked: false },
@@ -124,6 +132,9 @@ function EditableStatCard({ label, value, unit, goal, color, onSave }) {
 export default function HomePage({ calendarData = {}, currentUser, deleteMealFromDay, togglePlanMeal, loggedMeals = {} }) {
   const navigate = useNavigate();
 
+  // Derive plan name from user's survey goal — falls back to default if no user
+  const planName = GOAL_TO_PLAN[currentUser?.goal] || "Your Fitness Plan";
+
   // Stats state — all start at 0
   const [caloriesIntake, setCaloriesIntake] = useState(0);
   const [caloriesBurnt,  setCaloriesBurnt]  = useState(0);
@@ -139,7 +150,7 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
   const [calMonth,    setCalMonth]    = useState(todayDate.getMonth());
   const [selectedDay, setSelectedDay] = useState(today);
 
-  const planProgress = Math.round((daysCompleted / CURRENT_PLAN.totalDays) * 100);
+  const planProgress = Math.round((daysCompleted / PLAN_TOTAL_DAYS) * 100);
 
   // Calendar helpers
   function changeMonth(direction) {
@@ -199,10 +210,14 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
       <div className="border-b border-[#1E1E1E]">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between px-6 md:px-14 pt-10 pb-8 border-b border-[#1E1E1E] gap-4">
           <div>
-            <div className="text-[8px] tracking-[0.25em] uppercase text-[#FF2A5E] mb-2">// 001 - Workout Dashboard</div>
             <h1 className="font-['Barlow_Condensed'] font-black text-5xl md:text-6xl uppercase leading-none tracking-tight">
               Today's <em className="not-italic text-[#C6F135]">Stats</em>
             </h1>
+            {currentUser?.name && (
+              <div className="text-[9px] tracking-[0.2em] uppercase text-[#555] mt-2">
+                Welcome back, {currentUser.name}
+              </div>
+            )}
           </div>
           <div className="text-[9px] tracking-[0.2em] uppercase text-[#555]">
             {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
@@ -238,7 +253,6 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
       <div className="border-b border-[#1E1E1E]">
         <div className="flex items-end justify-between px-6 md:px-14 pt-10 pb-8 border-b border-[#1E1E1E]">
           <div>
-            <div className="text-[8px] tracking-[0.25em] uppercase text-[#FF2A5E] mb-2">// 002 - Plan and Achievements</div>
             <h2 className="font-['Barlow_Condensed'] font-black text-4xl md:text-5xl uppercase leading-none tracking-tight">
               Your <em className="not-italic text-[#C6F135]">Progress</em>
             </h2>
@@ -248,15 +262,18 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
         <div className="grid grid-cols-1 lg:grid-cols-2">
           <div className="px-6 md:px-14 py-10 border-b lg:border-b-0 lg:border-r border-[#1E1E1E]">
             <div className="text-[8px] tracking-[0.2em] uppercase text-[#555] mb-2">Current Plan</div>
-            <div className="font-['Barlow_Condensed'] font-bold text-2xl uppercase mb-8">{CURRENT_PLAN.name}</div>
+
+            {/* Plan name derived from user's survey goal */}
+            <div className="font-['Barlow_Condensed'] font-bold text-2xl uppercase mb-8">{planName}</div>
+
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-8 mb-8">
-              <RingProgress value={daysCompleted} max={CURRENT_PLAN.totalDays} color="#C6F135" size={120} stroke={8}>
+              <RingProgress value={daysCompleted} max={PLAN_TOTAL_DAYS} color="#C6F135" size={120} stroke={8}>
                 <span className="font-['Barlow_Condensed'] font-black text-3xl text-[#C6F135] leading-none">{planProgress}%</span>
               </RingProgress>
               <div className="flex flex-col gap-3">
                 <div className="text-[9px] tracking-[0.15em] uppercase text-[#555]">Click a day to mark it done</div>
                 <div className="flex gap-2 flex-wrap mt-1">
-                  {Array.from({ length: CURRENT_PLAN.totalDays }).map((_, i) => (
+                  {Array.from({ length: PLAN_TOTAL_DAYS }).map((_, i) => (
                     <button key={i}
                       onClick={() => setDaysCompleted(i < daysCompleted ? i : i + 1)}
                       className="w-9 h-9 border flex items-center justify-center text-[10px] transition-colors cursor-pointer"
@@ -268,9 +285,10 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
                     </button>
                   ))}
                 </div>
-                <div className="text-[9px] tracking-widest text-[#555]">{daysCompleted} / {CURRENT_PLAN.totalDays} Days Completed</div>
+                <div className="text-[9px] tracking-widest text-[#555]">{daysCompleted} / {PLAN_TOTAL_DAYS} Days Completed</div>
               </div>
             </div>
+
             <div className="border border-[#1E1E1E] p-4">
               <div className="flex justify-between items-center mb-3">
                 <span className="text-[8px] tracking-[0.2em] uppercase text-[#555]">Completion</span>
@@ -308,7 +326,6 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
       <div className="border-b border-[#1E1E1E]">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between px-6 md:px-14 pt-10 pb-8 border-b border-[#1E1E1E] gap-4">
           <div>
-            <div className="text-[8px] tracking-[0.25em] uppercase text-[#FF2A5E] mb-2">// 003 - Activity Log</div>
             <h2 className="font-['Barlow_Condensed'] font-black text-4xl md:text-5xl uppercase leading-none tracking-tight">
               Activity <em className="not-italic text-[#C6F135]">Calendar</em>
             </h2>
@@ -443,12 +460,6 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
           </div>
         </div>
       </div>
-
-      {/* Footer */}
-      <footer className="px-6 md:px-14 py-8 flex items-center justify-between border-t border-[#1E1E1E]">
-        <div className="font-['Barlow_Condensed'] font-black text-xl text-[#C6F135] uppercase">FitTrack</div>
-        <div className="text-[8px] tracking-[0.2em] uppercase text-[#555]">2026 FitTrack v3.0.0</div>
-      </footer>
 
     </div>
   );
