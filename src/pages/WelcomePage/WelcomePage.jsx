@@ -25,12 +25,12 @@ const Welcome = () => {
       </div>
 
       {/* Hero Section */}
-      <div className="welcome-hero pt-20 md:pt-24">
+      <div className="welcome-hero pt-28 md:pt-32">
         <div className="welcome-grid">
           {/* Left Column - Text Content */}
           <div className="welcome-content">
       
-            <h1 className="welcome-title">
+            <h1 className="welcome-title pt-4 pb-2 md:pt-6 md:pb-4">
               transform your
               <em>fitness journey</em>
             </h1>
