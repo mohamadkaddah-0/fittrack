@@ -7,10 +7,12 @@ import Navbar from "./components/Navbar";
 // ── Mohamad Kaddah's pages ────────────────────────────────────
 import HomePage       from "./pages/HomePage";
 import LogWorkoutPage from "./pages/LogWorkoutPage";
-// ── Jawad's pages ────────────────────────────────────
-import ExerciseLibrary from "./pages/exerciseLibrary";
-import ExerciseDetailPage  from "./pages/ExerciseDetailPage";
-// ── Diet teammate's pages ─────────────────────────────────────
+
+// ── Jawad's pages ─────────────────────────────────────────────
+import ExerciseLibrary    from "./pages/exerciseLibrary";
+import ExerciseDetailPage from "./pages/ExerciseDetailPage";
+
+// ── Sara pages ─────────────────────────────────────
 import DietProgram      from "./pages/DietProgram";
 import MealLog          from "./pages/MealLog";
 import IngredientDetail from "./pages/IngredientDetail";
@@ -27,10 +29,6 @@ import ReadySurvey    from "./pages/survey/ReadySurvey";
 import Welcome        from "./pages/WelcomePage/WelcomePage";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword  from "./pages/ResetPassword";
-
-// ── Other teammates — uncomment when ready ────────────────────
-// import ListViewPage    from "./pages/ListViewPage";
-// import DetailView1Page from "./pages/DetailView1Page";
 
 // ── Pages that should NOT show the navbar ─────────────────────
 const NO_NAVBAR_ROUTES = [
@@ -107,6 +105,19 @@ const Login = ({ email, setEmail, password, setPassword, rememberMe, setRemember
           <div className="auth-foot">
             no credentials? <Link to="/register" onClick={() => window.scrollTo(0, 0)}>join now</Link>
           </div>
+
+          {/* Demo credentials hint */}
+          <div style={{ marginTop: "20px", padding: "12px 16px", border: "1px solid #2A2A2A", background: "#0D0D0D" }}>
+            <div style={{ fontSize: "8px", letterSpacing: "0.2em", textTransform: "uppercase", color: "#555", marginBottom: "8px" }}>
+              // Demo Credentials
+            </div>
+            <div style={{ fontSize: "10px", color: "#C6F135", fontFamily: "JetBrains Mono, monospace" }}>
+              demo@fittrack.io
+            </div>
+            <div style={{ fontSize: "10px", color: "#555", fontFamily: "JetBrains Mono, monospace" }}>
+              demo123
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -130,8 +141,8 @@ export default function App() {
   };
 
   const addWorkoutToCalendar = (dateKey, entry) => {
-  const existing = calendarData[dateKey] || [];
-  setCalendarData({ ...calendarData, [dateKey]: [...existing, { ...entry, type: "workout" }] });
+    const existing = calendarData[dateKey] || [];
+    setCalendarData({ ...calendarData, [dateKey]: [...existing, { ...entry, type: "workout" }] });
   };
 
   const deleteMealFromDay = (dateKey, index) => {
@@ -177,27 +188,27 @@ export default function App() {
   ];
 
   const handleLogin = async (e) => {
-  e.preventDefault();
-  setMessage({ text: "", type: "info" });
-  await new Promise((r) => setTimeout(r, 1000));
-  
-  // First check mock users (demo accounts)
-  let foundUser = mockUsers.find((u) => u.email === email && u.password === password);
-  
-  // If not found in mock users, check registered users from localStorage
-  if (!foundUser) {
-    const registeredUsers = JSON.parse(localStorage.getItem('fittrack_logins') || '[]');
-    foundUser = registeredUsers.find((u) => u.email === email && u.password === password);
-  }
-  
-  if (foundUser) {
-    setCurrentUser({ name: foundUser.name, email: foundUser.email });
-    setMessage({ text: `Welcome back, ${foundUser.name}!`, type: "success" });
-    setTimeout(() => { window.location.href = "/ready-survey"; }, 1000);
-  } else {
-    setMessage({ text: "Invalid email or password", type: "error" });
-  }
-};
+    e.preventDefault();
+    setMessage({ text: "", type: "info" });
+    await new Promise((r) => setTimeout(r, 1000));
+
+    // Check mock users first
+    let foundUser = mockUsers.find((u) => u.email === email && u.password === password);
+
+    // If not found, check registered users from localStorage
+    if (!foundUser) {
+      const registeredUsers = JSON.parse(localStorage.getItem("fittrack_logins") || "[]");
+      foundUser = registeredUsers.find((u) => u.email === email && u.password === password);
+    }
+
+    if (foundUser) {
+      setCurrentUser({ name: foundUser.name, email: foundUser.email });
+      setMessage({ text: `Welcome back, ${foundUser.name}!`, type: "success" });
+      setTimeout(() => { window.location.href = "/ready-survey"; }, 1000);
+    } else {
+      setMessage({ text: "Invalid email or password", type: "error" });
+    }
+  };
 
   const isFormValid = () => email.includes("@") && email.includes(".") && password.length >= 3;
 
@@ -221,21 +232,22 @@ export default function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password"  element={<ResetPassword />} />
             <Route path="/ready-survey"    element={<ReadySurvey />} />
-           <Route path="/surveys" element={<Survey setCurrentUser={setCurrentUser} />} />
+            <Route path="/surveys"         element={<Survey setCurrentUser={setCurrentUser} />} />
+
             {/* ── App pages (navbar shown) ── */}
 
             {/* Mohamad Kaddah */}
-            <Route path="/dashboard" element={<HomePage calendarData={calendarData} currentUser={currentUser} />} />
-            <Route path="/log"       element={<LogWorkoutPage />} />
+            <Route path="/dashboard" element={<HomePage calendarData={calendarData} currentUser={currentUser} deleteMealFromDay={deleteMealFromDay} togglePlanMeal={togglePlanMeal} loggedMeals={loggedMeals} />} />
+            <Route path="/log"       element={<LogWorkoutPage addWorkoutToCalendar={addWorkoutToCalendar} />} />
 
             {/* Sara Ibrahim */}
             <Route path="/diet"           element={<DietProgram currentUser={currentUser} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} />} />
             <Route path="/diet-program"   element={<DietProgram currentUser={currentUser} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} />} />
             <Route path="/meal-log"       element={<MealLog currentUser={currentUser} calendarData={calendarData} savedMeals={savedMeals} addMealToCalendar={addMealToCalendar} saveCustomMeal={saveCustomMeal} deleteSavedMeal={deleteSavedMeal} />} />
             <Route path="/ingredient/:id" element={<IngredientDetail />} />
-            
+
             {/* Jawad */}
-            <Route path="/exercises"    element={<ExerciseLibrary calendarData={calendarData} addWorkoutToCalendar={addWorkoutToCalendar} currentUser={currentUser} />} />   
+            <Route path="/exercises"    element={<ExerciseLibrary calendarData={calendarData} addWorkoutToCalendar={addWorkoutToCalendar} currentUser={currentUser} />} />
             <Route path="/exercise/:id" element={<ExerciseDetailPage />} />
 
             {/* Mohammad Moghnieh */}
@@ -245,13 +257,9 @@ export default function App() {
             <Route path="/privacy"         element={<Privacy />} />
             <Route path="/support"         element={<Support />} />
 
-            {/* ── Other teammates — uncomment when ready ── */}
-            {/* <Route path="/exercises"    element={<ListViewPage />} /> */}
-            {/* <Route path="/exercise/:id" element={<DetailView1Page />} /> */}
-
           </Routes>
 
-          {/* Footer — only on app pages */}
+          {/* Footer only on app pages */}
           <AppFooter />
         </AppLayout>
       </BrowserRouter>

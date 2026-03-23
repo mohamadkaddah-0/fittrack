@@ -121,7 +121,7 @@ function EditableStatCard({ label, value, unit, goal, color, onSave }) {
 // MAIN PAGE COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function HomePage({ calendarData = {}, currentUser }) {
+export default function HomePage({ calendarData = {}, currentUser, deleteMealFromDay, togglePlanMeal, loggedMeals = {} }) {
   const navigate = useNavigate();
 
   // Stats state — all start at 0
@@ -199,6 +199,7 @@ export default function HomePage({ calendarData = {}, currentUser }) {
       <div className="border-b border-[#1E1E1E]">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between px-6 md:px-14 pt-10 pb-8 border-b border-[#1E1E1E] gap-4">
           <div>
+            <div className="text-[8px] tracking-[0.25em] uppercase text-[#FF2A5E] mb-2">// 001 - Workout Dashboard</div>
             <h1 className="font-['Barlow_Condensed'] font-black text-5xl md:text-6xl uppercase leading-none tracking-tight">
               Today's <em className="not-italic text-[#C6F135]">Stats</em>
             </h1>
@@ -237,6 +238,7 @@ export default function HomePage({ calendarData = {}, currentUser }) {
       <div className="border-b border-[#1E1E1E]">
         <div className="flex items-end justify-between px-6 md:px-14 pt-10 pb-8 border-b border-[#1E1E1E]">
           <div>
+            <div className="text-[8px] tracking-[0.25em] uppercase text-[#FF2A5E] mb-2">// 002 - Plan and Achievements</div>
             <h2 className="font-['Barlow_Condensed'] font-black text-4xl md:text-5xl uppercase leading-none tracking-tight">
               Your <em className="not-italic text-[#C6F135]">Progress</em>
             </h2>
@@ -306,6 +308,7 @@ export default function HomePage({ calendarData = {}, currentUser }) {
       <div className="border-b border-[#1E1E1E]">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between px-6 md:px-14 pt-10 pb-8 border-b border-[#1E1E1E] gap-4">
           <div>
+            <div className="text-[8px] tracking-[0.25em] uppercase text-[#FF2A5E] mb-2">// 003 - Activity Log</div>
             <h2 className="font-['Barlow_Condensed'] font-black text-4xl md:text-5xl uppercase leading-none tracking-tight">
               Activity <em className="not-italic text-[#C6F135]">Calendar</em>
             </h2>
