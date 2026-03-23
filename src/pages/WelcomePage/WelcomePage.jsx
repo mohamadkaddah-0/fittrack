@@ -7,7 +7,7 @@ const Welcome = () => {
     <section className="welcome-section">
       {/* Logo with Welcome Text */}
       <div className="absolute top-4 left-4 md:top-8 md:left-8 z-50">
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-4">
+        <div className="flex flex-row items-center gap-2 md:gap-4">
           <Link 
             to="/" 
             className="font-['Barlow_Condensed'] font-black tracking-wider uppercase text-[#C6F135] no-underline hover:opacity-80 transition-opacity"
