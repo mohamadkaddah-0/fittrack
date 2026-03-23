@@ -17,7 +17,7 @@ const Welcome = () => {
           </Link>
           
           <div className="border-l-0 md:border-l border-[#1E1E1E] md:pl-5 md:ml-2">
-            <span className="text-[10px] md:text-xs tracking-[0.2em] uppercase text-[#C6F135] font-['JetBrains_Mono']">
+            <span className="text-[7px] md:text-xs tracking-[0.2em] uppercase text-[#C6F135] font-['JetBrains_Mono']">
               WELCOME, YOUR JOURNEY STARTS HERE
             </span>
           </div>
