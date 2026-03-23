@@ -6,11 +6,12 @@ import Navbar from "./components/Navbar";
 
 // ── Mohamad Kaddah's pages ────────────────────────────────────
 import HomePage       from "./pages/HomePage";
+import LogWorkoutPage from "./pages/LogWorkoutPage";
 
 // ── Jawad's pages ─────────────────────────────────────────────
 import ExerciseLibrary    from "./pages/exerciseLibrary";
 import ExerciseDetailPage from "./pages/ExerciseDetailPage";
-import LogWorkout from "./pages/LogWorkout";
+
 
 
 // ── Sara pages ─────────────────────────────────────
@@ -237,8 +238,7 @@ export default function App() {
             {/* Jawad */}
             <Route path="/exercises"    element={<ExerciseLibrary calendarData={calendarData} addWorkoutToCalendar={addWorkoutToCalendar} currentUser={currentUser} />} />
             <Route path="/exercise/:id" element={<ExerciseDetailPage />} />
-            <Route path="/log" element={<LogWorkout addWorkoutToCalendar={addWorkoutToCalendar} />} />
-
+            <Route path="/log" element={<LogWorkoutPage addWorkoutToCalendar={addWorkoutToCalendar} />} />
             {/* Mohammad Moghnieh */}
             <Route path="/profile"         element={<UserProfile user={currentUser} />} />
             <Route path="/profile/:userId" element={<UserProfile />} />
