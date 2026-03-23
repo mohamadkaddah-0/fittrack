@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
-import Navbar from "../components/Navbar";
 import { EXERCISES, getExercisePlan, getUserProfile, isRiskyForUser } from "../data/mockData";
 
 function getCatColor(category) {
@@ -151,7 +150,6 @@ export default function ExerciseDetailPage() {
       `}</style>
 
       <div style={{ minHeight: "100vh", background: "#080808", color: "#ECECEC" }}>
-        <Navbar />
 
         <main style={{ maxWidth: "1200px", margin: "0 auto", padding: "40px 24px" }}>
 
