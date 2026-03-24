@@ -143,6 +143,14 @@ export default function App() {
     setCalendarData(newCalendar);
   };
 
+  const deleteWorkoutFromDay = (dateKey, index) => {
+  const existing    = calendarData[dateKey] || [];
+  const updated     = existing.filter((_, i) => i !== index);
+  const newCalendar = { ...calendarData };
+  if (updated.length === 0) { delete newCalendar[dateKey]; } else { newCalendar[dateKey] = updated; }
+  setCalendarData(newCalendar);
+  };
+
   const togglePlanMeal = (meal) => {
     const today        = getTodayKey();
     const todayChecked = new Set(loggedMeals[today] || []);
@@ -227,7 +235,7 @@ export default function App() {
             {/* ── App pages (navbar shown) ── */}
 
             {/* Mohamad Kaddah */}
-            <Route path="/dashboard" element={<HomePage calendarData={calendarData} currentUser={currentUser} deleteMealFromDay={deleteMealFromDay} togglePlanMeal={togglePlanMeal} loggedMeals={loggedMeals} />} />
+            <Route path="/dashboard" element={<HomePage calendarData={calendarData} currentUser={currentUser} deleteMealFromDay={deleteMealFromDay} deleteWorkoutFromDay={deleteWorkoutFromDay} togglePlanMeal={togglePlanMeal} loggedMeals={loggedMeals} />} />
 
             {/* Sara Ibrahim */}
             <Route path="/diet"           element={<DietProgram currentUser={currentUser} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} />} />

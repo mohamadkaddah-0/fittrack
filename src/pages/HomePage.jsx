@@ -155,7 +155,7 @@ function EditableStatCard({ label, value, unit, goal, color, onSave }) {
 // MAIN PAGE COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function HomePage({ calendarData = {}, currentUser, deleteMealFromDay, togglePlanMeal, loggedMeals = {} }) {
+export default function HomePage({ calendarData = {}, currentUser, deleteMealFromDay, deleteWorkoutFromDay, togglePlanMeal, loggedMeals = {} }) {
   const navigate = useNavigate();
 
   // Derive plan name from user's survey goal — falls back to default if no user
@@ -458,18 +458,34 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
                   <div>
                     <p className="text-[8px] tracking-widest uppercase text-[#555] mb-2">Meals</p>
                     <ul>
-                      {selectedMeals.map((entry, i) => (
-                        <li key={i} className="flex items-center justify-between py-2 border-b last:border-b-0 border-[#1E1E1E]">
-                          <div className="flex items-center gap-2">
-                            <div className="w-[6px] h-[6px] rounded-full flex-shrink-0" style={{ background: MEAL_CAT_COLORS[entry.cat] || "#555" }} />
-                            <div>
-                              <p className="text-xs font-bold text-[#e8e8e8]">{entry.name}</p>
-                              <p className="text-xs text-[#555] capitalize">{entry.cat}</p>
-                            </div>
-                          </div>
-                          <p className="text-xs font-bold text-[#C6F135]">{entry.kcal} kcal</p>
-                        </li>
-                      ))}
+                      {selectedDay !== today && selectedDayEntries.length > 0 && (
+  <p className="text-xs text-[#555] mb-2 italic">Past day — read only</p>
+)}
+{selectedMeals.map((entry, i) => (
+  <li key={i} className="flex items-center justify-between py-2 border-b last:border-b-0 border-[#1E1E1E]">
+    <div className="flex items-center gap-2">
+      <div className="w-[6px] h-[6px] rounded-full flex-shrink-0" style={{ background: MEAL_CAT_COLORS[entry.cat] || "#555" }} />
+      <div>
+        <p className="text-xs font-bold text-[#e8e8e8]">{entry.name}</p>
+        <p className="text-xs text-[#555] capitalize">{entry.cat}</p>
+      </div>
+    </div>
+    <div className="flex items-center gap-3">
+      <p className="text-xs font-bold text-[#C6F135]">{entry.kcal} kcal</p>
+      {selectedDay === today && deleteMealFromDay && (
+        <button
+          onClick={() => {
+            deleteMealFromDay(selectedDay, i);
+            const checkedSet = loggedMeals?.[today] || new Set();
+            if (togglePlanMeal && checkedSet.has?.(entry.name)) togglePlanMeal(entry);
+          }}
+          className="w-6 h-6 border border-[#222] text-[#555] hover:border-[#FF2A5E] hover:text-[#FF2A5E] flex items-center justify-center text-xs transition-colors">
+          ✕
+        </button>
+      )}
+    </div>
+  </li>
+))}
                     </ul>
                   </div>
                 )}
@@ -478,17 +494,26 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
                     <p className="text-[8px] tracking-widest uppercase text-[#555] mb-2">Workouts</p>
                     <ul>
                       {selectedWorkouts.map((entry, i) => (
-                        <li key={i} className="flex items-center justify-between py-2 border-b last:border-b-0 border-[#1E1E1E]">
-                          <div className="flex items-center gap-2">
-                            <div className="w-[6px] h-[6px] rounded-sm flex-shrink-0" style={{ background: WORKOUT_COLOR }} />
-                            <div>
-                              <p className="text-xs font-bold text-[#e8e8e8]">{entry.name}</p>
-                              <p className="text-xs text-[#555] capitalize">{entry.cat || "workout"}</p>
-                            </div>
-                          </div>
-                          <p className="text-xs font-bold" style={{ color: WORKOUT_COLOR }}>{entry.caloriesBurned || 0} kcal burned</p>
-                        </li>
-                      ))}
+  <li key={i} className="flex items-center justify-between py-2 border-b last:border-b-0 border-[#1E1E1E]">
+    <div className="flex items-center gap-2">
+      <div className="w-[6px] h-[6px] rounded-sm flex-shrink-0" style={{ background: WORKOUT_COLOR }} />
+      <div>
+        <p className="text-xs font-bold text-[#e8e8e8]">{entry.name}</p>
+        <p className="text-xs text-[#555] capitalize">{entry.cat || "workout"}</p>
+      </div>
+    </div>
+    <div className="flex items-center gap-3">
+      <p className="text-xs font-bold" style={{ color: WORKOUT_COLOR }}>{entry.caloriesBurned || 0} kcal burned</p>
+      {selectedDay === today && deleteWorkoutFromDay && (
+        <button
+          onClick={() => deleteWorkoutFromDay(selectedDay, i)}
+          className="w-6 h-6 border border-[#222] text-[#555] hover:border-[#FF2A5E] hover:text-[#FF2A5E] flex items-center justify-center text-xs transition-colors">
+          ✕
+        </button>
+      )}
+    </div>
+  </li>
+))}
                     </ul>
                   </div>
                 )}
