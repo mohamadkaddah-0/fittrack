@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BrowserRouter, Routes, Route, Link, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from "react-router-dom";
 
 // ── Shared components ─────────────────────────────────────────
 import Navbar from "./components/Navbar";
@@ -59,13 +59,30 @@ function AppLayout({ children }) {
 }
 
 // ── Mohammad Moghnieh — Login component ──────────────────────
-const Login = ({ email, setEmail, password, setPassword, rememberMe, setRememberMe, message, showExtraInfo, setShowExtraInfo, handleLogin, isFormValid }) => {
+const Login = ({ 
+  email, 
+  setEmail, 
+  password, 
+  setPassword, 
+  rememberMe, 
+  setRememberMe, 
+  message, 
+  setMessage, 
+  showExtraInfo, 
+  setShowExtraInfo, 
+  handleLogin, 
+  isFormValid,
+  isLoading 
+}) => {
+
+   const navigate = useNavigate();
+
   return (
     <section className="login-section">
       <div className="absolute top-6 left-6 z-10">
         <button
-          onClick={() => window.location.href = "/dashboard"}
-          className="font-['Barlow_Condensed'] text-2xl font-black tracking-wider uppercase text-[#C6F135] bg-transparent border-none cursor-pointer"
+          onClick={() => navigate("/")}
+          className="font-['Barlow_Condensed'] text-2xl font-black tracking-wider uppercase text-[#C6F135] bg-transparent border-none cursor-pointer hover:opacity-80 transition-opacity"
         >
           FitTrack<sup className="text-xs">™</sup>
         </button>
@@ -73,31 +90,64 @@ const Login = ({ email, setEmail, password, setPassword, rememberMe, setRemember
       <div className="login-card">
         <div className="login-ghost">//</div>
         <div className="login-header">
-          <div className="login-title">member<em>login</em></div>
+          <div className="login-title">
+            member
+            <em>login</em>
+          </div>
         </div>
         <div className="login-body">
           <form onSubmit={handleLogin}>
             <div className="field">
-              <label className="field-label" htmlFor="email">EMAIL ADDRESS</label>
-              <input type="email" id="email"
+              <label className="field-label" htmlFor="email">
+                EMAIL ADDRESS
+              </label>
+              <input 
+                type="email" 
+                id="email"
                 className="field-input bg-[var(--bg)] text-[var(--text)] border border-[var(--line)] font-['JetBrains_Mono'] text-xs p-[13px_16px] outline-none transition-colors duration-200 focus:border-[var(--cyan)]"
-                placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                placeholder="you@example.com" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                required 
+                disabled={isLoading}
+              />
             </div>
             <div className="field">
-              <label className="field-label" htmlFor="password">PASSWORD</label>
-              <input type="password" id="password"
+              <label className="field-label" htmlFor="password">
+                PASSWORD
+              </label>
+              <input 
+                type="password" 
+                id="password"
                 className="field-input bg-[var(--bg)] text-[var(--text)] border border-[var(--line)] font-['JetBrains_Mono'] text-xs p-[13px_16px] outline-none transition-colors duration-200 focus:border-[var(--cyan)]"
-                placeholder="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength="3" />
+                placeholder="password" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                required 
+                minLength="3"
+                disabled={isLoading}
+              />
             </div>
             <div className="login-options">
               <label className="checkbox-item">
-                <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
+                <input 
+                  type="checkbox" 
+                  checked={rememberMe} 
+                  onChange={(e) => setRememberMe(e.target.checked)} 
+                  disabled={isLoading}
+                />
                 keep me logged in
               </label>
-              <Link to="/forgot-password" className="forgot-link">reset passphrase</Link>
+              <Link to="/forgot-password" className="forgot-link">
+                reset passphrase
+              </Link>
             </div>
-            <button type="submit" className="btn-submit" disabled={!isFormValid()}>
-              <span>Login</span>
+            <button 
+              type="submit" 
+              className="btn-submit" 
+              disabled={!isFormValid() || isLoading}
+            >
+              <span>{isLoading ? 'LOGGING IN...' : 'Login'}</span>
             </button>
           </form>
           {message.text && (
@@ -108,7 +158,6 @@ const Login = ({ email, setEmail, password, setPassword, rememberMe, setRemember
           <div className="auth-foot">
             no credentials? <Link to="/register" onClick={() => window.scrollTo(0, 0)}>join now</Link>
           </div>
-
         </div>
       </div>
     </section>
@@ -125,6 +174,8 @@ export default function App() {
   const [calendarData, setCalendarData] = useState(INITIAL_CALENDAR);
   const [loggedMeals,  setLoggedMeals]  = useState({});
   const [savedMeals,   setSavedMeals]   = useState([]);
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const addMealToCalendar = (dateKey, entry) => {
     const existing = calendarData[dateKey] || [];
@@ -187,27 +238,68 @@ export default function App() {
   ];
 
   const handleLogin = async (e) => {
-    e.preventDefault();
-    setMessage({ text: "", type: "info" });
-    await new Promise((r) => setTimeout(r, 1000));
+  e.preventDefault();
+  setMessage({ text: "", type: "info" });
+  setIsLoading(true);
+  
+  await new Promise((r) => setTimeout(r, 1000));
 
+  try {
     // Check mock users first
     let foundUser = mockUsers.find((u) => u.email === email && u.password === password);
+    let userId = null;
 
     // If not found, check registered users from localStorage
     if (!foundUser) {
-      const registeredUsers = JSON.parse(localStorage.getItem("fittrack_logins") || "[]");
+      const registeredUsers = JSON.parse(localStorage.getItem("fittrack_users") || "[]");
       foundUser = registeredUsers.find((u) => u.email === email && u.password === password);
+      if (foundUser) {
+        userId = foundUser.id;
+      }
+    } else {
+      // For mock users, create an ID
+      userId = Date.now();
     }
 
     if (foundUser) {
-      setCurrentUser({ name: foundUser.name, email: foundUser.email });
-      setMessage({ text: `Welcome back, ${foundUser.name}!`, type: "success" });
-      setTimeout(() => { window.location.href = "/dashboard"; }, 1000);
+      // Create user object with ID
+      const userObject = {
+        id: userId || foundUser.id || Date.now(),
+        name: foundUser.name,
+        email: foundUser.email,
+        username: foundUser.username || foundUser.name.toLowerCase().replace(/\s/g, '')
+      };
+      
+      // Save to state
+      setCurrentUser(userObject);
+      
+      // IMPORTANT: Save to session storage with ID
+      sessionStorage.setItem('currentUser', JSON.stringify(userObject));
+      
+      setMessage({ 
+        text: `Welcome back, ${foundUser.name}! Redirecting to dashboard...`, 
+        type: "success" 
+      });
+      
+      // Clear form
+      setEmail("");
+      setPassword("");
+      setRememberMe(false);
+      
+      // Redirect after delay
+      setTimeout(() => { 
+        window.location.href = "/dashboard"; 
+      }, 1000);
     } else {
       setMessage({ text: "Invalid email or password", type: "error" });
     }
-  };
+  } catch (error) {
+    console.error('Login error:', error);
+    setMessage({ text: "An error occurred during login. Please try again.", type: "error" });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const isFormValid = () => email.includes("@") && email.includes(".") && password.length >= 3;
 
@@ -226,7 +318,26 @@ export default function App() {
             <Route path="/get-started" element={<Welcome />} />
 
             {/* ── Auth pages (no navbar) ── */}
-            <Route path="/login"           element={<Login email={email} setEmail={setEmail} password={password} setPassword={setPassword} rememberMe={rememberMe} setRememberMe={setRememberMe} message={message} setMessage={setMessage} showExtraInfo={showExtraInfo} setShowExtraInfo={setShowExtraInfo} handleLogin={handleLogin} isFormValid={isFormValid} />} />
+            <Route 
+              path="/login" 
+              element={
+                <Login 
+                  email={email} 
+                  setEmail={setEmail} 
+                  password={password} 
+                  setPassword={setPassword} 
+                  rememberMe={rememberMe} 
+                  setRememberMe={setRememberMe} 
+                  message={message} 
+                  setMessage={setMessage} 
+                  showExtraInfo={showExtraInfo} 
+                  setShowExtraInfo={setShowExtraInfo} 
+                  handleLogin={handleLogin} 
+                  isFormValid={isFormValid}
+                  isLoading={isLoading}
+                />
+              } 
+            />
             <Route path="/register"        element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password"  element={<ResetPassword />} />
