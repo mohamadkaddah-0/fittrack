@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import './Register.css';
-
 
 const Register = () => {
   const navigate = useNavigate();
-  
+  const location = useLocation();
   
   // State for form inputs
   const [formData, setFormData] = useState({
@@ -25,6 +24,49 @@ const Register = () => {
     label: ''
   });
   const [message, setMessage] = useState({ text: '', type: '' });
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    const saveTimeout = setTimeout(() => {
+      localStorage.setItem('register_form_data', JSON.stringify(formData));
+    }, 100);
+    
+    return () => clearTimeout(saveTimeout);
+  }, [formData]);
+
+  // Load saved form data on component mount
+  useEffect(() => {
+    const savedData = localStorage.getItem('register_form_data');
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        setFormData(parsedData);
+        
+        // Re-check password strength if password exists
+        if (parsedData.password) {
+          setPasswordStrength(checkPasswordStrength(parsedData.password));
+        }
+      } catch (error) {
+        console.error('Error loading saved form data:', error);
+      }
+    }
+  }, []);
+
+  // Clear saved form data when registration is successful
+  useEffect(() => {
+    if (message.type === 'success') {
+      localStorage.removeItem('register_form_data');
+    }
+  }, [message.type]);
+
+  // Check if returning from terms/privacy pages
+  useEffect(() => {
+    const fromTerms = localStorage.getItem('from_terms_page');
+    if (fromTerms === 'true') {
+      localStorage.removeItem('from_terms_page');
+      // Form data is already loaded from the other useEffect
+    }
+  }, []);
 
   // Password strength checker - sanitized and secure
   const checkPasswordStrength = (password) => {
@@ -94,6 +136,15 @@ const Register = () => {
         setErrors(prev => ({ ...prev, [name]: '' }));
       }
     }
+  };
+
+  // Handle navigation to terms/privacy with form data preservation
+  const handleLinkClick = (e, path) => {
+    e.preventDefault();
+    // Set flag that we're coming from registration page
+    localStorage.setItem('from_terms_page', 'true');
+    // Form data is already being saved automatically
+    navigate(path);
   };
 
   // Validate form
@@ -221,7 +272,10 @@ const Register = () => {
           id: newUser.id
         }));
         
-        // Redirect to readySurvey after 2 seconds
+        // Clear saved form data on success
+        localStorage.removeItem('register_form_data');
+        
+        // Redirect to login after 2 seconds
         setTimeout(() => {
           window.scrollTo(0, 0);
           navigate('/login');
@@ -250,17 +304,16 @@ const Register = () => {
     }
   };
 
-  
   return (
     <section className="login-section">
       <div className="absolute top-6 left-6 z-50">
-      <button
-        onClick={() => navigate("/")}
-        className="font-['Barlow_Condensed'] text-2xl font-black tracking-wider uppercase text-[#C6F135] bg-transparent border-none cursor-pointer hover:opacity-80 transition-opacity"
-      >
-        FitTrack<sup className="text-xs">™</sup>
-      </button>
-    </div>
+        <button
+          onClick={() => navigate("/")}
+          className="font-['Barlow_Condensed'] text-2xl font-black tracking-wider uppercase text-[#C6F135] bg-transparent border-none cursor-pointer hover:opacity-80 transition-opacity"
+        >
+          FitTrack<sup className="text-xs">™</sup>
+        </button>
+      </div>
       <div className="login-card">
         <div className="login-ghost">//</div>
         
@@ -450,7 +503,23 @@ const Register = () => {
                   disabled={isLoading}
                 />
                 <span>
-                  I agree to the <Link to="/terms" onClick={() => window.scrollTo(0, 0)}>Terms</Link> and <Link to="/privacy" onClick={() => window.scrollTo(0, 0)}>Privacy</Link> policies
+                  I agree to the{' '}
+                  <a 
+                    href="/terms" 
+                    onClick={(e) => handleLinkClick(e, '/terms')}
+                    style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                  >
+                    Terms
+                  </a>{' '}
+                  and{' '}
+                  <a 
+                    href="/privacy" 
+                    onClick={(e) => handleLinkClick(e, '/privacy')}
+                    style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                  >
+                    Privacy
+                  </a>{' '}
+                  policies
                 </span>
               </label>
               {errors.acceptTerms && (
@@ -479,7 +548,7 @@ const Register = () => {
               className="btn-submit"
               disabled={isLoading || passwordStrength.score < 2}
             >
-              <span onClick={() => window.scrollTo(0, 0)}>{isLoading ? 'CREATING...' : 'CREATE ACCOUNT →'}</span>
+              <span>{isLoading ? 'CREATING...' : 'CREATE ACCOUNT →'}</span>
             </button>
 
             {/* Login Link */}
