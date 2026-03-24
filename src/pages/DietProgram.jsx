@@ -3,6 +3,7 @@
 //
 // Features:
 //   - Macro bar: daily targets vs consumed, calculated from user profile
+//   - Calories burned from workouts added to daily calorie target
 //   - Recommended meals: 3-day rotation, duration + goal aware
 //   - Category filter tabs
 //   - Checkable meals → updates calendar + macro bar
@@ -67,14 +68,29 @@ export default function DietProgram({
   const targets          = calcNutritionTargets(currentUser);
   const recommendedMeals = recommendMeals(targets, today, currentUser);
 
-  //  Today's consumed totals 
+  //  Today's entries 
   const todayEntries = calendarData[today] || [];
+
+  //  Calories burned from workouts today 
+  let caloriesBurnedToday = 0;
+  for (const entry of todayEntries) {
+    if (entry.type === "workout") {
+      caloriesBurnedToday += entry.caloriesBurned || 0;
+    }
+  }
+
+  //  Adjusted calorie target = base + burned 
+  const adjustedKcalTarget = targets.kcal + caloriesBurnedToday;
+
+  //  Today's consumed meal totals (meals only) 
   let consumedKcal = 0, consumedProtein = 0, consumedCarbs = 0, consumedFat = 0;
   for (const entry of todayEntries) {
-    consumedKcal    += entry.kcal    || 0;
-    consumedProtein += entry.protein || 0;
-    consumedCarbs   += entry.carbs   || 0;
-    consumedFat     += entry.fat     || 0;
+    if (entry.type === "meal") {
+      consumedKcal    += entry.kcal    || 0;
+      consumedProtein += entry.protein || 0;
+      consumedCarbs   += entry.carbs   || 0;
+      consumedFat     += entry.fat     || 0;
+    }
   }
 
   const checkedToday = loggedMeals[today] || new Set();
@@ -139,11 +155,35 @@ export default function DietProgram({
 
       {/*  Macro Bar  */}
       <section className={`grid grid-cols-2 md:grid-cols-4 border-b ${bdr}`}>
+
+        {/* Daily Calories — adjusted if workouts logged today */}
+        <div className={`px-5 py-4 border-r ${bdr} ${bg2}`}>
+          <p className={`text-xs tracking-widest uppercase ${muted} mb-2`}>Daily Calories</p>
+          <p className="font-black text-3xl leading-none text-[#C6F135]">
+            {adjustedKcalTarget.toLocaleString()}
+            <span className={`text-xs ${muted} ml-1`}>kcal</span>
+          </p>
+          {caloriesBurnedToday > 0 && (
+            <p className="text-xs text-[#a78bfa] mt-1">
+              {targets.kcal.toLocaleString()} + {caloriesBurnedToday} burned
+            </p>
+          )}
+          <div className="mt-2 h-[2px] rounded-sm" style={{ background: "#C6F13530" }}>
+            <div
+              className="h-full transition-all duration-500 rounded-sm"
+              style={{ width: `${pct(consumedKcal, adjustedKcalTarget)}%`, background: "#C6F135" }}
+            />
+          </div>
+          <p className={`text-xs ${muted} mt-1`}>
+            {Math.round(consumedKcal)} consumed · {Math.round(Math.max(0, adjustedKcalTarget - consumedKcal))} left
+          </p>
+        </div>
+
+        {/* Protein, Carbs, Fat */}
         {[
-          { label: "Daily Calories", target: targets.kcal,    consumed: consumedKcal,    color: "#C6F135", cls: "text-[#C6F135]", unit: "kcal" },
-          { label: "Protein",        target: targets.protein, consumed: consumedProtein, color: "#FF2A5E", cls: "text-[#FF2A5E]", unit: "g"    },
-          { label: "Carbs",          target: targets.carbs,   consumed: consumedCarbs,   color: "#00E5FF", cls: "text-[#00E5FF]", unit: "g"    },
-          { label: "Fat",            target: targets.fat,     consumed: consumedFat,     color: "#FFAA00", cls: "text-[#FFAA00]", unit: "g"    },
+          { label: "Protein", target: targets.protein, consumed: consumedProtein, color: "#FF2A5E", cls: "text-[#FF2A5E]", unit: "g" },
+          { label: "Carbs",   target: targets.carbs,   consumed: consumedCarbs,   color: "#00E5FF", cls: "text-[#00E5FF]", unit: "g" },
+          { label: "Fat",     target: targets.fat,     consumed: consumedFat,     color: "#FFAA00", cls: "text-[#FFAA00]", unit: "g" },
         ].map((macro) => (
           <div key={macro.label} className={`px-5 py-4 border-r last:border-r-0 ${bdr} ${bg2}`}>
             <p className={`text-xs tracking-widest uppercase ${muted} mb-2`}>{macro.label}</p>
@@ -187,8 +227,13 @@ export default function DietProgram({
             Meal Plan for <span className="text-[#C6F135]">{firstName}</span>
           </p>
           <p className={`text-sm ${muted} mt-1`}>
-            {goalLabel} · {targets.kcal.toLocaleString()} kcal · {targets.protein}g protein · {targets.carbs}g carbs · {targets.fat}g fat
+            {goalLabel} · {adjustedKcalTarget.toLocaleString()} kcal · {targets.protein}g protein · {targets.carbs}g carbs · {targets.fat}g fat
           </p>
+          {caloriesBurnedToday > 0 && (
+            <p className="text-xs text-[#a78bfa] mt-1">
+              Includes {caloriesBurnedToday} kcal burned from today's workouts
+            </p>
+          )}
           <p className={`text-xs mt-1 ${muted} opacity-60`}>Meals rotate every 3 days</p>
         </div>
 

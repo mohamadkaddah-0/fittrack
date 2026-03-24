@@ -18,6 +18,7 @@ import ExerciseDetailPage from "./pages/ExerciseDetailPage";
 import DietProgram      from "./pages/DietProgram";
 import MealLog          from "./pages/MealLog";
 import IngredientDetail from "./pages/IngredientDetail";
+import UserProgress     from "./pages/UserProgress";
 import { getUserProfile, INITIAL_CALENDAR, getTodayKey } from "./data/mockData";
 
 // ── Mohammad Moghnieh's pages ─────────────────────────────────
@@ -238,6 +239,7 @@ export default function App() {
             <Route path="/dashboard" element={<HomePage calendarData={calendarData} currentUser={currentUser} deleteMealFromDay={deleteMealFromDay} deleteWorkoutFromDay={deleteWorkoutFromDay} togglePlanMeal={togglePlanMeal} loggedMeals={loggedMeals} />} />
 
             {/* Sara Ibrahim */}
+            <Route path="/progress" element={<UserProgress currentUser={currentUser} calendarData={calendarData}/>} />
             <Route path="/diet"           element={<DietProgram currentUser={currentUser} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} />} />
             <Route path="/diet-program"   element={<DietProgram currentUser={currentUser} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} />} />
             <Route path="/meal-log"       element={<MealLog currentUser={currentUser} calendarData={calendarData} savedMeals={savedMeals} addMealToCalendar={addMealToCalendar} saveCustomMeal={saveCustomMeal} deleteSavedMeal={deleteSavedMeal} />} />
