@@ -20,57 +20,159 @@ const SimplifiedProfile = ({ user: propUser }) => {
     return age;
   };
 
+  // Format workout types properly
+  const formatWorkoutTypes = (workoutTypes) => {
+    if (!workoutTypes) return 'Not specified';
+    if (Array.isArray(workoutTypes)) {
+      return workoutTypes.join(', ');
+    }
+    return workoutTypes; // Already a string
+  };
+
   // Load user data from multiple sources
   const loadUserData = () => {
     // First check if user was passed as prop
     if (propUser) return propUser;
     
-    // Then check localStorage for profile
-    const savedProfile = localStorage.getItem('userProfile');
-    if (savedProfile) {
-      return JSON.parse(savedProfile);
+    // Then check for survey data first (since it contains the most complete info)
+    const surveyDataRaw = localStorage.getItem('userSurveyData');
+    let survey = null;
+    if (surveyDataRaw) {
+      survey = JSON.parse(surveyDataRaw);
     }
     
-    // Then check for survey data
-    const surveyData = localStorage.getItem('userSurveyData');
-    if (surveyData) {
-      const survey = JSON.parse(surveyData);
-      // Map survey data to profile format
+    // Then check localStorage for profile
+    const savedProfile = localStorage.getItem('userProfile');
+    let profile = null;
+    if (savedProfile) {
+      profile = JSON.parse(savedProfile);
+    }
+    
+    // Get session user for name/email
+    const sessionUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+    
+    // Prioritize survey data for fitness preferences
+    if (survey) {
+      console.log('Loading survey data:', survey); // Debug log
+      
+      // Map workout preferences
+      let workoutTypeDisplay = 'Not specified';
+      if (survey.workoutTypes) {
+        workoutTypeDisplay = formatWorkoutTypes(survey.workoutTypes);
+      }
+      
+      // Map workout frequency/duration
+      let workoutFrequency = survey.workoutDuration || 'Not specified';
+      
+      // Map fitness level (convert to proper case)
+      let fitnessLevel = survey.fitnessLevel || 'Beginner';
+      if (fitnessLevel) {
+        fitnessLevel = fitnessLevel.charAt(0).toUpperCase() + fitnessLevel.slice(1).toLowerCase();
+      }
+      
+      // Map primary goal - check both weightGoal and performanceGoal
+      let primaryGoal = 'General Fitness';
+      if (survey.performanceGoal) {
+        // Map performance goal to display name
+        const goalMap = {
+          'buildStrength': 'Build Strength',
+          'improveEndurance': 'Improve Endurance',
+          'improveFlexibility': 'Improve Flexibility',
+          'generalFitness': 'General Fitness'
+        };
+        primaryGoal = goalMap[survey.performanceGoal] || survey.performanceGoal;
+      } else if (survey.weightGoal) {
+        // Fallback to weight goal
+        const weightGoalMap = {
+          'lose': 'Weight Loss',
+          'gain': 'Weight Gain',
+          'maintain': 'Weight Maintenance',
+          'buildMuscle': 'Build Muscle'
+        };
+        primaryGoal = weightGoalMap[survey.weightGoal] || survey.weightGoal;
+      }
+      
       return {
-        name: 'New User', // You'd get this from registration
-        username: 'newuser',
-        email: 'user@example.com', // From registration
-        phone: '',
-        memberSince: new Date().toLocaleDateString('default', { month: 'long', year: 'numeric' }),
-        birthdate: survey.birthdate,
-        height: survey.height,
-        weight: survey.weight,
-        fitnessLevel: survey.fitnessLevel,
-        primaryGoal: survey.performanceGoal || 'General Fitness',
-        workoutFrequency: survey.workoutDuration || '3-4 days/week',
-        workoutType: survey.workoutTypes?.join(', ') || 'Mixed',
-        workoutLocation: survey.workoutLocation || 'Gym',
-        preferredTime: survey.workoutTime || 'Morning',
-        limitations: survey.limitations || []
+        // Personal info from session or profile
+        name: sessionUser.name || profile?.name || survey.name || 'New User',
+        username: sessionUser.username || profile?.username || 'newuser',
+        email: sessionUser.email || profile?.email || 'user@example.com',
+        phone: profile?.phone || '',
+        memberSince: profile?.memberSince || new Date().toLocaleDateString('default', { month: 'long', year: 'numeric' }),
+        
+        // Physical stats from survey
+        birthdate: survey.birthdate || profile?.birthdate,
+        height: survey.height ? parseFloat(survey.height) : (profile?.height || 0),
+        weight: survey.weight ? parseFloat(survey.weight) : (profile?.weight || 0),
+        weightUnit: survey.weightUnit || 'kg',
+        heightUnit: survey.heightUnit || 'cm',
+        
+        // Fitness preferences from survey
+        fitnessLevel: fitnessLevel,
+        primaryGoal: primaryGoal,
+        workoutFrequency: workoutFrequency,
+        workoutType: workoutTypeDisplay,
+        workoutLocation: survey.workoutLocation || profile?.workoutLocation || 'Not specified',
+        preferredTime: survey.workoutTime || profile?.preferredTime || 'Not specified',
+        
+        // Additional data from survey
+        limitations: survey.limitations || [],
+        equipment: survey.equipment || [],
+        timeline: survey.timemap || 'Not specified',
+        weightGoal: survey.weightGoal || 'maintain',
+        targetWeight: survey.targetWeight || null,
+        
+        // Location (if any)
+        location: profile?.location || 'Not specified'
+      };
+    }
+    
+    // Fallback to profile data if no survey
+    if (profile) {
+      return {
+        name: sessionUser.name || profile.name || 'New User',
+        username: sessionUser.username || profile.username || 'newuser',
+        email: sessionUser.email || profile.email || 'user@example.com',
+        phone: profile.phone || '',
+        memberSince: profile.memberSince || new Date().toLocaleDateString('default', { month: 'long', year: 'numeric' }),
+        birthdate: profile.birthdate,
+        height: profile.height || 0,
+        weight: profile.weight || 0,
+        weightUnit: profile.weightUnit || 'kg',
+        heightUnit: profile.heightUnit || 'cm',
+        fitnessLevel: profile.fitnessLevel || 'Beginner',
+        primaryGoal: profile.primaryGoal || 'General Fitness',
+        workoutFrequency: profile.workoutFrequency || 'Not specified',
+        workoutType: profile.workoutType || 'Not specified',
+        workoutLocation: profile.workoutLocation || 'Not specified',
+        preferredTime: profile.preferredTime || 'Not specified',
+        limitations: profile.limitations || [],
+        equipment: profile.equipment || [],
+        location: profile.location || 'Not specified'
       };
     }
     
     // Default fallback
     return {
-      name: 'Alex Johnson',
-      username: 'alexjohnson',
-      email: 'alex.johnson@example.com',
+      name: sessionUser.name || 'Alex Johnson',
+      username: sessionUser.username || 'alexjohnson',
+      email: sessionUser.email || 'alex.johnson@example.com',
       phone: '+1 (555) 123-4567',
-      memberSince: 'March 2024',
+      memberSince: new Date().toLocaleDateString('default', { month: 'long', year: 'numeric' }),
       birthdate: '1996-05-15',
       height: 180,
       weight: 75,
+      weightUnit: 'kg',
+      heightUnit: 'cm',
       fitnessLevel: 'Intermediate',
       primaryGoal: 'Weight Loss',
-      workoutFrequency: '4-5 days/week',
+      workoutFrequency: '3-4 days/week',
       workoutType: 'Mixed',
       workoutLocation: 'Gym',
-      preferredTime: 'Morning'
+      preferredTime: 'Morning',
+      limitations: [],
+      equipment: [],
+      location: 'Not specified'
     };
   };
 
@@ -80,6 +182,11 @@ const SimplifiedProfile = ({ user: propUser }) => {
   // Save to localStorage whenever user changes
   useEffect(() => {
     localStorage.setItem('userProfile', JSON.stringify(user));
+  }, [user]);
+
+  // Debug: Log what's being displayed
+  useEffect(() => {
+    console.log('Current user data:', user);
   }, [user]);
 
   // Handle input changes
@@ -205,7 +312,7 @@ const SimplifiedProfile = ({ user: propUser }) => {
                 </div>
                 <div className="info-item">
                   <span className="info-label">Phone</span>
-                  <span className="info-value">{user.phone}</span>
+                  <span className="info-value">{user.phone || 'Not specified'}</span>
                 </div>
                 <div className="info-item">
                   <span className="info-label">Age</span>
@@ -213,7 +320,7 @@ const SimplifiedProfile = ({ user: propUser }) => {
                 </div>
                 <div className="info-item">
                   <span className="info-label">Location</span>
-                  <span className="info-value">{user.location}</span>
+                  <span className="info-value">{user.location || 'Not specified'}</span>
                 </div>
               </div>
             </div>
@@ -224,11 +331,11 @@ const SimplifiedProfile = ({ user: propUser }) => {
               <div className="info-grid">
                 <div className="info-item">
                   <span className="info-label">Height</span>
-                  <span className="info-value">{user.height} cm</span>
+                  <span className="info-value">{user.height} {user.heightUnit}</span>
                 </div>
                 <div className="info-item">
                   <span className="info-label">Weight</span>
-                  <span className="info-value">{user.weight} kg</span>
+                  <span className="info-value">{user.weight} {user.weightUnit}</span>
                 </div>
                 <div className="info-item">
                   <span className="info-label">From Survey</span>
@@ -236,10 +343,16 @@ const SimplifiedProfile = ({ user: propUser }) => {
                     ✓ Data imported
                   </span>
                 </div>
+                {user.targetWeight && (
+                  <div className="info-item">
+                    <span className="info-label">Target Weight</span>
+                    <span className="info-value">{user.targetWeight} {user.weightUnit}</span>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Fitness Preferences */}
+            {/* Fitness Preferences - Now properly showing survey data */}
             <div className="info-section">
               <h2>Fitness Preferences</h2>
               <div className="info-grid">
@@ -252,7 +365,7 @@ const SimplifiedProfile = ({ user: propUser }) => {
                   <span className="info-value">{user.primaryGoal}</span>
                 </div>
                 <div className="info-item">
-                  <span className="info-label">Workout Frequency</span>
+                  <span className="info-label">Workout Duration</span>
                   <span className="info-value">{user.workoutFrequency}</span>
                 </div>
                 <div className="info-item">
@@ -269,11 +382,105 @@ const SimplifiedProfile = ({ user: propUser }) => {
                 </div>
               </div>
             </div>
+
+            {/* Limitations & Equipment - Additional info from survey */}
+            {user.limitations && user.limitations.length > 0 && !user.limitations.includes('No limitations') && (
+              <div className="info-section">
+                <h2>Physical Limitations</h2>
+                <div className="info-grid">
+                  <div className="info-item">
+                    <span className="info-label">Limitations</span>
+                    <span className="info-value">{user.limitations.join(', ')}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {user.equipment && user.equipment.length > 0 && !user.equipment.includes('None') && (
+              <div className="info-section">
+                <h2>Available Equipment</h2>
+                <div className="info-grid">
+                  <div className="info-item">
+                    <span className="info-label">Equipment</span>
+                    <span className="info-value">{user.equipment.join(', ')}</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
-          /* EDIT MODE - Keep your existing edit form */
+          /* EDIT MODE - Keep your existing edit form or add a simple one */
           <div className="edit-mode">
-            {/* ... your existing edit form ... */}
+            <div className="info-section">
+              <h2>Edit Personal Information</h2>
+              <div className="form-group">
+                <label>Full Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={editForm.name}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="form-group">
+                <label>Username</label>
+                <input
+                  type="text"
+                  name="username"
+                  value={editForm.username}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="form-group">
+                <label>Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={editForm.email}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="form-group">
+                <label>Phone</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={editForm.phone}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="form-group">
+                <label>Location</label>
+                <input
+                  type="text"
+                  name="location"
+                  value={editForm.location}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
+
+            <div className="info-section">
+              <h2>Edit Physical Stats</h2>
+              <div className="form-group">
+                <label>Height ({user.heightUnit})</label>
+                <input
+                  type="number"
+                  name="height"
+                  value={editForm.height}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="form-group">
+                <label>Weight ({user.weightUnit})</label>
+                <input
+                  type="number"
+                  name="weight"
+                  value={editForm.weight}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
           </div>
         )}
       </div>
