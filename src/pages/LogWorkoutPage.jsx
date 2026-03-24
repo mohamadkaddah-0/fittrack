@@ -25,9 +25,10 @@ function estimateCalories(ex, logData, userWeightKg) {
   const type = getLogType(ex);
 
   if (type === "duration") {
-    const totalMinutes = parseFloat(logData.duration) || 0; // Not multiplied by sets
-    return Math.round((ex.met || 7) * wt * (totalMinutes / 60));
-  }
+  const minutesPerSet = parseFloat(logData.duration) / 60;
+  const totalMinutes = minutesPerSet * (parseInt(logData.sets) || 1);
+  return Math.round((ex.met || 7) * wt * (totalMinutes / 60));
+}
   if (type === "reps-cardio") {
     const reps = (parseInt(logData.reps) || 0) * (parseInt(logData.sets) || 1);
     return Math.round(reps * (ex.kcalPerRep || 0.4));
