@@ -36,7 +36,7 @@ bashnpm run dev
 Navigate to http://localhost:5173 in your browser.
 
 
-*Member Contributions:*
+**Member Contributions:**
 
 *Sara Ibrahim:*
 
@@ -104,6 +104,6 @@ Seed data: INITIAL_CALENDAR pre-populates the last 3 days with realistic entries
 
 Ingredient database: 51 food items with accurate per-100g macros, including Lebanese foods. Portion-scaled macro calculations simulate the behaviour of an API.
 
-Exercise plan generation — buildPlanDays() constructs a 14-day plan from the user's filtered exercise pool, respecting a 3-day repeat cooldown and alternating rest days. Equipment filtering and cardio ratio logic simulate a personalised training programme generator.
+Exercise plan generation: buildPlanDays() constructs a 14-day plan from the user's filtered exercise pool, respecting a 3-day repeat cooldown and alternating rest days. Equipment filtering and cardio ratio logic simulate a personalised training programme generator.
 
 
