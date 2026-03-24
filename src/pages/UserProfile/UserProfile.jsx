@@ -1,3 +1,5 @@
+// UserProfile.jsx - FIXED VERSION
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './UserProfile.css';
@@ -21,13 +23,183 @@ const SimplifiedProfile = ({ user: propUser }) => {
     return age;
   };
 
-  // Format workout types properly
-  const formatWorkoutTypes = (workoutTypes) => {
-    if (!workoutTypes) return 'Not specified';
-    if (Array.isArray(workoutTypes)) {
-      return workoutTypes.join(', ');
+  // Load user data from multiple sources - FIXED VERSION
+  const loadUserData = () => {
+    console.log('=== LOADING USER DATA ===');
+    
+    // CRITICAL FIX: First, get the current user from sessionStorage
+    const sessionUserRaw = sessionStorage.getItem('currentUser');
+    if (!sessionUserRaw) {
+      console.log('No session user found');
+      return getDefaultUser();
     }
-    return workoutTypes;
+    
+    const sessionUser = JSON.parse(sessionUserRaw);
+    const userId = sessionUser.id;
+    
+    console.log('Session user ID:', userId);
+    console.log('Session user:', sessionUser);
+    
+    if (!userId) {
+      console.log('No user ID in session');
+      return getDefaultUser();
+    }
+    
+    // Try to load user-specific survey data
+    const userSurveyRaw = localStorage.getItem(`userSurveyData_${userId}`);
+    console.log(`Looking for survey data for ID ${userId}:`, userSurveyRaw);
+    
+    if (!userSurveyRaw) {
+      console.log('No survey data found, using basic user data');
+      return {
+        id: userId,
+        name: sessionUser.name || 'New User',
+        username: sessionUser.username || 'newuser',
+        email: sessionUser.email || 'user@example.com',
+        phone: '',
+        birthdate: '',
+        height: 0,
+        weight: 0,
+        weightUnit: 'kg',
+        heightUnit: 'cm',
+        fitnessLevel: 'Not specified',
+        primaryGoal: 'Not specified',
+        workoutFrequency: 'Not specified',
+        workoutType: 'Not specified',
+        workoutLocation: 'Not specified',
+        preferredTime: 'Not specified',
+        limitations: [],
+        equipment: [],
+        location: 'Not specified',
+        surveyCompleted: false,
+        // Also include session data
+        currentWeight: sessionUser.currentWeight || 0,
+        targetWeight: sessionUser.targetWeight || 0,
+        activityLevel: sessionUser.activityLevel || 'moderately_active',
+        weightGoal: sessionUser.weightGoal || 'maintain'
+      };
+    }
+    
+    // Parse survey data
+    let survey;
+    try {
+      survey = JSON.parse(userSurveyRaw);
+      console.log('✅ Loaded survey data:', survey);
+    } catch (error) {
+      console.error('Error parsing survey data:', error);
+      return getDefaultUser();
+    }
+    
+    // Map performance goal to display string
+    const getPrimaryGoal = () => {
+      if (survey.performanceGoal) {
+        const goalMap = {
+          'buildStrength': 'Build Strength',
+          'improveEndurance': 'Improve Endurance',
+          'improveFlexibility': 'Improve Flexibility',
+          'generalFitness': 'General Fitness'
+        };
+        return goalMap[survey.performanceGoal] || survey.performanceGoal;
+      }
+      if (survey.weightGoal) {
+        const weightGoalMap = {
+          'lose': 'Weight Loss',
+          'gain': 'Weight Gain',
+          'maintain': 'Weight Maintenance',
+          'buildMuscle': 'Build Muscle'
+        };
+        return weightGoalMap[survey.weightGoal] || survey.weightGoal;
+      }
+      return 'General Fitness';
+    };
+    
+    // Build complete user object from survey data
+    const userData = {
+      id: survey.userId || userId,
+      name: sessionUser.name || survey.userName || `${survey.firstName || ''} ${survey.lastName || ''}`.trim() || 'FitTrack User',
+      username: sessionUser.username || survey.username || `user_${userId}`,
+      email: sessionUser.email || survey.userEmail || survey.email || 'user@example.com',
+      phone: '',
+      birthdate: survey.birthdate || '',
+      height: survey.height ? parseFloat(survey.height) : 0,
+      weight: survey.weight ? parseFloat(survey.weight) : 0,
+      weightUnit: survey.weightUnit || 'kg',
+      heightUnit: survey.heightUnit || 'cm',
+      fitnessLevel: survey.fitnessLevel ? survey.fitnessLevel.charAt(0).toUpperCase() + survey.fitnessLevel.slice(1).toLowerCase() : 'Not specified',
+      primaryGoal: getPrimaryGoal(),
+      workoutFrequency: survey.workoutDuration || 'Not specified',
+      workoutType: survey.workoutTypes || 'Not specified',
+      workoutLocation: survey.workoutLocation || 'Not specified',
+      preferredTime: survey.workoutTime || 'Not specified',
+      weightGoal: survey.weightGoal || 'maintain',
+      targetWeight: survey.targetWeight || null,
+      performanceGoal: survey.performanceGoal || null,
+      activityLevel: survey.activityLevel || 'moderately_active',
+      limitations: survey.limitations || [],
+      equipment: survey.equipment || [],
+      timeline: survey.timeline || 'Not specified',
+      location: 'Not specified',
+      surveyCompleted: true,
+      // Include these for the weight trend section
+      currentWeight: survey.weight ? parseFloat(survey.weight) : 0,
+      targetWeightFromSurvey: survey.targetWeight || null
+    };
+    
+    console.log('✅ Final user data loaded:', userData);
+    return userData;
+  };
+  
+  const getDefaultUser = () => ({
+    id: Date.now(),
+    name: 'New User',
+    username: 'newuser',
+    email: 'user@example.com',
+    phone: '',
+    birthdate: '',
+    height: 0,
+    weight: 0,
+    weightUnit: 'kg',
+    heightUnit: 'cm',
+    fitnessLevel: 'Not specified',
+    primaryGoal: 'Not specified',
+    workoutFrequency: 'Not specified',
+    workoutType: 'Not specified',
+    workoutLocation: 'Not specified',
+    preferredTime: 'Not specified',
+    limitations: [],
+    equipment: [],
+    location: 'Not specified',
+    surveyCompleted: false,
+    currentWeight: 0,
+    targetWeight: 0
+  });
+
+  const [user, setUser] = useState(loadUserData());
+  const [editForm, setEditForm] = useState({ ...user });
+
+  // Force reload data when component mounts and when localStorage changes
+  useEffect(() => {
+    const freshData = loadUserData();
+    setUser(freshData);
+    setEditForm({ ...freshData });
+    
+    // Listen for storage changes
+    const handleStorageChange = (e) => {
+      if (e.key && (e.key.includes('userSurveyData') || e.key === 'userProfile')) {
+        console.log('Storage changed, reloading user data');
+        const updatedData = loadUserData();
+        setUser(updatedData);
+        setEditForm({ ...updatedData });
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Trigger file input click
+  const triggerFileInput = () => {
+    fileInputRef.current.click();
   };
 
   // Handle image upload
@@ -48,258 +220,14 @@ const SimplifiedProfile = ({ user: propUser }) => {
     setEditForm(prev => ({ ...prev, [name]: value }));
   };
 
-  // Handle logout
-  const handleLogout = () => {
-    // Clear user session
-    sessionStorage.removeItem('currentUser');
-    sessionStorage.removeItem('userLoggedIn');
-    
-    // Optional: Clear any other user-related data
-    localStorage.removeItem('userProfile');
-    
-    // Navigate to welcome page
-    navigate('/');
-    
-    // Optional: Show logout confirmation (you can customize this)
-    console.log('User logged out successfully');
-  };
-
-  // Load user data from multiple sources
-const loadUserData = () => {
-  console.log('=== LOADING USER DATA ===');
-  
-  // First check if user was passed as prop
-  if (propUser && propUser.name) {
-    console.log('Using prop user data:', propUser);
-    return propUser;
-  }
-  
-  // Check for survey data
-  const surveyDataRaw = localStorage.getItem('userSurveyData');
-  console.log('Raw survey data:', surveyDataRaw);
-  
-  let survey = null;
-  if (surveyDataRaw) {
-    try {
-      survey = JSON.parse(surveyDataRaw);
-      console.log('Parsed survey data:', survey);
-    } catch (error) {
-      console.error('Error parsing survey data:', error);
-    }
-  }
-  
-  // Get session user for name/email
-  const sessionUserRaw = sessionStorage.getItem('currentUser');
-  const sessionUser = sessionUserRaw ? JSON.parse(sessionUserRaw) : {};
-  console.log('Session user:', sessionUser);
-  
-  // If we have survey data, use it
-  if (survey) {
-    console.log('✅ Using survey data');
-    
-    // Log all survey fields
-    console.log('=== SURVEY FIELDS ===');
-    console.log('fitnessLevel:', survey.fitnessLevel);
-    console.log('workoutDuration:', survey.workoutDuration);
-    console.log('workoutTypes:', survey.workoutTypes);
-    console.log('workoutLocation:', survey.workoutLocation);
-    console.log('workoutTime:', survey.workoutTime);
-    console.log('weightGoal:', survey.weightGoal);
-    console.log('performanceGoal:', survey.performanceGoal);
-    console.log('birthdate:', survey.birthdate);
-    
-    // Get fitness level directly from survey (it's already properly formatted)
-    let fitnessLevel = 'Not specified';
-    if (survey.fitnessLevel && survey.fitnessLevel !== '') {
-      // Capitalize first letter
-      fitnessLevel = survey.fitnessLevel.charAt(0).toUpperCase() + survey.fitnessLevel.slice(1).toLowerCase();
-    }
-    
-    // Get workout duration directly from survey
-    let workoutDuration = 'Not specified';
-    if (survey.workoutDuration && survey.workoutDuration !== '') {
-      workoutDuration = survey.workoutDuration;
-    }
-    
-    // Get workout type
-    let workoutTypeDisplay = 'Not specified';
-    if (survey.workoutTypes && survey.workoutTypes !== '') {
-      workoutTypeDisplay = survey.workoutTypes;
-    }
-    
-    // Get workout location
-    let workoutLocation = 'Not specified';
-    if (survey.workoutLocation && survey.workoutLocation !== '') {
-      workoutLocation = survey.workoutLocation;
-    }
-    
-    // Get preferred time
-    let preferredTime = 'Not specified';
-    if (survey.workoutTime && survey.workoutTime !== '') {
-      preferredTime = survey.workoutTime;
-    }
-    
-    // Map primary goal - combine performanceGoal and weightGoal
-    let primaryGoal = 'General Fitness';
-    
-    // First try performanceGoal (more specific)
-    if (survey.performanceGoal && survey.performanceGoal !== '') {
-      const goalMap = {
-        'buildStrength': 'Build Strength',
-        'improveEndurance': 'Improve Endurance',
-        'improveFlexibility': 'Improve Flexibility',
-        'generalFitness': 'General Fitness'
-      };
-      primaryGoal = goalMap[survey.performanceGoal] || survey.performanceGoal;
-      console.log('Primary goal from performanceGoal:', primaryGoal);
-    } 
-    // Fallback to weightGoal
-    else if (survey.weightGoal && survey.weightGoal !== '') {
-      const weightGoalMap = {
-        'lose': 'Weight Loss',
-        'gain': 'Weight Gain',
-        'maintain': 'Weight Maintenance',
-        'buildMuscle': 'Build Muscle'
-      };
-      primaryGoal = weightGoalMap[survey.weightGoal] || survey.weightGoal;
-      console.log('Primary goal from weightGoal:', primaryGoal);
-    }
-    
-    const userData = {
-      // Personal info from session
-      name: sessionUser.name || 'New User',
-      username: sessionUser.username || sessionUser.name?.toLowerCase().replace(/\s/g, '') || 'newuser',
-      email: sessionUser.email || 'user@example.com',
-      phone: '',
-      
-      // Physical stats from survey
-      birthdate: survey.birthdate || '',
-      height: survey.height ? parseFloat(survey.height) : 0,
-      weight: survey.weight ? parseFloat(survey.weight) : 0,
-      weightUnit: survey.weightUnit || 'kg',
-      heightUnit: survey.heightUnit || 'cm',
-      
-      // Fitness preferences - DIRECT MAPPING
-      fitnessLevel: fitnessLevel,
-      primaryGoal: primaryGoal,
-      workoutFrequency: workoutDuration,  // workoutDuration maps to workoutFrequency
-      workoutType: workoutTypeDisplay,
-      workoutLocation: workoutLocation,
-      preferredTime: preferredTime,
-      
-      // Additional data
-      limitations: survey.limitations || [],
-      equipment: survey.equipment || [],
-      timeline: survey.timeline || 'Not specified',
-      weightGoal: survey.weightGoal || 'maintain',
-      targetWeight: survey.targetWeight || null,
-      performanceGoal: survey.performanceGoal || null,
-      activityLevel: survey.activityLevel || null,
-      
-      // Location
-      location: 'Not specified'
-    };
-    
-    console.log('=== FINAL USER DATA ===');
-    console.log('Name:', userData.name);
-    console.log('Username:', userData.username);
-    console.log('Age will be calculated from birthdate:', userData.birthdate);
-    console.log('Fitness Level:', userData.fitnessLevel);
-    console.log('Primary Goal:', userData.primaryGoal);
-    console.log('Workout Duration:', userData.workoutFrequency);
-    console.log('Workout Type:', userData.workoutType);
-    console.log('Workout Location:', userData.workoutLocation);
-    console.log('Preferred Time:', userData.preferredTime);
-    
-    return userData;
-  }
-  
-  // Default fallback
-  console.log('Using default fallback data');
-  return {
-    name: sessionUser.name || 'Alex Johnson',
-    username: sessionUser.username || 'alexjohnson',
-    email: sessionUser.email || 'alex.johnson@example.com',
-    phone: '',
-    birthdate: '1996-05-15',
-    height: 180,
-    weight: 75,
-    weightUnit: 'kg',
-    heightUnit: 'cm',
-    fitnessLevel: 'Intermediate',
-    primaryGoal: 'Weight Loss',
-    workoutFrequency: '3-4 days/week',
-    workoutType: 'Mixed',
-    workoutLocation: 'Gym',
-    preferredTime: 'Morning',
-    limitations: [],
-    equipment: [],
-    location: 'Not specified'
-  };
-};
-
-  const [user, setUser] = useState(loadUserData());
-  const [editForm, setEditForm] = useState({ ...user });
-
-  // Force reload data when component mounts and when localStorage changes
-  useEffect(() => {
-    const freshData = loadUserData();
-    setUser(freshData);
-    setEditForm({ ...freshData });
-    
-    // Listen for storage changes (when survey is completed)
-    const handleStorageChange = (e) => {
-      if (e.key === 'userSurveyData' || e.key === 'userProfile') {
-        console.log('Storage changed, reloading user data');
-        const updatedData = loadUserData();
-        setUser(updatedData);
-        setEditForm({ ...updatedData });
-      }
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-
-  // Debug: Log what's being displayed
-  useEffect(() => {
-    console.log('Current user data:', user);
-  }, [user]);
-
-  // Debug: Check what's in localStorage when component mounts
-  useEffect(() => {
-    const surveyData = localStorage.getItem('userSurveyData');
-    const userProfile = localStorage.getItem('userProfile');
-    console.log('=== PROFILE PAGE LOADED ===');
-    console.log('userSurveyData in localStorage:', surveyData);
-    console.log('userProfile in localStorage:', userProfile);
-    
-    if (surveyData) {
-      const parsed = JSON.parse(surveyData);
-      console.log('Fitness preferences in localStorage:', {
-        workoutTypes: parsed.workoutTypes,
-        workoutDuration: parsed.workoutDuration,
-        workoutLocation: parsed.workoutLocation,
-        workoutTime: parsed.workoutTime,
-        fitnessLevel: parsed.fitnessLevel,
-        performanceGoal: parsed.performanceGoal,
-        weightGoal: parsed.weightGoal,
-        targetWeight: parsed.targetWeight
-      });
-    }
-  }, []);
-
-  // Trigger file input click
-  const triggerFileInput = () => {
-    fileInputRef.current.click();
-  };
-
   // Save changes
   const handleSave = () => {
     setUser(editForm);
     setIsEditing(false);
-    // Save to localStorage
-    localStorage.setItem('userProfile', JSON.stringify(editForm));
+    // Save to localStorage with user ID
+    if (user.id) {
+      localStorage.setItem(`userProfile_${user.id}`, JSON.stringify(editForm));
+    }
   };
 
   // Cancel editing
@@ -308,8 +236,16 @@ const loadUserData = () => {
     setIsEditing(false);
   };
 
+  // Handle logout
+  const handleLogout = () => {
+    sessionStorage.removeItem('currentUser');
+    sessionStorage.removeItem('userLoggedIn');
+    navigate('/');
+  };
+
   // Get initials for avatar fallback
   const getInitials = () => {
+    if (!user.name) return 'U';
     return user.name
       .split(' ')
       .map(word => word[0])
@@ -318,10 +254,7 @@ const loadUserData = () => {
       .slice(0, 2);
   };
 
-
   const age = calculateAge(user.birthdate);
-  console.log('Birthdate:', user.birthdate);
-  console.log('Calculated age:', age);
 
   return (
     <div className="simplified-profile">
@@ -411,10 +344,6 @@ const loadUserData = () => {
                   <span className="info-label">Age</span>
                   <span className="info-value">{age || 'Not specified'} years</span>
                 </div>
-                <div className="info-item">
-                  <span className="info-label">Location</span>
-                  <span className="info-value">{user.location || 'Not specified'}</span>
-                </div>
               </div>
             </div>
 
@@ -467,17 +396,6 @@ const loadUserData = () => {
                   <span className="info-label">Preferred Time</span>
                   <span className="info-value">{user.preferredTime || 'Not specified'}</span>
                 </div>
-                {user.weightGoal && (
-                  <div className="info-item">
-                    <span className="info-label">Weight Goal</span>
-                    <span className="info-value">
-                      {user.weightGoal === 'lose' ? 'Lose Weight' : 
-                       user.weightGoal === 'gain' ? 'Gain Weight' : 
-                       user.weightGoal === 'maintain' ? 'Maintain Weight' : 
-                       user.weightGoal === 'buildMuscle' ? 'Build Muscle' : user.weightGoal}
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -511,72 +429,67 @@ const loadUserData = () => {
           <div className="edit-mode">
             <div className="info-section">
               <h2>Edit Personal Information</h2>
-              <div className="form-group">
-                <label>Full Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={editForm.name}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="form-group">
-                <label>Username</label>
-                <input
-                  type="text"
-                  name="username"
-                  value={editForm.username}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="form-group">
-                <label>Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={editForm.email}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="form-group">
-                <label>Phone</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={editForm.phone}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="form-group">
-                <label>Location</label>
-                <input
-                  type="text"
-                  name="location"
-                  value={editForm.location}
-                  onChange={handleInputChange}
-                />
+              <div className="edit-grid">
+                <div className="edit-field">
+                  <label>Full Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={editForm.name}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="edit-field">
+                  <label>Username</label>
+                  <input
+                    type="text"
+                    name="username"
+                    value={editForm.username}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="edit-field">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={editForm.email}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="edit-field">
+                  <label>Phone</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={editForm.phone}
+                    onChange={handleInputChange}
+                  />
+                </div>
               </div>
             </div>
 
             <div className="info-section">
               <h2>Edit Physical Stats</h2>
-              <div className="form-group">
-                <label>Height ({user.heightUnit})</label>
-                <input
-                  type="number"
-                  name="height"
-                  value={editForm.height}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="form-group">
-                <label>Weight ({user.weightUnit})</label>
-                <input
-                  type="number"
-                  name="weight"
-                  value={editForm.weight}
-                  onChange={handleInputChange}
-                />
+              <div className="edit-grid">
+                <div className="edit-field">
+                  <label>Height ({user.heightUnit})</label>
+                  <input
+                    type="number"
+                    name="height"
+                    value={editForm.height}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="edit-field">
+                  <label>Weight ({user.weightUnit})</label>
+                  <input
+                    type="number"
+                    name="weight"
+                    value={editForm.weight}
+                    onChange={handleInputChange}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -585,8 +498,8 @@ const loadUserData = () => {
 
       {/* Footer */}
       <div className="profile-footer">
-        <p style={{ fontSize: '10px', color: 'var(--dim)' }}>
-          Profile data from fitness survey
+        <p>
+          {user.surveyCompleted ? '✓ Profile data from fitness survey' : 'Complete the fitness survey to see your personalized data'}
         </p>
       </div>
     </div>
