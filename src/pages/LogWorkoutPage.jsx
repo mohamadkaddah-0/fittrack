@@ -25,26 +25,22 @@ function estimateCalories(ex, logData, userWeightKg) {
   const type = getLogType(ex);
 
   if (type === "duration") {
-  const sets = parseInt(logData.sets) || 1;
-  const durationPerSetSec = parseFloat(logData.duration) || 0;
-  const totalMinutes = (sets * durationPerSetSec) / 60;
-  
-  return Math.round((ex.met || 7) * wt * (totalMinutes / 60));
-}
+    const totalMinutes = parseFloat(logData.duration) || 0; // Not multiplied by sets
+    return Math.round((ex.met || 7) * wt * (totalMinutes / 60));
+  }
   if (type === "reps-cardio") {
-  const reps = (parseInt(logData.reps) || 0) * (parseInt(logData.sets) || 1);
-  const kcalPerRep = ex.kcalPerRep || 0.15;  // Changed default to 0.15
-  return Math.round(reps * kcalPerRep);
-}
+    const reps = (parseInt(logData.reps) || 0) * (parseInt(logData.sets) || 1);
+    return Math.round(reps * (ex.kcalPerRep || 0.4));
+  }
   if (type === "bodyweight") {
     const reps = (parseInt(logData.reps) || 0) * (parseInt(logData.sets) || 1);
     return Math.round(reps * (ex.kcalPerRep || 0.32));
   }
   if (type === "weighted") {
-  const reps   = (parseInt(logData.reps) || 0) * (parseInt(logData.sets) || 1);
-  const weight = parseFloat(logData.weight) || 20;
-  return Math.round(reps * weight * 0.05);
-}
+    const reps   = (parseInt(logData.reps) || 0) * (parseInt(logData.sets) || 1);
+    const weight = parseFloat(logData.weight) || 20;
+    return Math.round(reps * weight * 0.1);
+  }
   if (type === "distance") {
     const mins = parseFloat(logData.duration) || 30;
     return Math.round((ex.met || 7) * wt * (mins / 60));
@@ -761,6 +757,16 @@ export default function LogWorkoutPage({ addWorkoutToCalendar }) {
                     calories={previewCalories}
                   />
 
+                  <button onClick={handleAddExercise}
+                    style={{ width: "100%", marginTop: "16px", padding: "14px",
+                      background: "#C6F135", border: 0, borderRadius: "10px",
+                      fontSize: "12px", fontWeight: 700, letterSpacing: "0.12em",
+                      textTransform: "uppercase", color: "#080808", cursor: "pointer",
+                      transition: "opacity 0.2s" }}
+                    onMouseEnter={e => { e.currentTarget.style.opacity = "0.85"; }}
+                    onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}>
+                    + Add to Today's Log
+                  </button>
                 </div>
               )}
 
