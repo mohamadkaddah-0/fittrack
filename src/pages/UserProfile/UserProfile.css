@@ -346,3 +346,105 @@
     width: 100%;
   }
 }
+/* Add these styles to your UserProfile.css */
+
+.profile-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.edit-profile-btn,
+.logout-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.edit-profile-btn {
+  background-color: var(--lime, #C6F135);
+  color: #000;
+}
+
+.edit-profile-btn:hover {
+  background-color: #b3e02c;
+  transform: translateY(-1px);
+}
+
+.logout-btn {
+  background-color: transparent;
+  border: 1px solid var(--hot, #ff4444);
+  color: var(--hot, #ff4444);
+}
+
+.logout-btn:hover {
+  background-color: var(--hot, #ff4444);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.edit-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.save-btn {
+  padding: 8px 16px;
+  background-color: var(--lime, #C6F135);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.save-btn:hover {
+  background-color: #b3e02c;
+  transform: translateY(-1px);
+}
+
+.cancel-btn {
+  padding: 8px 16px;
+  background-color: transparent;
+  border: 1px solid var(--dim, #666);
+  color: var(--dim, #666);
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-btn:hover {
+  background-color: var(--dim, #666);
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .profile-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .edit-profile-btn,
+  .logout-btn,
+  .save-btn,
+  .cancel-btn {
+    width: 100%;
+  }
+  
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .profile-title-section {
+    text-align: center;
+  }
+}
