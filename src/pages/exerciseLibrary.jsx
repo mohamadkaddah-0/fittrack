@@ -8,65 +8,61 @@ import {
   isRiskyForUser,
 } from "../data/mockData";
 
-// Exercise source data
+// Exercise data source.
 const exercises = EXERCISES;
 
-// ─────────────────────────────────────────────────────────────
-// Display helpers
-// ─────────────────────────────────────────────────────────────
+// --------------------------------------------------
+// Display helper functions
+// --------------------------------------------------
 
-// Returns the display color for the exercise category.
+// Returns the display color for an exercise category.
 function getCatColor(category) {
   return category === "Cardio" ? "#FF2A5E" : "#C6F135";
 }
 
-// Returns the display color for each exercise difficulty level.
-// Athlete is treated as the highest level.
-function getDiffColor(d) {
-  if (d === "Beginner") return "#C6F135";
-  if (d === "Intermediate") return "#FFAA00";
-  if (d === "Advanced") return "#FF2A5E";
+// Returns the display color for the exercise difficulty level.
+function getDiffColor(difficulty) {
+  if (difficulty === "Beginner") return "#C6F135";
+  if (difficulty === "Intermediate") return "#FFAA00";
+  if (difficulty === "Advanced") return "#FF2A5E";
   return "#A855F7";
 }
 
-// ─────────────────────────────────────────────────────────────
-// Equipment requirements
-// ─────────────────────────────────────────────────────────────
+// --------------------------------------------------
+// Equipment helper functions
+// --------------------------------------------------
 
-// Maps each exercise to the equipment required to perform it.
-// "none" indicates a bodyweight exercise that does not require equipment.
+// Maps each exercise id to the required equipment.
 const EXERCISE_EQUIPMENT_MAP = {
-  1: "none",            // Jump Rope
-  2: "none",            // High Knees
-  3: "none",            // Burpees
-  4: "none",            // Mountain Climbers
-  5: "none",            // Jumping Jacks
-  6: "none",            // Running in Place
-  7: "stationary bike", // Cycling
-  8: "treadmill",       // Treadmill Walk
-  9: "rowing machine",  // Rowing Machine
-  10: "none",           // Stair Climber
-  11: "none",           // Push Up
-  12: "barbell",        // Bench Press
-  13: "pull-up bar",    // Pull Up
-  14: "none",           // Lat Pulldown
-  15: "none",           // Squat
-  16: "none",           // Lunges
-  17: "barbell",        // Deadlift
-  18: "none",           // Leg Press
-  19: "dumbbells",      // Shoulder Press
-  20: "dumbbells",      // Biceps Curl
+  1: "none",
+  2: "none",
+  3: "none",
+  4: "none",
+  5: "none",
+  6: "none",
+  7: "stationary bike",
+  8: "treadmill",
+  9: "rowing machine",
+  10: "none",
+  11: "none",
+  12: "barbell",
+  13: "pull-up bar",
+  14: "none",
+  15: "none",
+  16: "none",
+  17: "barbell",
+  18: "none",
+  19: "dumbbells",
+  20: "dumbbells",
 };
 
-// Normalizes the equipment list from the user profile
-// to support reliable case-insensitive comparison.
+// Converts the user's equipment list to lowercase for comparison.
 function normaliseEquipment(equipList) {
   if (!equipList || equipList.length === 0) return ["none"];
-  return equipList.map((e) => e.toLowerCase().trim());
+  return equipList.map((item) => item.toLowerCase().trim());
 }
 
-// Returns true when the user has the required equipment
-// for a given exercise. Bodyweight exercises are always allowed.
+// Checks whether the user has the equipment needed for an exercise.
 function userHasEquipmentForExercise(exerciseId, userEquipment) {
   const needed = EXERCISE_EQUIPMENT_MAP[exerciseId] || "none";
 
@@ -79,16 +75,11 @@ function userHasEquipmentForExercise(exerciseId, userEquipment) {
   return normalised.includes(needed);
 }
 
-// ─────────────────────────────────────────────────────────────
-// Activity level adjustment
-// ─────────────────────────────────────────────────────────────
+// --------------------------------------------------
+// Activity and level helpers
+// --------------------------------------------------
 
-// Determines the effective exercise level using both the
-// reported fitness level and daily activity level.
-//
-// Rules:
-// - Very active users are progressed by one level.
-// - Sedentary users are limited to beginner intensity.
+// Adjusts the user's exercise level based on fitness and activity level.
 function getEffectiveLevel(fitnessLevel, activityLevel) {
   const level = (fitnessLevel || "beginner").toLowerCase();
   const activity = (activityLevel || "").toLowerCase();
@@ -99,56 +90,67 @@ function getEffectiveLevel(fitnessLevel, activityLevel) {
     if (level === "advanced") return "athlete";
   }
 
-  if (activity === "sedentary" && level !== "beginner") return "beginner";
+  if (activity === "sedentary" && level !== "beginner") {
+    return "beginner";
+  }
 
   return level;
 }
 
-// ─────────────────────────────────────────────────────────────
-// Utility helpers
-// ─────────────────────────────────────────────────────────────
+// --------------------------------------------------
+// General utility helpers
+// --------------------------------------------------
 
-// Returns a random subset of unique items from an array.
-function pickRandom(array, n) {
+// Returns a random group of unique items from an array.
+function pickRandom(array, count) {
   const copy = [...array];
   const result = [];
 
-  while (result.length < n && copy.length > 0) {
-    const i = Math.floor(Math.random() * copy.length);
-    result.push(copy[i]);
-    copy.splice(i, 1);
+  while (result.length < count && copy.length > 0) {
+    const index = Math.floor(Math.random() * copy.length);
+    result.push(copy[index]);
+    copy.splice(index, 1);
   }
 
   return result;
 }
 
-// Generates a personalized exercise pool using:
-// 1. effective level,
-// 2. available equipment,
-// 3. cardio-to-strength ratio based on weight goal.
+// Builds a filtered exercise list that matches the user's profile.
 function getMatchingExercises(goal, level, weightGoal, userEquipment, activityLevel) {
   const effectiveLevel = getEffectiveLevel(level, activityLevel);
 
-  // Filter exercises by the user’s effective training level.
-  const byLevel = exercises.filter((ex) => {
-    if (effectiveLevel === "beginner") return ex.difficulty === "Beginner";
+  const byLevel = exercises.filter((exercise) => {
+    if (effectiveLevel === "beginner") return exercise.difficulty === "Beginner";
+
     if (effectiveLevel === "intermediate") {
-      return ex.difficulty === "Beginner" || ex.difficulty === "Intermediate";
+      return (
+        exercise.difficulty === "Beginner" ||
+        exercise.difficulty === "Intermediate"
+      );
     }
-    if (effectiveLevel === "advanced") return ex.difficulty !== "Athlete";
-    if (effectiveLevel === "athlete") return true;
+
+    if (effectiveLevel === "advanced") {
+      return exercise.difficulty !== "Athlete";
+    }
+
+    if (effectiveLevel === "athlete") {
+      return true;
+    }
+
     return true;
   });
 
-  // Restrict exercises to those that can be performed
-  // using the user's available equipment.
-  const byEquipment = byLevel.filter((ex) =>
-    userHasEquipmentForExercise(ex.id, userEquipment)
+  const byEquipment = byLevel.filter((exercise) =>
+    userHasEquipmentForExercise(exercise.id, userEquipment)
   );
 
-  // Apply the cardio-to-strength ratio associated with the weight goal.
-  const cardioPool = byEquipment.filter((ex) => ex.category === "Cardio");
-  const strengthPool = byEquipment.filter((ex) => ex.category === "Weightlifting");
+  const cardioPool = byEquipment.filter(
+    (exercise) => exercise.category === "Cardio"
+  );
+  const strengthPool = byEquipment.filter(
+    (exercise) => exercise.category === "Weightlifting"
+  );
+
   const ratio = getCardioRatio(weightGoal || "maintain");
   const total = byEquipment.length;
   const cardioCount = Math.round(total * ratio);
@@ -160,19 +162,46 @@ function getMatchingExercises(goal, level, weightGoal, userEquipment, activityLe
   ];
 }
 
-// Returns the local date key used for logging and calendar display.
+// Returns today's date as a string in YYYY-MM-DD format.
 function getTodayKey() {
   return new Date().toISOString().split("T")[0];
 }
 
-// ─────────────────────────────────────────────────────────────
+// --------------------------------------------------
 // Constants
-// ─────────────────────────────────────────────────────────────
+// --------------------------------------------------
 
-const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const MONTHS_FULL = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const MONTHS_SHORT = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
-// Meal category colors used by the shared calendar.
+const MONTHS_FULL = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+// Colors used for meal categories in the calendar.
 const CAT_COLORS = {
   breakfast: "#FFAA00",
   lunch: "#C6F135",
@@ -180,14 +209,14 @@ const CAT_COLORS = {
   dinner: "#FF2A5E",
 };
 
-// Exercise logs use a separate color to distinguish them from meals.
+// Color used for exercise markers in the calendar.
 const EXERCISE_DOT_COLOR = "#A855F7";
 
-// ─────────────────────────────────────────────────────────────
+// --------------------------------------------------
 // Small UI components
-// ─────────────────────────────────────────────────────────────
+// --------------------------------------------------
 
-// Animated indicator used in the hero section.
+// Small animated dot used in the header.
 function PulseDot() {
   return (
     <span
@@ -204,15 +233,19 @@ function PulseDot() {
   );
 }
 
-// Displays an individual exercise card.
-// Includes caution messaging for exercises that may be unsuitable
-// for users with reported limitations.
+// Displays a single exercise card.
 function ExerciseCard({ ex, mockUser }) {
   const catColor = getCatColor(ex.category);
   const diffColor = getDiffColor(ex.difficulty);
   const hasWarning = isRiskyForUser(ex, mockUser.limitations);
   const [imgErr, setImgErr] = useState(false);
-  const initials = ex.name.split(" ").map((w) => w[0]).join("").slice(0, 2);
+
+  const initials = ex.name
+    .split(" ")
+    .map((word) => word[0])
+    .join("")
+    .slice(0, 2);
+
   const equipNeeded = EXERCISE_EQUIPMENT_MAP[ex.id];
 
   return (
@@ -408,7 +441,6 @@ function ExerciseCard({ ex, mockUser }) {
             {ex.muscles}
           </p>
 
-          {/* Shows the equipment requirement for the exercise when applicable. */}
           {equipNeeded && equipNeeded !== "none" && (
             <p
               style={{
@@ -441,8 +473,7 @@ function ExerciseCard({ ex, mockUser }) {
   );
 }
 
-// Displays one day in the 14-day plan.
-// Only the current plan day can be marked as completed.
+// Displays one day from the 14-day workout plan.
 function PlanDayCard({
   day,
   isRest,
@@ -454,16 +485,27 @@ function PlanDayCard({
   onToggleDone,
   todayPlanDay,
 }) {
-  const allDone = !isRest && picks.length > 0 && picks.every((ex) => completedPlanItems[`${day}-${ex.id}`]);
+  const allDone =
+    !isRest &&
+    picks.length > 0 &&
+    picks.every((ex) => completedPlanItems[`${day}-${ex.id}`]);
+
   const isToday = day === todayPlanDay;
 
-  // Applies progressive overload to the displayed calorie range.
-  function getBoostedRange(r) {
-    if (intensityBoostCount === 0) return r;
-    const p = r.split("–");
-    if (p.length !== 2) return r;
-    const m = Math.pow(1.15, intensityBoostCount);
-    return Math.round(parseInt(p[0]) * m) + "–" + Math.round(parseInt(p[1]) * m);
+  // Increases the displayed calorie range after each intensity boost.
+  function getBoostedRange(range) {
+    if (intensityBoostCount === 0) return range;
+
+    const parts = range.split("–");
+    if (parts.length !== 2) return range;
+
+    const multiplier = Math.pow(1.15, intensityBoostCount);
+
+    return (
+      Math.round(parseInt(parts[0]) * multiplier) +
+      "–" +
+      Math.round(parseInt(parts[1]) * multiplier)
+    );
   }
 
   return (
@@ -531,7 +573,9 @@ function PlanDayCard({
             borderRadius: "6px",
           }}
         >
-          <span style={{ color: "#C6F135", fontSize: "11px", fontWeight: 700 }}>✓</span>
+          <span style={{ color: "#C6F135", fontSize: "11px", fontWeight: 700 }}>
+            ✓
+          </span>
           <span
             style={{
               color: "#C6F135",
@@ -621,7 +665,11 @@ function PlanDayCard({
                       e.stopPropagation();
                       onToggleDone(day, ex.id);
                     }}
-                    aria-label={done ? `Mark ${ex.name} as not done` : `Mark ${ex.name} as done`}
+                    aria-label={
+                      done
+                        ? `Mark ${ex.name} as not done`
+                        : `Mark ${ex.name} as done`
+                    }
                     style={{
                       width: "18px",
                       height: "18px",
@@ -677,26 +725,41 @@ function PlanDayCard({
   );
 }
 
-// Modal shown when the 14-day plan is completed.
-// Supports progressive overload and level progression up to Athlete.
-function PlanCompleteModal({ userLevel, intensityBoostCount, onContinue, onClose }) {
-  const totalKcal = workoutLog.reduce((sum, e) => sum + (e.caloriesBurned || 0), 0);
+// Shows a modal when the user completes the 14-day plan.
+function PlanCompleteModal({
+  userLevel,
+  intensityBoostCount,
+  onContinue,
+  onClose,
+}) {
+  const totalKcal = workoutLog.reduce(
+    (sum, entry) => sum + (entry.caloriesBurned || 0),
+    0
+  );
+
   const levels = ["beginner", "intermediate", "advanced", "athlete"];
-  const idx = levels.indexOf(userLevel);
+  const currentIndex = levels.indexOf(userLevel);
 
   function getBtnLabel() {
     if (intensityBoostCount < 3) {
-      return `Continue — Same Level, +15% Reps (${3 - intensityBoostCount} boosts left) →`;
+      return `Continue — Same Level, +15% Reps (${
+        3 - intensityBoostCount
+      } boosts left) →`;
     }
-    if (idx < levels.length - 1) {
-      return `Advance to ${levels[idx + 1].charAt(0).toUpperCase() + levels[idx + 1].slice(1)} Level →`;
+
+    if (currentIndex < levels.length - 1) {
+      return `Advance to ${
+        levels[currentIndex + 1].charAt(0).toUpperCase() +
+        levels[currentIndex + 1].slice(1)
+      } Level →`;
     }
+
     return "Continue — Max Level (Athlete) →";
   }
 
   function getBtnColor() {
     if (intensityBoostCount < 3) return "#C6F135";
-    if (idx < levels.length - 1) return "#00E5FF";
+    if (currentIndex < levels.length - 1) return "#00E5FF";
     return "#A855F7";
   }
 
@@ -736,7 +799,9 @@ function PlanCompleteModal({ userLevel, intensityBoostCount, onContinue, onClose
             border: "2px solid #C6F135",
           }}
         >
-          <span style={{ fontSize: "24px", fontWeight: 700, color: "#C6F135" }}>✓</span>
+          <span style={{ fontSize: "24px", fontWeight: 700, color: "#C6F135" }}>
+            ✓
+          </span>
         </div>
 
         <h2
@@ -778,9 +843,21 @@ function PlanCompleteModal({ userLevel, intensityBoostCount, onContinue, onClose
           }}
         >
           {[
-            { label: "Workouts Logged", value: workoutLog.length, color: "#C6F135" },
-            { label: "Calories Burned", value: totalKcal, color: "#FFAA00" },
-            { label: "Current Level", value: userLevel.slice(0, 3).toUpperCase(), color: "#00E5FF" },
+            {
+              label: "Workouts Logged",
+              value: workoutLog.length,
+              color: "#C6F135",
+            },
+            {
+              label: "Calories Burned",
+              value: totalKcal,
+              color: "#FFAA00",
+            },
+            {
+              label: "Current Level",
+              value: userLevel.slice(0, 3).toUpperCase(),
+              color: "#00E5FF",
+            },
           ].map((stat) => (
             <div
               key={stat.label}
@@ -896,39 +973,44 @@ function PlanCompleteModal({ userLevel, intensityBoostCount, onContinue, onClose
   );
 }
 
-// Calendar component showing meals and completed exercises by date.
-// Exercise logs are stored separately so exercises only appear
-// on the specific dates when they were completed.
-function WorkoutCalendar({ planDays, calendarData, exerciseLogByDate }) {
+// Displays meals and completed exercises in a calendar view.
+function WorkoutCalendar({ calendarData, exerciseLogByDate }) {
   const todayKey = getTodayKey();
   const todayDate = new Date();
+
   const [calYear, setCalYear] = useState(todayDate.getFullYear());
   const [calMonth, setCalMonth] = useState(todayDate.getMonth());
   const [selected, setSelected] = useState(todayKey);
+
   const allCalendar = calendarData || {};
 
-  function changeMonth(dir) {
+  function changeMonth(direction) {
     setCalMonth((prev) => {
-      let m = prev + dir;
-      if (m < 0) {
-        setCalYear((y) => y - 1);
+      let newMonth = prev + direction;
+
+      if (newMonth < 0) {
+        setCalYear((year) => year - 1);
         return 11;
       }
-      if (m > 11) {
-        setCalYear((y) => y + 1);
+
+      if (newMonth > 11) {
+        setCalYear((year) => year + 1);
         return 0;
       }
-      return m;
+
+      return newMonth;
     });
   }
 
-  // Builds the visible calendar grid including leading and trailing days.
+  // Builds all visible cells for the current month view.
   function buildCells() {
     const firstDay = new Date(calYear, calMonth, 1).getDay();
-    const daysInMon = new Date(calYear, calMonth + 1, 0).getDate();
-    const daysInPrev = new Date(calYear, calMonth, 0).getDate();
-    const total = firstDay + daysInMon;
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    const daysInPrevMonth = new Date(calYear, calMonth, 0).getDate();
+
+    const total = firstDay + daysInMonth;
     const gridSize = total + ((7 - (total % 7)) % 7);
+
     const cells = [];
 
     for (let i = 0; i < gridSize; i++) {
@@ -938,29 +1020,36 @@ function WorkoutCalendar({ planDays, calendarData, exerciseLogByDate }) {
       let other = false;
 
       if (i < firstDay) {
-        day = daysInPrev - (firstDay - 1 - i);
+        day = daysInPrevMonth - (firstDay - 1 - i);
         month = calMonth - 1;
+
         if (month < 0) {
           month = 11;
           year = calYear - 1;
         }
+
         other = true;
-      } else if (i >= firstDay + daysInMon) {
-        day = i - firstDay - daysInMon + 1;
+      } else if (i >= firstDay + daysInMonth) {
+        day = i - firstDay - daysInMonth + 1;
         month = calMonth + 1;
+
         if (month > 11) {
           month = 0;
           year = calYear + 1;
         }
+
         other = true;
       } else {
         day = i - firstDay + 1;
       }
 
-      const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(
+        day
+      ).padStart(2, "0")}`;
+
       const entries = allCalendar[dateKey] || [];
-      const meals = entries.filter((e) => e.type !== "workout");
-      const exForDate = exerciseLogByDate[dateKey] || [];
+      const meals = entries.filter((entry) => entry.type !== "workout");
+      const exercisesForDate = exerciseLogByDate[dateKey] || [];
 
       cells.push({
         day,
@@ -969,7 +1058,7 @@ function WorkoutCalendar({ planDays, calendarData, exerciseLogByDate }) {
         isToday: dateKey === todayKey,
         isSelected: dateKey === selected,
         meals,
-        exCount: exForDate.length,
+        exCount: exercisesForDate.length,
       });
     }
 
@@ -977,8 +1066,9 @@ function WorkoutCalendar({ planDays, calendarData, exerciseLogByDate }) {
   }
 
   const cells = buildCells();
+
   const selectedEntry = allCalendar[selected] || [];
-  const selectedMeals = selectedEntry.filter((e) => e.type !== "workout");
+  const selectedMeals = selectedEntry.filter((entry) => entry.type !== "workout");
   const selectedExercises = exerciseLogByDate[selected] || [];
 
   return (
@@ -1003,6 +1093,7 @@ function WorkoutCalendar({ planDays, calendarData, exerciseLogByDate }) {
         >
           CALENDAR
         </h2>
+
         <span
           style={{
             fontSize: "11px",
@@ -1017,8 +1108,13 @@ function WorkoutCalendar({ planDays, calendarData, exerciseLogByDate }) {
       </div>
 
       <div className="cal-grid">
-        {/* Calendar grid */}
-        <div style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid #1E1E1E" }}>
+        <div
+          style={{
+            borderRadius: "12px",
+            overflow: "hidden",
+            border: "1px solid #1E1E1E",
+          }}
+        >
           <div
             style={{
               display: "flex",
@@ -1038,19 +1134,28 @@ function WorkoutCalendar({ planDays, calendarData, exerciseLogByDate }) {
               }}
             >
               <span style={{ color: "#C6F135" }}>{MONTHS_FULL[calMonth]}</span>
-              <span style={{ color: "#555555", fontSize: "16px", marginLeft: "8px" }}>{calYear}</span>
+              <span
+                style={{
+                  color: "#555555",
+                  fontSize: "16px",
+                  marginLeft: "8px",
+                }}
+              >
+                {calYear}
+              </span>
             </p>
 
             <div style={{ display: "flex" }}>
-              {[["‹", -1], ["›", 1]].map(([lbl, dir]) => (
+              {[["‹", -1], ["›", 1]].map(([label, direction]) => (
                 <button
-                  key={lbl}
-                  onClick={() => changeMonth(dir)}
+                  key={label}
+                  onClick={() => changeMonth(direction)}
                   style={{
                     width: "32px",
                     height: "32px",
                     border: "1px solid #1E1E1E",
-                    borderRight: dir === -1 ? "none" : "1px solid #1E1E1E",
+                    borderRight:
+                      direction === -1 ? "none" : "1px solid #1E1E1E",
                     color: "#555555",
                     background: "transparent",
                     cursor: "pointer",
@@ -1068,16 +1173,22 @@ function WorkoutCalendar({ planDays, calendarData, exerciseLogByDate }) {
                     e.currentTarget.style.color = "#555555";
                   }}
                 >
-                  {lbl}
+                  {label}
                 </button>
               ))}
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", borderBottom: "1px solid #1E1E1E" }}>
-            {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(7,1fr)",
+              borderBottom: "1px solid #1E1E1E",
+            }}
+          >
+            {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((dayName) => (
               <div
-                key={d}
+                key={dayName}
                 style={{
                   padding: "8px 0",
                   textAlign: "center",
@@ -1088,12 +1199,18 @@ function WorkoutCalendar({ planDays, calendarData, exerciseLogByDate }) {
                   borderRight: "1px solid #1E1E1E",
                 }}
               >
-                {d}
+                {dayName}
               </div>
             ))}
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", background: "#080808" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(7,1fr)",
+              background: "#080808",
+            }}
+          >
             {cells.map((cell) => (
               <button
                 key={cell.dateKey}
@@ -1131,38 +1248,39 @@ function WorkoutCalendar({ planDays, calendarData, exerciseLogByDate }) {
                 </span>
 
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "2px" }}>
-                  {cell.meals.slice(0, 3).map((m, i) => (
+                  {cell.meals.slice(0, 3).map((meal, index) => (
                     <div
-                      key={`m-${i}`}
+                      key={`m-${index}`}
                       style={{
                         width: "4px",
                         height: "4px",
                         borderRadius: "50%",
-                        background: CAT_COLORS[m.cat] || "#555",
+                        background: CAT_COLORS[meal.cat] || "#555",
                       }}
-                      title={m.name}
+                      title={meal.name}
                     />
                   ))}
 
-                  {Array.from({ length: Math.min(cell.exCount, 3) }).map((_, i) => (
-                    <div
-                      key={`e-${i}`}
-                      style={{
-                        width: "4px",
-                        height: "4px",
-                        borderRadius: "50%",
-                        background: EXERCISE_DOT_COLOR,
-                      }}
-                      title="Exercise done"
-                    />
-                  ))}
+                  {Array.from({ length: Math.min(cell.exCount, 3) }).map(
+                    (_, index) => (
+                      <div
+                        key={`e-${index}`}
+                        style={{
+                          width: "4px",
+                          height: "4px",
+                          borderRadius: "50%",
+                          background: EXERCISE_DOT_COLOR,
+                        }}
+                        title="Exercise done"
+                      />
+                    )
+                  )}
                 </div>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Selected day side panel */}
         <div
           style={{
             borderRadius: "12px",
@@ -1184,7 +1302,8 @@ function WorkoutCalendar({ planDays, calendarData, exerciseLogByDate }) {
               margin: 0,
             }}
           >
-            {MONTHS_SHORT[parseInt(selected.split("-")[1]) - 1]} {parseInt(selected.split("-")[2])}, {selected.split("-")[0]}
+            {MONTHS_SHORT[parseInt(selected.split("-")[1]) - 1]}{" "}
+            {parseInt(selected.split("-")[2])}, {selected.split("-")[0]}
           </p>
 
           {selectedMeals.length > 0 && (
@@ -1202,9 +1321,9 @@ function WorkoutCalendar({ planDays, calendarData, exerciseLogByDate }) {
                 Meals
               </p>
 
-              {selectedMeals.map((m, i) => (
+              {selectedMeals.map((meal, index) => (
                 <div
-                  key={i}
+                  key={index}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -1219,13 +1338,22 @@ function WorkoutCalendar({ planDays, calendarData, exerciseLogByDate }) {
                       height: "6px",
                       borderRadius: "50%",
                       flexShrink: 0,
-                      background: CAT_COLORS[m.cat] || "#555",
+                      background: CAT_COLORS[meal.cat] || "#555",
                     }}
                   />
                   <div>
-                    <p style={{ fontSize: "12px", fontWeight: 700, color: "#ECECEC", margin: 0 }}>{m.name}</p>
+                    <p
+                      style={{
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        color: "#ECECEC",
+                        margin: 0,
+                      }}
+                    >
+                      {meal.name}
+                    </p>
                     <p style={{ fontSize: "10px", color: "#555555", margin: 0 }}>
-                      {m.cat} · {m.kcal} kcal
+                      {meal.cat} · {meal.kcal} kcal
                     </p>
                   </div>
                 </div>
@@ -1248,9 +1376,9 @@ function WorkoutCalendar({ planDays, calendarData, exerciseLogByDate }) {
                 Exercises Done
               </p>
 
-              {selectedExercises.map((ex, i) => (
+              {selectedExercises.map((exercise, index) => (
                 <div
-                  key={i}
+                  key={index}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -1268,8 +1396,15 @@ function WorkoutCalendar({ planDays, calendarData, exerciseLogByDate }) {
                       background: EXERCISE_DOT_COLOR,
                     }}
                   />
-                  <p style={{ fontSize: "12px", fontWeight: 700, color: "#C6F135", margin: 0 }}>
-                    ✓ {ex.name}
+                  <p
+                    style={{
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      color: "#C6F135",
+                      margin: 0,
+                    }}
+                  >
+                    ✓ {exercise.name}
                   </p>
                 </div>
               ))}
@@ -1277,15 +1412,32 @@ function WorkoutCalendar({ planDays, calendarData, exerciseLogByDate }) {
           )}
 
           {selectedMeals.length === 0 && selectedExercises.length === 0 && (
-            <p style={{ fontSize: "12px", color: "#333333" }}>Nothing logged this day.</p>
+            <p style={{ fontSize: "12px", color: "#333333" }}>
+              Nothing logged this day.
+            </p>
           )}
 
-          {/* Legend */}
-          <div style={{ marginTop: "8px", paddingTop: "12px", borderTop: "1px solid #1E1E1E" }}>
+          <div
+            style={{
+              marginTop: "8px",
+              paddingTop: "12px",
+              borderTop: "1px solid #1E1E1E",
+            }}
+          >
             <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-              {Object.entries(CAT_COLORS).map(([cat, color]) => (
-                <div key={cat} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                  <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: color }} />
+              {Object.entries(CAT_COLORS).map(([category, color]) => (
+                <div
+                  key={category}
+                  style={{ display: "flex", alignItems: "center", gap: "4px" }}
+                >
+                  <div
+                    style={{
+                      width: "6px",
+                      height: "6px",
+                      borderRadius: "50%",
+                      background: color,
+                    }}
+                  />
                   <span
                     style={{
                       fontSize: "9px",
@@ -1294,13 +1446,20 @@ function WorkoutCalendar({ planDays, calendarData, exerciseLogByDate }) {
                       color: "#555555",
                     }}
                   >
-                    {cat}
+                    {category}
                   </span>
                 </div>
               ))}
 
               <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: EXERCISE_DOT_COLOR }} />
+                <div
+                  style={{
+                    width: "6px",
+                    height: "6px",
+                    borderRadius: "50%",
+                    background: EXERCISE_DOT_COLOR,
+                  }}
+                />
                 <span
                   style={{
                     fontSize: "9px",
@@ -1320,11 +1479,16 @@ function WorkoutCalendar({ planDays, calendarData, exerciseLogByDate }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// Main page
-// ─────────────────────────────────────────────────────────────
+// --------------------------------------------------
+// Main page component
+// --------------------------------------------------
 
-export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalendar, currentUser }) {
+// Main page for the exercise library and workout plan.
+export default function ExerciseLibrary({
+  calendarData = {},
+  addWorkoutToCalendar,
+  currentUser,
+}) {
   const mockUser = currentUser || getUserProfile();
 
   const [search, setSearch] = useState("");
@@ -1335,47 +1499,23 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
   const [planOpen, setPlanOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState(null);
 
-  // Stores completion state for daily plan items.
-  const [completedPlanItems, setCompletedPlanItems] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("completedPlanItems")) || {};
-    } catch {
-      return {};
-    }
-  });
+  // Stores completed exercises for the current session only.
+  const [completedPlanItems, setCompletedPlanItems] = useState({});
 
-  // Stores completed exercises by date so the calendar reflects
-  // the actual day on which each exercise was performed.
-  const [exerciseLogByDate, setExerciseLogByDate] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("exerciseLogByDate")) || {};
-    } catch {
-      return {};
-    }
-  });
-
-  useEffect(() => {
-    localStorage.setItem("completedPlanItems", JSON.stringify(completedPlanItems));
-  }, [completedPlanItems]);
-
-  useEffect(() => {
-    localStorage.setItem("exerciseLogByDate", JSON.stringify(exerciseLogByDate));
-  }, [exerciseLogByDate]);
+  // Stores completed exercises by date for the current session only.
+  const [exerciseLogByDate, setExerciseLogByDate] = useState({});
 
   const planDaysRef = useRef(null);
 
-  if (!planDaysRef.current) planDaysRef.current = buildPlanDays(userLevel);
+  if (!planDaysRef.current) {
+    planDaysRef.current = buildPlanDays(userLevel);
+  }
 
   useEffect(() => {
     planDaysRef.current = buildPlanDays(userLevel);
-  }, [userLevel, boostCount]);
+  }, [userLevel]);
 
-  // Builds the personalized 14-day plan using:
-  // - goal,
-  // - weight goal,
-  // - available equipment,
-  // - activity level,
-  // - current exercise level.
+  // Builds a personalized 14-day exercise plan based on the user's profile.
   function buildPlanDays(level) {
     const pool = getMatchingExercises(
       mockUser.goal,
@@ -1385,13 +1525,12 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
       mockUser.activityLevel
     );
 
-    // Safety fallback:
-    // if no exercises remain after equipment filtering,
-    // use bodyweight exercises so the plan is never empty.
     const safePool =
       pool.length > 0
         ? pool
-        : exercises.filter((ex) => EXERCISE_EQUIPMENT_MAP[ex.id] === "none");
+        : exercises.filter(
+            (exercise) => EXERCISE_EQUIPMENT_MAP[exercise.id] === "none"
+          );
 
     const lastUsed = {};
     const days = [];
@@ -1402,12 +1541,15 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
       let picks = [];
 
       if (!isRest) {
-        // Reduces repeated exercise selection across nearby days.
-        const available = safePool.filter((ex) => !lastUsed[ex.id] || day - lastUsed[ex.id] >= 3);
+        const available = safePool.filter(
+          (exercise) => !lastUsed[exercise.id] || day - lastUsed[exercise.id] >= 3
+        );
+
         const source = available.length >= count ? available : safePool;
         picks = pickRandom(source, count);
-        picks.forEach((ex) => {
-          lastUsed[ex.id] = day;
+
+        picks.forEach((exercise) => {
+          lastUsed[exercise.id] = day;
         });
       }
 
@@ -1417,124 +1559,146 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
     return days;
   }
 
-  // Determines the current day in the 14-day plan
-  // based on the stored plan start date.
+  // Returns the current day of the plan.
+  // Since localStorage is removed, the plan starts from day 1 in the current session.
   function getTodayPlanDay() {
-    try {
-      const startStr = localStorage.getItem("planStartDate");
-
-      if (!startStr) {
-        localStorage.setItem("planStartDate", getTodayKey());
-        return 1;
-      }
-
-      const start = new Date(startStr);
-      const today = new Date(getTodayKey());
-      const diffDays = Math.floor((today - start) / (1000 * 60 * 60 * 24));
-      const dayNum = diffDays + 1;
-
-      return dayNum >= 1 && dayNum <= 14 ? dayNum : null;
-    } catch {
-      return null;
-    }
+    return 1;
   }
 
   const todayPlanDay = getTodayPlanDay();
 
+  // Shows a temporary message at the bottom of the page.
   function showToast(text, color = "#C6F135") {
     setToastMsg({ text, color });
     setTimeout(() => setToastMsg(null), 3500);
   }
 
-  // Updates both:
-  // 1. the daily plan completion state,
-  // 2. the exercise-by-date log used by the calendar.
+  // Marks an exercise as done and updates the calendar log.
   function toggleExerciseDone(day, exerciseId) {
     if (day !== todayPlanDay) return;
 
     const key = `${day}-${exerciseId}`;
     const isDone = !completedPlanItems[key];
-    const ex = exercises.find((e) => e.id === exerciseId);
+    const exercise = exercises.find((item) => item.id === exerciseId);
     const today = getTodayKey();
 
-    setCompletedPlanItems((prev) => ({ ...prev, [key]: isDone }));
+    setCompletedPlanItems((prev) => ({
+      ...prev,
+      [key]: isDone,
+    }));
 
     if (isDone) {
       setExerciseLogByDate((prev) => ({
         ...prev,
-        [today]: [...(prev[today] || []), { name: ex?.name || "Exercise", category: ex?.category || "Cardio" }],
+        [today]: [
+          ...(prev[today] || []),
+          {
+            name: exercise?.name || "Exercise",
+            category: exercise?.category || "Cardio",
+          },
+        ],
       }));
 
       if (addWorkoutToCalendar) {
-        // Parse midpoint of kcalRange string e.g. "70-90" -> 80
-        const rangeParts = (ex?.kcalRange || "0").replace("\u2013", "-").split("-");
-        const kcalMid = rangeParts.length === 2
-          ? Math.round((parseFloat(rangeParts[0]) + parseFloat(rangeParts[1])) / 2)
-          : parseFloat(rangeParts[0]) || 0;
+        const rangeParts = (exercise?.kcalRange || "0")
+          .replace("\u2013", "-")
+          .split("-");
+
+        const kcalMid =
+          rangeParts.length === 2
+            ? Math.round(
+                (parseFloat(rangeParts[0]) + parseFloat(rangeParts[1])) / 2
+              )
+            : parseFloat(rangeParts[0]) || 0;
+
         addWorkoutToCalendar(today, {
-          name:           ex?.name || "Exercise",
-          category:       ex?.category || "Cardio",
+          name: exercise?.name || "Exercise",
+          category: exercise?.category || "Cardio",
           caloriesBurned: kcalMid,
-          cat:            "workout",
-          type:           "workout",
+          cat: "workout",
+          type: "workout",
         });
       }
     } else {
       setExerciseLogByDate((prev) => {
         const existing = prev[today] || [];
-        const idx = existing.findIndex((e) => e.name === (ex?.name || "Exercise"));
-        if (idx === -1) return prev;
+        const index = existing.findIndex(
+          (item) => item.name === (exercise?.name || "Exercise")
+        );
+
+        if (index === -1) return prev;
 
         const updated = [...existing];
-        updated.splice(idx, 1);
+        updated.splice(index, 1);
 
-        return { ...prev, [today]: updated };
+        return {
+          ...prev,
+          [today]: updated,
+        };
       });
     }
   }
 
-  // Handles post-plan progression:
-  // - first applies up to 3 progressive overload boosts,
-  // - then advances to the next level,
-  // - Athlete is treated as the maximum level.
+  // Handles progression after completing the plan.
   function handlePlanContinue() {
     const levels = ["beginner", "intermediate", "advanced", "athlete"];
-    const idx = levels.indexOf(userLevel);
+    const currentIndex = levels.indexOf(userLevel);
 
     if (boostCount < 3) {
-      const next = boostCount + 1;
-      setBoostCount(next);
-      showToast(`Reps +${Math.round((Math.pow(1.15, next) - 1) * 100)}% · Level stays ${userLevel}`);
-    } else if (idx < levels.length - 1) {
-      setUserLevel(levels[idx + 1]);
+      const nextBoost = boostCount + 1;
+      setBoostCount(nextBoost);
+      showToast(
+        `Reps +${Math.round(
+          (Math.pow(1.15, nextBoost) - 1) * 100
+        )}% · Level stays ${userLevel}`
+      );
+    } else if (currentIndex < levels.length - 1) {
+      setUserLevel(levels[currentIndex + 1]);
       setBoostCount(0);
-      showToast(`Level advanced to ${levels[idx + 1].toUpperCase()}`, "#00E5FF");
+      showToast(
+        `Level advanced to ${levels[currentIndex + 1].toUpperCase()}`,
+        "#00E5FF"
+      );
     } else {
-      const next = boostCount + 1;
-      setBoostCount(next);
-      showToast(`Max Level (Athlete) · Reps +${Math.round((Math.pow(1.15, next) - 1) * 100)}%`, "#A855F7");
+      const nextBoost = boostCount + 1;
+      setBoostCount(nextBoost);
+      showToast(
+        `Max Level (Athlete) · Reps +${Math.round(
+          (Math.pow(1.15, nextBoost) - 1) * 100
+        )}%`,
+        "#A855F7"
+      );
     }
 
     setPlanOpen(false);
   }
 
-  // Filters the exercise library by:
-  // - search text,
-  // - category,
-  // - difficulty,
-  // - equipment availability.
-  const filtered = exercises.filter((ex) => {
-    const matchSearch = ex.name.toLowerCase().includes(search.toLowerCase());
-    const matchCat = filterCat === "All" || ex.category === filterCat;
-    const matchDiff = filterDiff === "All" || ex.difficulty === filterDiff;
-    const matchEquip = userHasEquipmentForExercise(ex.id, mockUser.equipment);
+  // Filters exercises by search, category, difficulty, and equipment.
+  const filtered = exercises.filter((exercise) => {
+    const matchSearch = exercise.name
+      .toLowerCase()
+      .includes(search.toLowerCase());
+
+    const matchCat =
+      filterCat === "All" || exercise.category === filterCat;
+
+    const matchDiff =
+      filterDiff === "All" || exercise.difficulty === filterDiff;
+
+    const matchEquip = userHasEquipmentForExercise(
+      exercise.id,
+      mockUser.equipment
+    );
 
     return matchSearch && matchCat && matchDiff && matchEquip;
   });
 
   const timelineLabel = mockUser.timeline || "Ongoing";
+
   const activityLabel = mockUser.activityLevel
-    ? mockUser.activityLevel.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+    ? mockUser.activityLevel
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase())
     : null;
 
   return (
@@ -1579,36 +1743,38 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
           color: #ECECEC;
         }
 
-        /* Responsive 14-day plan grid */
         .plan-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           gap: 8px;
         }
+
         @media (min-width: 640px) {
           .plan-grid { grid-template-columns: repeat(4, 1fr); }
         }
+
         @media (min-width: 1024px) {
           .plan-grid { grid-template-columns: repeat(7, 1fr); }
         }
 
-        /* Responsive exercise card grid */
         .exercise-grid {
           display: grid;
           grid-template-columns: 1fr;
           gap: 20px;
         }
+
         @media (min-width: 640px) {
           .exercise-grid { grid-template-columns: repeat(2, 1fr); }
         }
+
         @media (min-width: 1024px) {
           .exercise-grid { grid-template-columns: repeat(3, 1fr); }
         }
+
         @media (min-width: 1280px) {
           .exercise-grid { grid-template-columns: repeat(4, 1fr); }
         }
 
-        /* Responsive plan summary layout */
         .plan-summary {
           display: grid;
           grid-template-columns: 1fr;
@@ -1618,24 +1784,25 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
           background: #1E1E1E;
           margin-bottom: 16px;
         }
+
         @media (min-width: 640px) {
           .plan-summary { grid-template-columns: repeat(2, 1fr); }
         }
+
         @media (min-width: 1024px) {
           .plan-summary { grid-template-columns: repeat(4, 1fr); }
         }
 
-        /* Responsive calendar layout */
         .cal-grid {
           display: grid;
           grid-template-columns: 1fr;
           gap: 16px;
         }
+
         @media (min-width: 1024px) {
           .cal-grid { grid-template-columns: 1fr 300px; }
         }
 
-        /* Responsive filter bar */
         .filter-grid {
           display: grid;
           grid-template-columns: 1fr;
@@ -1646,6 +1813,7 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
           padding: 16px;
           margin-bottom: 24px;
         }
+
         @media (min-width: 640px) {
           .filter-grid { grid-template-columns: repeat(3, 1fr); }
         }
@@ -1667,7 +1835,6 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
             padding: "clamp(24px,5vw,48px) clamp(16px,4vw,40px)",
           }}
         >
-          {/* Hero section */}
           <header style={{ position: "relative", marginBottom: "56px" }}>
             <span
               aria-hidden="true"
@@ -1719,7 +1886,12 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
               >
                 EXERCISE
                 <br />
-                <span style={{ color: "transparent", WebkitTextStroke: "2px #C6F135" }}>
+                <span
+                  style={{
+                    color: "transparent",
+                    WebkitTextStroke: "2px #C6F135",
+                  }}
+                >
                   LIBRARY
                 </span>
               </h1>
@@ -1733,12 +1905,12 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
                   color: "#555555",
                 }}
               >
-                Your personalized 14-day plan is built from your profile. Only exercises you can do with your available equipment are included.
+                Your personalized 14-day plan is built from your profile. Only
+                exercises you can do with your available equipment are included.
               </p>
             </div>
           </header>
 
-          {/* Plan summary */}
           <section className="a3" style={{ marginBottom: "40px" }}>
             <h2
               style={{
@@ -1754,12 +1926,31 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
 
             <div className="plan-summary">
               {[
-                { label: "Goal", value: mockUser.goal.toUpperCase(), color: "#C6F135" },
-                { label: "Level", value: userLevel.toUpperCase(), color: "#00E5FF" },
-                { label: "Weekly Target", value: mockUser.weeklyTarget + " kg / week", color: "#FF2A5E" },
-                { label: "Activity", value: activityLabel || "Not set", color: "#FFAA00" },
+                {
+                  label: "Goal",
+                  value: mockUser.goal.toUpperCase(),
+                  color: "#C6F135",
+                },
+                {
+                  label: "Level",
+                  value: userLevel.toUpperCase(),
+                  color: "#00E5FF",
+                },
+                {
+                  label: "Weekly Target",
+                  value: mockUser.weeklyTarget + " kg / week",
+                  color: "#FF2A5E",
+                },
+                {
+                  label: "Activity",
+                  value: activityLabel || "Not set",
+                  color: "#FFAA00",
+                },
               ].map((item) => (
-                <div key={item.label} style={{ padding: "16px 20px", background: "#0D0D0D" }}>
+                <div
+                  key={item.label}
+                  style={{ padding: "16px 20px", background: "#0D0D0D" }}
+                >
                   <p
                     style={{
                       fontSize: "11px",
@@ -1772,14 +1963,20 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
                   >
                     {item.label}
                   </p>
-                  <p style={{ fontWeight: 700, fontSize: "14px", color: item.color, margin: 0 }}>
+                  <p
+                    style={{
+                      fontWeight: 700,
+                      fontSize: "14px",
+                      color: item.color,
+                      margin: 0,
+                    }}
+                  >
                     {item.value}
                   </p>
                 </div>
               ))}
             </div>
 
-            {/* Equipment tags indicate the resources used to build the plan. */}
             {mockUser.equipment && mockUser.equipment.length > 0 && (
               <div
                 style={{
@@ -1802,9 +1999,9 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
                   Equipment:
                 </span>
 
-                {mockUser.equipment.map((eq) => (
+                {mockUser.equipment.map((equipment) => (
                   <span
-                    key={eq}
+                    key={equipment}
                     style={{
                       fontSize: "10px",
                       fontWeight: 700,
@@ -1814,7 +2011,7 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
                       color: "#A855F7",
                     }}
                   >
-                    {eq}
+                    {equipment}
                   </span>
                 ))}
               </div>
@@ -1835,7 +2032,6 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
             </p>
           </section>
 
-          {/* 14-day plan */}
           <section style={{ marginBottom: "64px" }}>
             <div
               style={{
@@ -1891,16 +2087,13 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
 
           <hr style={{ borderColor: "#1E1E1E", marginBottom: "64px" }} />
 
-          {/* Calendar */}
           <WorkoutCalendar
-            planDays={planDaysRef.current}
             calendarData={calendarData}
             exerciseLogByDate={exerciseLogByDate}
           />
 
           <hr style={{ borderColor: "#1E1E1E", marginBottom: "64px" }} />
 
-          {/* Exercise library */}
           <section style={{ marginBottom: "24px" }}>
             <div
               style={{
@@ -2012,8 +2205,12 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
             </div>
           ) : (
             <div className="exercise-grid">
-              {filtered.map((ex) => (
-                <ExerciseCard key={ex.id} ex={ex} mockUser={mockUser} />
+              {filtered.map((exercise) => (
+                <ExerciseCard
+                  key={exercise.id}
+                  ex={exercise}
+                  mockUser={mockUser}
+                />
               ))}
             </div>
           )}
