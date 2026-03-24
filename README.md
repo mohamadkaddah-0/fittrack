@@ -38,7 +38,7 @@ Navigate to http://localhost:5173 in your browser.
 
 *Member Contributions:*
 
-Sara Ibrahim:
+*Sara Ibrahim:*
 
 Diet Program (/diet-program)
   Displays the user's personalised daily meal plan and macro targets. Calorie, protein, carbs, and fat daily targets are computed from the user's survey     data using the Mifflin-St Jeor BMR formula. Workout calories burned are added to the daily calorie target in real time. Meal recommendations rotate       every 3 days using a date-seeded algorithm that prioritises meal profiles matching to +-10% of the user's goal (e.g. high-protein for muscle gain).         Checking a meal logs it    to the shared calendar and updates the macro progress bars instantly. Note: since the mock database is still limited,     recommended meals may not add up to 10% of the daily macros yet. 
@@ -51,16 +51,19 @@ Ingredient Detail (/ingredient/:id)
   
 User Progress (/progress)
   A visual dashboard showing daily and weekly progress. Features circular ring charts for calories, protein, burned calories, and net balance. Includes a     7-day calorie bar chart comparing eaten vs burned against the daily target, weekly summary rings, a weight trend tracker with an editable current          weight,   a colour-coded activity calendar, and a custom personal goals checklist.
+  
 
 
-Jawad Al Housseini:
+*Jawad Al Housseini:*
 
 Primarily responsible for designing and implementing two main pages: the Exercise Library (/exercises) and the Exercise Detail page (/exercise/:id). My contribution focused on building a personalized workout experience based on user profile data collected from the survey. I developed the logic that generates a dynamic 14-day workout plan by combining the user’s fitness level and activity level into an effective level, filtering exercises based on available equipment and user limitations, and applying a goal-based cardio-to-strength ratio. I ensured the plan follows a structured design that includes rest days, variation between days, and a balanced distribution of exercises. I also implemented a progress tracking system that allows users to mark exercises as completed only on the current day, and designed a calendar feature that displays both meals and completed exercises while ensuring that each entry appears on the correct date. In addition, I built a search and filtering system for the exercise library, allowing users to browse exercises by name, category, difficulty, and equipment availability so that only relevant exercises are shown. In addition to my assigned pages, I also contributed to the Log Workout page by supporting parts of the logging logic and its integration with the shared calendar.
 
 A key part of my contribution involved working with the shared mock data (mockData.js) to simulate application behavior. I used structured exercise data and helper functions to retrieve user information, control workout composition based on goals, and ensure exercises are appropriate for the user’s limitations. I also worked with shared logging and calendar data to ensure that completed exercises are recorded and reflected consistently across different parts of the application. The mock data acts as an in-memory data source that simulates how a real backend system would function, allowing the application to dynamically generate plans, track activity, and update the interface without requiring a database or server. This demonstrates how data flows through the application and how different components remain synchronized while staying within the project constraints.
 
 
-Mohammad Kaddah:
+
+
+*Mohammad Kaddah:*
 
 Primarily responsible for:
 1. HomePage.jsx
@@ -76,7 +79,7 @@ The next phase will focus on expanding functionality and improving the overall t
 Planned Enhancements: Achievement Section Functionality. Activate and connect the achievement system to user activity. Introduce dynamic progress tracking and milestone-based rewards. Step Tracking Integration. Implement a system to track steps taken by the user. Use step data as an additional metric for activity tracking. Advanced Calorie Calculation. Improve total calorie burn estimation by combining: Steps taken, Logged workouts, and Logged meals. Provide a more accurate representation of user activity and fitness progress.
 
 
-Mohammad Moghnieh:
+*Mohammad Moghnieh:*
 
 
 
@@ -97,6 +100,10 @@ Calendar as a database: calendarData in App.jsx is a shared in-memory object key
 
 Meal recommendations: recommendMeals() uses a date-seeded pseudo-random number generator so recommendations stay stable all day, a 3-day rotation stored in localStorage to avoid repetition, and goal-aware meal profile sorting to match suggestions to the user's fitness goal. A macro tolerance check validates the combo and attempts swaps if targets aren't met — simulating a constraint-based recommendation engine.
 
-Seed data — INITIAL_CALENDAR pre-populates the last 3 days with realistic entries using dynamic date keys, giving users a non-empty calendar from day one and simulating a returning user's history.
+Seed data: INITIAL_CALENDAR pre-populates the last 3 days with realistic entries using dynamic date keys, giving users a non-empty calendar from day one and simulating a returning user's history.
 
-Ingredient database — 51 food items with accurate per-100g macros including Lebanese foods. Portion-scaled macro calculations simulate the behaviour of a food tracking API like Nutritionix or Edamam.
+Ingredient database: 51 food items with accurate per-100g macros, including Lebanese foods. Portion-scaled macro calculations simulate the behaviour of an API.
+
+Exercise plan generation — buildPlanDays() constructs a 14-day plan from the user's filtered exercise pool, respecting a 3-day repeat cooldown and alternating rest days. Equipment filtering and cardio ratio logic simulate a personalised training programme generator.
+
+
