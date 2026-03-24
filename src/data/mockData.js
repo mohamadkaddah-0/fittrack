@@ -512,77 +512,158 @@ export function getTodayKey() {
 
 // ─────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────
-// ADDED BY JAWAD — Exercise Library+ survey data
-// ─────────────────────────────────────────────────────────────
+/**
+ * mockData.js — Jawad's additions
+ * --------------------------------
+ * This section of the shared mockData file contains all the data and helper
+ * functions that I (Jawad) added for the Exercise Library and Exercise Detail
+ * pages.
+ *
+ * What is exported from here:
+ *  - dailyCalorieLog  — array that other pages can push calorie data into
+ *  - workoutLog       — array that holds logged workout entries this session
+ *  - getUserProfile() — reads the user profile from the survey storage
+ *  - getCardioRatio() — returns the cardio-to-strength ratio for a weight goal
+ *  - isRiskyForUser() — checks if an exercise conflicts with user limitations
+ *  - getExercisePlan()— returns the recommended sets/reps for a fitness level
+ *  - EXERCISES        — the full array of 20 exercise objects
+ * NOTE ON EXERCISE LIBRARY HELPERS:
+ * The following functions are defined INSIDE ExerciseLibrary.jsx (not here)
+ * because they are only used by that page:
+ *  - EXERCISE_EQUIPMENT_MAP
+ *  - normaliseEquipment()
+ *  - userHasEquipmentForExercise()
+ *  - getEffectiveLevel()
+ *  - pickRandom()
+ *  - getMatchingExercises()
+ *  - buildPlanDays()
+ * This follows the principle of keeping logic close to where it is used.
+ */
 
+// ─── Shared arrays ────────────────────────────────────────────────────────────
+
+/**
+ * dailyCalorieLog — accumulates calorie entries during the session.
+ * Sara's diet page reads this to adjust meal recommendations.
+ * It is an exported array so both pages reference the same object in memory.
+ */
 export const dailyCalorieLog = [];
-export const workoutLog      = [];
+
+/**
+ * workoutLog — accumulates workout entries during the session.
+ * The Plan Complete modal reads workoutLog.length to show how many
+ * workouts were logged.
+ */
+export const workoutLog = [];
+
+// ─── User profile ─────────────────────────────────────────────────────────────
+
 
 export function getUserProfile() {
-  try {
-    const sessionUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
-    const saved = localStorage.getItem("userProfile");
-    if (saved) {
-      const p = JSON.parse(saved);
-      return {
-        name:         sessionUser.name     || p.name  || "User",
-        email:        sessionUser.email    || p.email || "",
-        username:     sessionUser.username || "",
-        gender:       (p.gender || "male").toLowerCase(),
-        age:          p.age || 20,
-        weight:       parseFloat(p.weight) || 70,
-        weightUnit:   p.weightUnit || "kg",
-        height:       parseFloat(p.height) || 170,
-        weightGoal:   p.weightGoal || "maintain",
-        level:        p.fitnessLevel ? p.fitnessLevel.toLowerCase() : "beginner",
-        limitations:  Array.isArray(p.limitations)  ? p.limitations  : [],
-        equipment:    Array.isArray(p.equipment)     ? p.equipment    : [],
-        workoutTypes: Array.isArray(p.workoutTypes)  ? p.workoutTypes : [],
-        goal:
-          p.weightGoal === "lose"        ? "weight loss"  :
-          p.weightGoal === "gain"        ? "muscle gain"  :
-          p.weightGoal === "buildMuscle" ? "muscle gain"  :
-                                          "general fitness",
-        weeklyTarget: p.weeklyRate ? parseFloat(p.weeklyRate) : 0.5,
-        totalGoal:    p.targetWeight && p.weight
-          ? Math.abs(parseFloat(p.targetWeight) - parseFloat(p.weight))
-          : 5,
-        currentWeight: parseFloat(p.weight)       || 70,
-        targetWeight:  parseFloat(p.targetWeight) || 70,
-        activityLevel:
-          p.activityLevel === "lightly_active"    ? "lightly_active"    :
-          p.activityLevel === "moderately_active" ? "moderately_active" :
-          p.activityLevel === "very_active"       ? "very_active"       :
-          p.activityLevel === "sedentary"         ? "sedentary"         :
-          "moderately_active",
-        isOngoing: p.timeline === "Ongoing",
-        duration:
-          p.timeline === "1 month"  ? 1  :
-          p.timeline === "3 months" ? 3  :
-          p.timeline === "6 months" ? 6  :
-          p.timeline === "1 year"   ? 12 :
-          p.timeline === "2 years"  ? 24 : null,
-        goal_meal:
-          p.weightGoal === "lose"        ? "lose"        :
-          p.weightGoal === "gain"        ? "gain_muscle" :
-          p.weightGoal === "buildMuscle" ? "gain_muscle" :
-          p.weightGoal === "gain_muscle" ? "gain_muscle" :
-          "maintain",
-      };
-    }
-  } catch (e) {}
-  return {
-    name: "User", gender: "male", age: 20,
-    weight: 70, weightUnit: "kg", height: 170,
-    weightGoal: "maintain", level: "beginner",
-    limitations: [], equipment: [], workoutTypes: [],
-    goal: "general fitness", weeklyTarget: 0.5, totalGoal: 5,
-    currentWeight: 70, targetWeight: 70,
+  // Default profile used for Phase 1 simulation.
+  // These values represent a realistic beginner user.
+  const defaultProfile = {
+    name:          "User",
+    email:         "",
+    username:      "",
+    gender:        "male",
+    age:           20,
+    weight:        70,
+    weightUnit:    "kg",
+    height:        170,
+    weightGoal:    "maintain",
+    level:         "beginner",
+    limitations:   [],
+    equipment:     [],
+    workoutTypes:  [],
+    goal:          "general fitness",
+    weeklyTarget:  0.5,
+    totalGoal:     5,
+    currentWeight: 70,
+    targetWeight:  70,
     activityLevel: "moderately_active",
-    isOngoing: true, duration: null, goal_meal: "maintain",
+    isOngoing:     true,
+    duration:      null,
+    goal_meal:     "maintain",
+    timeline:      "Ongoing",
   };
+
+  try {
+    const savedJson = localStorage.getItem("userProfile");
+    if (!savedJson) return defaultProfile;
+
+    const p = JSON.parse(savedJson);
+
+    // Map the survey's weightGoal values to display strings
+    const goalMap = {
+      lose:         "weight loss",
+      gain:         "muscle gain",
+      buildMuscle:  "muscle gain",
+    };
+
+    // Map the survey's weightGoal values to meal goal keys
+    const mealGoalMap = {
+      lose:         "lose",
+      gain:         "gain_muscle",
+      buildMuscle:  "gain_muscle",
+      gain_muscle:  "gain_muscle",
+    };
+
+    // Map the survey's timeline strings to month counts
+    const durationMap = {
+      "1 month":  1,
+      "3 months": 3,
+      "6 months": 6,
+      "1 year":   12,
+      "2 years":  24,
+    };
+
+    return {
+      name:          p.name  || "User",
+      email:         p.email || "",
+      username:      "",
+      gender:        (p.gender || "male").toLowerCase(),
+      age:           p.age   || 20,
+      weight:        parseFloat(p.weight) || 70,
+      weightUnit:    p.weightUnit || "kg",
+      height:        parseFloat(p.height) || 170,
+      weightGoal:    p.weightGoal || "maintain",
+      level:         p.fitnessLevel ? p.fitnessLevel.toLowerCase() : "beginner",
+      limitations:   Array.isArray(p.limitations)  ? p.limitations  : [],
+      equipment:     Array.isArray(p.equipment)     ? p.equipment    : [],
+      workoutTypes:  Array.isArray(p.workoutTypes)  ? p.workoutTypes : [],
+      goal:          goalMap[p.weightGoal] || "general fitness",
+      weeklyTarget:  p.weeklyRate ? parseFloat(p.weeklyRate) : 0.5,
+      totalGoal:     p.targetWeight && p.weight
+                       ? Math.abs(parseFloat(p.targetWeight) - parseFloat(p.weight))
+                       : 5,
+      currentWeight: parseFloat(p.weight)       || 70,
+      targetWeight:  parseFloat(p.targetWeight) || 70,
+      activityLevel: ["lightly_active", "moderately_active", "very_active", "sedentary"].includes(p.activityLevel)
+                       ? p.activityLevel
+                       : "moderately_active",
+      isOngoing:     p.timeline === "Ongoing",
+      duration:      durationMap[p.timeline] || null,
+      goal_meal:     mealGoalMap[p.weightGoal] || "maintain",
+      timeline:      p.timeline || "Ongoing",
+    };
+  } catch (error) {
+    // Return safe defaults if parsing fails
+    return defaultProfile;
+  }
 }
 
+// ─── Algorithm helpers ────────────────────────────────────────────────────────
+
+/**
+ * getCardioRatio — returns the proportion of cardio exercises for a weight goal.
+ *
+ * Used in ExerciseLibrary.jsx to split the exercise pool.
+ * The ratios are designed to match the user's fitness objective:
+ *  lose weight   → 70% cardio (more calorie burning)
+ *  build muscle  → 20% cardio (more strength training)
+ *  maintain      → 50% cardio (balanced)
+ */
 export function getCardioRatio(weightGoal) {
   if (weightGoal === "lose")        return 0.7;
   if (weightGoal === "gain")        return 0.3;
@@ -591,17 +672,39 @@ export function getCardioRatio(weightGoal) {
   return 0.5;
 }
 
+/**
+ * isRiskyForUser — returns true if an exercise conflicts with the user's limitations.
+ *
+ * Used by ExerciseCard (ExerciseLibrary) and ExerciseDetailPage to show
+ * a caution warning for users who reported physical limitations in the survey.
+ *
+ * Parameters:
+ *  ex          — exercise object with a limitedFor array
+ *  limitations — array of limitation strings from the user profile
+ */
 export function isRiskyForUser(ex, limitations) {
   if (!limitations || limitations.length === 0) return false;
   if (limitations.includes("No limitations")) return false;
-  return ex.limitedFor?.some(l => limitations.includes(l)) || false;
+  return ex.limitedFor?.some((limitation) => limitations.includes(limitation)) || false;
 }
 
+/**
+ * getExercisePlan — returns the recommended training plan for an exercise.
+ *
+ * Used by ExerciseDetailPage to show the "YOUR LEVEL-BASED PLAN" section.
+ * Each level gets progressively harder sets, reps, and shorter rest periods.
+ *
+ * Parameters:
+ *  exercise  — the exercise object (to read logType)
+ *  userLevel — the user's fitness level string (beginner / intermediate / advanced / athlete(a small note is that athlete have no regular exercises you can search and filter but when you reach athlete level the exercises levels are enhanced to match this level))
+ */
 export function getExercisePlan(exercise, userLevel = "beginner") {
   const level = (userLevel || "beginner").toLowerCase();
-  const byLevel = {
+
+  // Plan configurations per fitness level and exercise log type
+  const plansByLevel = {
     beginner: {
-      duration:      { title: "3 sets × 20 sec", details: "Rest 40 sec · Low intensity" },
+      duration:      { title: "3 sets × 20 sec",  details: "Rest 40 sec · Low intensity" },
       "reps-cardio": { title: "3 sets × 12 reps", details: "Rest 35 sec" },
       bodyweight:    { title: "3 sets × 8 reps",  details: "Rest 45 sec" },
       weighted:      { title: "3 sets × 8 reps",  details: "Rest 60 sec · Light weight" },
@@ -625,10 +728,35 @@ export function getExercisePlan(exercise, userLevel = "beginner") {
       weighted:      { title: "6 sets × 12 reps", details: "Rest 35 sec · Heavy weight" },
     },
   };
-  const levelConfig = byLevel[level] || byLevel.beginner;
+
+  const levelConfig = plansByLevel[level] || plansByLevel.beginner;
   return levelConfig[exercise.logType] || { title: "Custom workout", details: "Adjust based on your ability" };
 }
 
+// ─── Exercise data ────────────────────────────────────────────────────────────
+
+/**
+ * EXERCISES — the full array of 20 exercise objects.
+ *
+ * Each exercise has:
+ *  id, name, category, difficulty, logType       — core identification
+ *  met / kcalPerRep                               — for calorie calculations
+ *  goals                                          — which fitness goals it serves
+ *  link                                           — React Router path to detail page
+ *  kcalRange                                      — display string "min–max kcal/10min"
+ *  muscles                                        — short muscles string for cards
+ *  desc                                           — short description
+ *  limitedFor                                     — limitations that make it risky
+ *  image                                          — Unsplash free photo URL
+ *  videoId                                        — YouTube video ID for tutorial
+ *  equipmentName                                  — display name of required equipment
+ *  type                                           — exercise type label
+ *  primaryMuscles / secondaryMuscles              — for the detail page muscles section
+ *  steps / tips / mistakes / variations           — for the detail page how-to section
+ *
+ * Images: Unsplash (free, no attribution required for educational use)
+ * Videos: YouTube public tutorial videos (free to embed)
+ */
 export const EXERCISES = [
   {
     id: 1, name: "Jump Rope", category: "Cardio", difficulty: "Beginner",
@@ -642,7 +770,12 @@ export const EXERCISES = [
     equipmentName: "Jump rope", type: "Cardio endurance",
     primaryMuscles: ["Calves", "Shoulders", "Core"],
     secondaryMuscles: ["Forearms", "Quads"],
-    steps: ["Hold the rope handles at hip level.", "Keep elbows close to your body.", "Rotate the rope mainly with your wrists.", "Jump lightly on the balls of your feet."],
+    steps: [
+      "Hold the rope handles at hip level.",
+      "Keep elbows close to your body.",
+      "Rotate the rope mainly with your wrists.",
+      "Jump lightly on the balls of your feet.",
+    ],
     tips: ["Keep jumps low.", "Relax your shoulders.", "Stay light on your feet."],
     mistakes: ["Jumping too high", "Landing heavily", "Using the whole arm to swing"],
     variations: ["Single unders", "Alternate foot jumps", "Double unders"],
