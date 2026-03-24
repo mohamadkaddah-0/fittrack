@@ -25,8 +25,8 @@ function estimateCalories(ex, logData, userWeightKg) {
   const type = getLogType(ex);
 
   if (type === "duration") {
-    const mins = (parseFloat(logData.duration) || 0) * (parseInt(logData.sets) || 1);
-    return Math.round((ex.met || 7) * wt * (mins / 60));
+    const totalMinutes = parseFloat(logData.duration) || 0; // Not multiplied by sets
+    return Math.round((ex.met || 7) * wt * (totalMinutes / 60));
   }
   if (type === "reps-cardio") {
     const reps = (parseInt(logData.reps) || 0) * (parseInt(logData.sets) || 1);
@@ -515,6 +515,15 @@ export default function LogWorkoutPage({ addWorkoutToCalendar }) {
     setSavedToCalendar(false);
   }
 
+  // Function to clear the selected exercise
+  function handleClearExercise() {
+    setSelectedEx(null);
+    setLogData({});
+    setPickerOpen(false);
+    setSavedToCalendar(false);
+    showToast("Exercise selection cleared", "#555555");
+  }
+
   // Add current exercise to the session log with locked calories
   function handleAddExercise() {
     if (!selectedEx) return;
@@ -638,42 +647,82 @@ export default function LogWorkoutPage({ addWorkoutToCalendar }) {
             {/* Left — log form */}
             <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
 
-              {/* Exercise picker trigger */}
+              {/* Exercise picker trigger with clear button */}
               <div style={{ background: "#0D0D0D", border: "1px solid #1E1E1E",
                 borderRadius: "14px", padding: "20px" }}>
                 <Label color="#555555">Select Exercise</Label>
-                <button onClick={() => setPickerOpen(p => !p)}
-                  style={{ width: "100%", display: "flex", alignItems: "center",
-                    justifyContent: "space-between", gap: "12px",
-                    background: "#111111", border: `1px solid ${pickerOpen ? "#C6F135" : "#2A2A2A"}`,
-                    borderRadius: "10px", padding: "14px 16px", cursor: "pointer",
-                    textAlign: "left", transition: "all 0.2s" }}
-                  onMouseEnter={e => { if (!pickerOpen) e.currentTarget.style.borderColor = "#555555"; }}
-                  onMouseLeave={e => { if (!pickerOpen) e.currentTarget.style.borderColor = "#2A2A2A"; }}>
-                  {selectedEx ? (
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <div style={{ width: "8px", height: "8px", borderRadius: "50%",
-                        background: selectedEx.category === "Cardio" ? "#FF2A5E" : "#C6F135" }} />
-                      <div>
-                        <p style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "#ECECEC" }}>
-                          {selectedEx.name}
-                        </p>
-                        <p style={{ margin: 0, fontSize: "10px", color: "#555555",
-                          textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                          {selectedEx.category} · {selectedEx.difficulty}
-                        </p>
+                
+                {/* Wrapper for relative positioning */}
+                <div style={{ position: "relative" }}>
+                  <button onClick={() => setPickerOpen(p => !p)}
+                    style={{ width: "100%", display: "flex", alignItems: "center",
+                      justifyContent: "space-between", gap: "12px",
+                      background: "#111111", border: `1px solid ${pickerOpen ? "#C6F135" : "#2A2A2A"}`,
+                      borderRadius: "10px", padding: "14px 16px", cursor: "pointer",
+                      textAlign: "left", transition: "all 0.2s" }}
+                    onMouseEnter={e => { if (!pickerOpen) e.currentTarget.style.borderColor = "#555555"; }}
+                    onMouseLeave={e => { if (!pickerOpen) e.currentTarget.style.borderColor = "#2A2A2A"; }}>
+                    {selectedEx ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <div style={{ width: "8px", height: "8px", borderRadius: "50%",
+                          background: selectedEx.category === "Cardio" ? "#FF2A5E" : "#C6F135" }} />
+                        <div>
+                          <p style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "#ECECEC" }}>
+                            {selectedEx.name}
+                          </p>
+                          <p style={{ margin: 0, fontSize: "10px", color: "#555555",
+                            textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                            {selectedEx.category} · {selectedEx.difficulty}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <span style={{ fontSize: "13px", color: "#555555" }}>
-                      Browse Exercise Library to log…
+                    ) : (
+                      <span style={{ fontSize: "13px", color: "#555555" }}>
+                        Browse Exercise Library to log…
+                      </span>
+                    )}
+                    <span style={{ fontSize: "16px", color: "#555555",
+                      transform: pickerOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
+                      ▾
                     </span>
+                  </button>
+
+                  {/* Clear button - only shows when an exercise is selected */}
+                  {selectedEx && (
+                    <button 
+                      onClick={handleClearExercise}
+                      style={{
+                        position: "absolute",
+                        right: "45px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        background: "transparent",
+                        border: "none",
+                        color: "#555555",
+                        cursor: "pointer",
+                        fontSize: "14px",
+                        padding: "4px 8px",
+                        borderRadius: "4px",
+                        zIndex: 10,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        transition: "all 0.2s"
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.color = "#FF2A5E";
+                        e.currentTarget.style.transform = "translateY(-50%) scale(1.1)";
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.color = "#555555";
+                        e.currentTarget.style.transform = "translateY(-50%) scale(1)";
+                      }}
+                      title="Clear selected exercise"
+                    >
+                      ✕
+                    </button>
                   )}
-                  <span style={{ fontSize: "16px", color: "#555555",
-                    transform: pickerOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
-                    ▾
-                  </span>
-                </button>
+                </div>
 
                 {pickerOpen && (
                   <div style={{ marginTop: "14px", animation: "fadeUp 0.2s ease" }}>
@@ -708,16 +757,6 @@ export default function LogWorkoutPage({ addWorkoutToCalendar }) {
                     calories={previewCalories}
                   />
 
-                  <button onClick={handleAddExercise}
-                    style={{ width: "100%", marginTop: "16px", padding: "14px",
-                      background: "#C6F135", border: 0, borderRadius: "10px",
-                      fontSize: "12px", fontWeight: 700, letterSpacing: "0.12em",
-                      textTransform: "uppercase", color: "#080808", cursor: "pointer",
-                      transition: "opacity 0.2s" }}
-                    onMouseEnter={e => { e.currentTarget.style.opacity = "0.85"; }}
-                    onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}>
-                    + Add to Today's Log
-                  </button>
                 </div>
               )}
 
