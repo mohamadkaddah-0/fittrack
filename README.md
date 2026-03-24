@@ -106,4 +106,46 @@ Ingredient database: 51 food items with accurate per-100g macros, including Leba
 
 Exercise plan generation: buildPlanDays() constructs a 14-day plan from the user's filtered exercise pool, respecting a 3-day repeat cooldown and alternating rest days. Equipment filtering and cardio ratio logic simulate a personalised training programme generator.
 
+**Mohammad Moghnieh:**
 
+Primarily responsible for designing and implementing the complete authentication, onboarding, and user profile ecosystem. This module handles user registration, login, password recovery, the fitness onboarding survey, and profile management, forming the foundational layer for user personalisation across the entire application.
+
+Authentication & User Management:
+
+Welcome Page (WelcomePage.jsx): The application's landing page, showcasing key features and providing clear calls-to-action for new users to register or existing users to log in.
+
+Registration (Register.jsx): A secure account creation component featuring a real-time password strength meter (checking for length, uppercase, lowercase, numbers, and symbols) and robust validation rules. Upon successful registration, user data is persisted to localStorage (fittrack_users and fittrack_logins), simulating a backend database. The user is then seamlessly guided to the onboarding survey.
+
+Login (Embedded in App.jsx): An authentication handler that validates credentials against both mock demo users and registered users from localStorage. On successful login, the global application state is updated, and the user is redirected to the main dashboard.
+
+Password Recovery Flow (ForgotPassword.jsx, ResetPassword.jsx): A two-step process that simulates a secure password reset. The user requests a reset for their email, a 6-digit code is generated (logged to the console for testing), and they can then set a new password after verifying the code.
+
+User Onboarding & Personalisation:
+
+Ready Survey (ReadySurvey.jsx): A transitional page that prepares new users for the upcoming fitness assessment, explaining its benefits and time commitment before they proceed.
+
+Fitness Survey (Survey.jsx): A comprehensive 4-step questionnaire designed to build a detailed user profile. It collects:
+
+Basic Information: Birthdate (for age calculation), gender, height, and weight (with unit conversion).
+Fitness Goals: Weight goal, target weight, performance goal, and timeline, featuring a Goal Analysis Algorithm that calculates a healthy weekly rate and provides feedback on whether the user's target is "healthy", "ambitious", or "impossible".
+Workout Preferences: Preferred workout type, location, session duration, and time of day.
+Experience & Lifestyle: Fitness level, activity level (with descriptions), physical limitations, and available equipment.
+On completion, the raw survey data and a formatted user profile are saved to localStorage, enabling all other modules (Diet Program, Exercise Library, etc.) to access personalised user data.
+Profile Management:
+
+User Profile (UserProfile.jsx): A dedicated page for viewing and editing user information. It aggregates data from multiple localStorage sources to display personal details, physical statistics, and fitness preferences. Key features include inline editing of all fields, profile picture upload (with Base64 conversion), real-time validation, and automatic syncing of changes back to localStorage.
+
+Support & Legal:
+
+Legal Pages (Terms.jsx, Privacy.jsx): Standard Terms of Service and Privacy Policy pages.
+
+Support Page (Support.jsx): A centralised help hub integrating live chat (via Tawk.to), an email contact form (via EmailJS), phone support information, a searchable FAQ section, and system status indicators.
+
+Mock Data System Contribution:
+My work established the core user data structure that the rest of the application relies on. I designed the localStorage schema for users, login credentials, survey data, and user profiles. This system allows for a fully functional, persistent user experience without a backend, simulating data flows such as:
+
+Registration → Storage → Login → Profile Retrieval
+
+Survey → Profile Generation → Personalised Data Consumption by other modules
+
+This foundation ensures that every other feature in FitTrack, from meal recommendations to workout plans, can access a consistent and personalised user profile.
