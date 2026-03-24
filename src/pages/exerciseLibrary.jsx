@@ -1074,16 +1074,6 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
   // exerciseLogByDate stores exercises per date so the calendar shows
   // exercises only on the specific date they were done
   const [exerciseLogByDate, setExerciseLogByDate] = useState({});
-
-  /**
-   * FIX for stale plan bug:
-   * I moved the plan days into useState instead of useRef.
-   * With useRef the plan only updated after a re-render (inside useEffect),
-   * so for one render cycle the old plan was displayed even after a level change.
-   * With useState the plan rebuilds synchronously before the render.
-   *
-   * The plan is computed with a lazy initializer so it only runs on first mount.
-   */
   const [planDays, setPlanDays] = useState(() => {
     const pool = getMatchingExercises(
       mockUser.goal, mockUser.level, mockUser.weightGoal,
@@ -1092,11 +1082,7 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
     return buildPlanDays(pool);
   });
 
-  /**
-   * Rebuilds the plan whenever the fitness level or boost count changes.
-   * Using useEffect with [userLevel, boostCount] as dependencies ensures
-   * it runs after every level advance or boost — Lecture 15.
-   */
+ 
   useEffect(() => {
     const pool = getMatchingExercises(
       mockUser.goal, userLevel, mockUser.weightGoal,
@@ -1107,11 +1093,7 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
     setCompletedPlanItems({});
   }, [userLevel, boostCount]);
 
-  /**
-   * Since localStorage is removed (not taught in lecture), the plan
-   * always starts at Day 1 for the current session.
-   * This is acceptable for Phase 1 where data does not persist on refresh.
-   */
+
   const todayPlanDay = 1;
 
   /** Shows a brief toast notification at the bottom of the screen. */
