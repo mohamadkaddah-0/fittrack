@@ -1466,12 +1466,17 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
       }));
 
       if (addWorkoutToCalendar) {
+        // Parse midpoint of kcalRange string e.g. "70-90" -> 80
+        const rangeParts = (ex?.kcalRange || "0").replace("\u2013", "-").split("-");
+        const kcalMid = rangeParts.length === 2
+          ? Math.round((parseFloat(rangeParts[0]) + parseFloat(rangeParts[1])) / 2)
+          : parseFloat(rangeParts[0]) || 0;
         addWorkoutToCalendar(today, {
-          name: ex?.name || "Exercise",
-          category: ex?.category || "Cardio",
-          kcal: 0,
-          cat: "workout",
-          type: "workout",
+          name:           ex?.name || "Exercise",
+          category:       ex?.category || "Cardio",
+          caloriesBurned: kcalMid,
+          cat:            "workout",
+          type:           "workout",
         });
       }
     } else {

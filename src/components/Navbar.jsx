@@ -1,42 +1,29 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CONFIGURATION
-// ─────────────────────────────────────────────────────────────────────────────
-
 const NAV_LINKS = [
   { label: "Home",             to: "/dashboard" },
-  { label: "User Progress",    to: "/progress"  },
   { label: "Diet Program",     to: "/diet"      },
-  { label: "Log Meal",         to: "/meal-log"  }, 
+  { label: "Log Meal",         to: "/meal-log"  },
   { label: "Exercise Library", to: "/exercises" },
   { label: "Log Workout",      to: "/log"       },
-  { label: "Settings",         to: "/settings"  },
 ];
 
-// Account dropdown menu options
 const ACCOUNT_MENU = [
   { label: "My Profile",  to: "/profile"   },
   { label: "Dashboard",   to: "/dashboard" },
-  { label: "Settings",    to: "/settings"  },
 ];
-
-// ─────────────────────────────────────────────────────────────────────────────
-// NAVBAR COMPONENT
-// ─────────────────────────────────────────────────────────────────────────────
 
 export default function Navbar() {
   const navigate  = useNavigate();
   const location  = useLocation();
 
-  const [menuOpen,    setMenuOpen]    = useState(false); // burger menu
-  const [accountOpen, setAccountOpen] = useState(false); // account dropdown
-  const [loggedIn,    setLoggedIn]    = useState(false); // mock login state
+  const [menuOpen,    setMenuOpen]    = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [loggedIn,    setLoggedIn]    = useState(false);
 
   const accountRef = useRef(null);
 
-  // Close account dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(e) {
       if (accountRef.current && !accountRef.current.contains(e.target)) {
@@ -47,14 +34,17 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Mock logout
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
+
   function handleLogout() {
     setLoggedIn(false);
     setAccountOpen(false);
     navigate("/login");
   }
 
-  // Navigate from account menu
   function handleAccountNav(to) {
     setAccountOpen(false);
     navigate(to);
@@ -77,24 +67,13 @@ export default function Navbar() {
       <nav className="sticky top-0 z-50 border-b border-[#1E1E1E] bg-[rgba(8,8,8,0.92)] backdrop-blur-xl">
         <div className="h-[60px] flex items-center justify-between px-6">
 
-          {/* Logo with Welcome Text */}
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate("/")}
-              className="font-['Barlow_Condensed'] text-2xl font-black tracking-wider uppercase text-[#C6F135] bg-transparent border-none cursor-pointer"
-            >
-              FitTrack<sup className="text-xs">™</sup>
-            </button>
-            
-            {/* Welcome message - only on homepage */}
-            {location.pathname === "/" && (
-              <div className="hidden md:block border-l border-[#1E1E1E] pl-4 ml-2">
-                <span className="text-xs tracking-[0.2em] uppercase text-[#555] font-['JetBrains_Mono']">
-                  WELCOME TO FITTRACK
-                </span>
-              </div>
-            )}
-          </div>
+          {/* Logo */}
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="font-['Barlow_Condensed'] text-2xl font-black tracking-wider uppercase text-[#C6F135] bg-transparent border-none cursor-pointer"
+          >
+            FitTrack<sup className="text-xs">™</sup>
+          </button>
 
           {/* Desktop nav links */}
           <ul className="hidden md:flex items-center gap-8 list-none">
@@ -134,25 +113,17 @@ export default function Navbar() {
                 className="bg-[#C6F135] text-black font-bold text-[10px] tracking-[0.18em] uppercase px-4 py-2 hover:bg-[#FF2A5E] hover:text-white transition-colors cursor-pointer flex items-center gap-2"
               >
                 Account
-                {/* Arrow indicator */}
-                <span className={`text-[8px] transition-transform duration-200 ${accountOpen ? "rotate-180" : ""}`}>
-                  ▼
-                </span>
+                <span className={`text-[8px] transition-transform duration-200 ${accountOpen ? "rotate-180" : ""}`}>▼</span>
               </button>
 
-              {/* Dropdown menu */}
               {accountOpen && (
                 <div className="absolute right-0 top-full mt-1 w-48 border border-[#2A2A2A] bg-[#0D0D0D] z-50">
-
-                  {/* User info row */}
                   <div className="px-4 py-3 border-b border-[#1E1E1E]">
                     <div className="text-[8px] tracking-[0.2em] uppercase text-[#555]">Signed in as</div>
                     <div className="text-[10px] text-[#ECECEC] mt-1 truncate">
                       {loggedIn ? "demo@fittrack.io" : "Guest"}
                     </div>
                   </div>
-
-                  {/* Menu options */}
                   {ACCOUNT_MENU.map(({ label, to }) => (
                     <button
                       key={to}
@@ -162,8 +133,6 @@ export default function Navbar() {
                       {label}
                     </button>
                   ))}
-
-                  {/* Login / Logout */}
                   {loggedIn ? (
                     <button
                       onClick={handleLogout}
@@ -196,19 +165,23 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Mobile dropdown */}
+        {/* Mobile dropdown — full-width, flush under the navbar */}
         {menuOpen && (
           <div className="md:hidden border-t border-[#1E1E1E] bg-[#0D0D0D]">
-            {NAV_LINKS.map(({ label, to }) => (
-              <button
-                key={to}
-                onClick={() => { navigate(to); setMenuOpen(false); }}
-                className="w-full text-left px-6 py-4 text-[10px] tracking-[0.18em] uppercase text-[#555] hover:text-[#ECECEC] hover:bg-[#111] border-b border-[#1E1E1E] last:border-b-0 transition-colors cursor-pointer bg-transparent"
-              >
-                {label}
-              </button>
-            ))}
-            {/* Mobile account options */}
+            {NAV_LINKS.map(({ label, to }) => {
+              const isActive = location.pathname === to;
+              return (
+                <button
+                  key={to}
+                  onClick={() => { navigate(to); setMenuOpen(false); }}
+                  className={`w-full text-left px-6 py-4 text-[10px] tracking-[0.18em] uppercase border-b border-[#1E1E1E] transition-colors cursor-pointer bg-transparent ${
+                    isActive ? "text-[#C6F135]" : "text-[#555] hover:text-[#ECECEC] hover:bg-[#111]"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
             <div className="border-t border-[#2A2A2A]">
               <button onClick={() => { navigate("/profile"); setMenuOpen(false); }}
                 className="w-full text-left px-6 py-4 text-[10px] tracking-[0.18em] uppercase text-[#555] hover:text-[#ECECEC] hover:bg-[#111] border-b border-[#1E1E1E] transition-colors cursor-pointer bg-transparent">

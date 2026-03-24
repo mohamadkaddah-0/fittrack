@@ -69,6 +69,32 @@ function RingProgress({ value, max, color, size = 120, stroke = 8, children }) {
   );
 }
 
+// Read-only stat card — value derived automatically from logged data
+function AutoStatCard({ label, value, unit, goal, color, source }) {
+  const progressPct = goal > 0 ? Math.min((value / goal) * 100, 100) : 0;
+  return (
+    <div className="flex flex-col gap-3 p-5 border-b sm:border-b-0 sm:border-r border-[#1E1E1E] last:border-0">
+      <div className="flex items-center justify-between">
+        <span className="text-[8px] tracking-[0.22em] uppercase text-[#555]">{label}</span>
+        <span className="text-[8px] text-[#333] uppercase tracking-widest">{source}</span>
+      </div>
+      <div className="font-['Barlow_Condensed'] font-black text-5xl leading-none" style={{ color }}>
+        {typeof value === "number" ? value.toLocaleString() : value}
+        {unit && <span className="text-base text-[#555] font-['JetBrains_Mono'] ml-1">{unit}</span>}
+      </div>
+      {goal > 0 && (
+        <>
+          <div className="w-full bg-[#1E1E1E] h-[3px]">
+            <div className="h-full transition-all duration-700" style={{ width: `${progressPct}%`, background: color }} />
+          </div>
+          <div className="text-[9px] text-[#555] tracking-widest">/ {goal} {unit}</div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// Editable stat card — user sets the value manually
 function EditableStatCard({ label, value, unit, goal, color, onSave }) {
   const [editing, setEditing] = useState(false);
   const [input,   setInput]   = useState("");
@@ -135,13 +161,24 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
   // Derive plan name from user's survey goal — falls back to default if no user
   const planName = GOAL_TO_PLAN[currentUser?.goal] || "Your Fitness Plan";
 
-  // Stats state — all start at 0
-  const [caloriesIntake, setCaloriesIntake] = useState(0);
-  const [caloriesBurnt,  setCaloriesBurnt]  = useState(0);
-  const [waterIntake,    setWaterIntake]     = useState(0);
-  const [exercisesDone,  setExercisesDone]   = useState(0);
-  const [steps,          setSteps]           = useState(0);
-  const [daysCompleted,  setDaysCompleted]   = useState(0);
+  // Water intake and steps — user-editable
+  const [waterIntake,   setWaterIntake]   = useState(0);
+  const [steps,         setSteps]         = useState(0);
+  const [daysCompleted, setDaysCompleted] = useState(0);
+
+  // Calories intake — auto-derived from today's meal entries in calendarData
+  const todayEntries    = calendarData[getTodayKey()] || [];
+  const caloriesIntake  = todayEntries
+    .filter(e => e.type === "meal")
+    .reduce((sum, e) => sum + (e.kcal || 0), 0);
+
+  // Calories burnt — auto-derived from today's logged workouts in calendarData
+  const caloriesBurnt   = todayEntries
+    .filter(e => e.type === "workout")
+    .reduce((sum, e) => sum + (e.caloriesBurned || 0), 0);
+
+  // Exercises done — auto count of today's logged workouts
+  const exercisesDone   = todayEntries.filter(e => e.type === "workout").length;
 
   // Calendar state
   const today      = getTodayKey();
@@ -225,10 +262,10 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border-b border-[#1E1E1E]">
-          <EditableStatCard label="Calories Intake" value={caloriesIntake} unit="kcal" goal={GOALS.calories}  color="#C6F135" onSave={setCaloriesIntake} />
-          <EditableStatCard label="Calories Burnt"  value={caloriesBurnt}  unit="kcal" goal={0}               color="#FF2A5E" onSave={setCaloriesBurnt}  />
+          <AutoStatCard label="Calories Intake" value={caloriesIntake} unit="kcal" goal={GOALS.calories}  color="#C6F135" source="from meals" />
+          <AutoStatCard label="Calories Burnt"  value={caloriesBurnt}  unit="kcal" goal={0}               color="#FF2A5E" source="from workouts" />
           <EditableStatCard label="Water Intake"    value={waterIntake}    unit="L"    goal={GOALS.water}     color="#00E5FF" onSave={setWaterIntake}     />
-          <EditableStatCard label="Exercises Done"  value={exercisesDone}  unit=""     goal={GOALS.exercises} color="#FFAA00" onSave={setExercisesDone}   />
+          <AutoStatCard label="Exercises Done"  value={exercisesDone}  unit=""     goal={GOALS.exercises} color="#FFAA00" source="from workouts" />
         </div>
 
         <div

@@ -63,7 +63,7 @@ const Login = ({ email, setEmail, password, setPassword, rememberMe, setRemember
     <section className="login-section">
       <div className="absolute top-6 left-6 z-10">
         <button
-          onClick={() => window.location.href = "/"}
+          onClick={() => window.location.href = "/dashboard"}
           className="font-['Barlow_Condensed'] text-2xl font-black tracking-wider uppercase text-[#C6F135] bg-transparent border-none cursor-pointer"
         >
           FitTrack<sup className="text-xs">™</sup>
