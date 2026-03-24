@@ -29,18 +29,19 @@ function estimateCalories(ex, logData, userWeightKg) {
     return Math.round((ex.met || 7) * wt * (totalMinutes / 60));
   }
   if (type === "reps-cardio") {
-    const reps = (parseInt(logData.reps) || 0) * (parseInt(logData.sets) || 1);
-    return Math.round(reps * (ex.kcalPerRep || 0.4));
-  }
+  const reps = (parseInt(logData.reps) || 0) * (parseInt(logData.sets) || 1);
+  const kcalPerRep = ex.kcalPerRep || 0.15;  // Changed default to 0.15
+  return Math.round(reps * kcalPerRep);
+}
   if (type === "bodyweight") {
     const reps = (parseInt(logData.reps) || 0) * (parseInt(logData.sets) || 1);
     return Math.round(reps * (ex.kcalPerRep || 0.32));
   }
   if (type === "weighted") {
-    const reps   = (parseInt(logData.reps) || 0) * (parseInt(logData.sets) || 1);
-    const weight = parseFloat(logData.weight) || 20;
-    return Math.round(reps * weight * 0.1);
-  }
+  const reps   = (parseInt(logData.reps) || 0) * (parseInt(logData.sets) || 1);
+  const weight = parseFloat(logData.weight) || 20;
+  return Math.round(reps * weight * 0.05);
+}
   if (type === "distance") {
     const mins = parseFloat(logData.duration) || 30;
     return Math.round((ex.met || 7) * wt * (mins / 60));
