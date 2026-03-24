@@ -405,77 +405,106 @@ const Surveys = ({ setCurrentUser }) => {
   };
 
   const handleSubmit = () => {
-    const stepErrors = validateStep(4);
+  const stepErrors = validateStep(4);
+  
+  if (Object.keys(stepErrors).length === 0) {
+    // Check if goal is impossible (only for lose/gain goals with target weight)
+    if (goalAnalysis && goalAnalysis.status === 'impossible' && surveyData.targetWeight) {
+      alert('Please fix the impossible goal before continuing.');
+      return;
+    }
     
-    if (Object.keys(stepErrors).length === 0) {
-      // Check if goal is impossible (only for lose/gain goals with target weight)
-      if (goalAnalysis && goalAnalysis.status === 'impossible' && surveyData.targetWeight) {
-        alert('Please fix the impossible goal before continuing.');
+    // Check if goal is ambitious and confirm (only for lose/gain goals with target weight)
+    if (goalAnalysis && goalAnalysis.status === 'ambitious' && surveyData.targetWeight) {
+      if (!window.confirm(
+        'This goal is ambitious and may be difficult to achieve.\n\n' +
+        `Weekly rate: ${goalAnalysis.weeklyRate} kg/week\n` +
+        `Recommended safe rate: ${goalAnalysis.safeRate} kg/week\n\n` +
+        'Do you want to continue with this ambitious goal?'
+      )) {
         return;
       }
-      
-      // Check if goal is ambitious and confirm (only for lose/gain goals with target weight)
-      if (goalAnalysis && goalAnalysis.status === 'ambitious' && surveyData.targetWeight) {
-        if (!window.confirm(
-          'This goal is ambitious and may be difficult to achieve.\n\n' +
-          `Weekly rate: ${goalAnalysis.weeklyRate} kg/week\n` +
-          `Recommended safe rate: ${goalAnalysis.safeRate} kg/week\n\n` +
-          'Do you want to continue with this ambitious goal?'
-        )) {
-          return;
-        }
-      }
-      
-      // Save survey data to localStorage
-      localStorage.setItem('userSurveyData', JSON.stringify(surveyData));
-      
-      // Calculate BMI
-      const heightInM = surveyData.heightUnit === 'cm' 
-        ? parseFloat(surveyData.height) / 100 
-        : parseFloat(surveyData.height) * 0.3048;
-      const weightInKg = convertToKg(surveyData.weight, surveyData.weightUnit);
-      const bmi = (weightInKg / (heightInM * heightInM)).toFixed(1);
-      
-      // Get activity level description
-      const activityLevelInfo = activityLevelOptions.find(level => level.value === surveyData.activityLevel);
-      
-
-      const userProfile = {
-        name: 'New User',
-        email: 'user@example.com',
-        age: calculateAge(surveyData.birthdate),
-        birthdate: surveyData.birthdate,
-        gender: surveyData.gender,
-        height: surveyData.height,
-        heightUnit: surveyData.heightUnit,
-        weight: surveyData.weight,
-        weightUnit: surveyData.weightUnit,
-        bmi: bmi,
-        fitnessLevel: surveyData.fitnessLevel,
-        activityLevel: surveyData.activityLevel,
-        activityLevelDescription: activityLevelInfo ? activityLevelInfo.description : '',
-        fitnessGoal: surveyData.performanceGoal,
-        weightGoal: surveyData.weightGoal,
-        targetWeight: surveyData.targetWeight,
-        timeline: surveyData.timeline,
-        weeklyRate: goalAnalysis ? `${goalAnalysis.weeklyRate} kg/week` : null,
-        workoutTypes: surveyData.workoutTypes, // Now a string, not an array
-        workoutLocation: surveyData.workoutLocation,
-        workoutDuration: surveyData.workoutDuration,
-        workoutTime: surveyData.workoutTime,
-        limitations: surveyData.limitations,
-        equipment: surveyData.equipment
-      };
-      
-      localStorage.setItem('userProfile', JSON.stringify(userProfile));
-      if (setCurrentUser) {
-        setCurrentUser(getUserProfile());
-      }
-      navigate('/profile');
-    } else {
-      setErrors(stepErrors);
     }
-  };
+    
+    // Save survey data to localStorage with consistent field names
+    const surveyToSave = {
+      // Step 1: Basic Info
+      birthdate: surveyData.birthdate,
+      gender: surveyData.gender,
+      height: surveyData.height,
+      heightUnit: surveyData.heightUnit,
+      weight: surveyData.weight,
+      weightUnit: surveyData.weightUnit,
+      
+      // Step 2: Fitness Goals
+      weightGoal: surveyData.weightGoal,
+      performanceGoal: surveyData.performanceGoal,
+      targetWeight: surveyData.targetWeight,
+      timeline: surveyData.timeline,
+      
+      // Step 3: Workout Preferences - Keep as string for single selection
+      workoutTypes: surveyData.workoutTypes, // This is a string now
+      workoutLocation: surveyData.workoutLocation,
+      workoutDuration: surveyData.workoutDuration, // This is what profile expects as workoutFrequency
+      workoutTime: surveyData.workoutTime,
+      
+      // Step 4: Experience Level
+      fitnessLevel: surveyData.fitnessLevel,
+      activityLevel: surveyData.activityLevel,
+      limitations: surveyData.limitations,
+      equipment: surveyData.equipment
+    };
+    
+    localStorage.setItem('userSurveyData', JSON.stringify(surveyToSave));
+    console.log('Survey saved:', surveyToSave); // Debug log
+    
+    // Calculate BMI
+    const heightInM = surveyData.heightUnit === 'cm' 
+      ? parseFloat(surveyData.height) / 100 
+      : parseFloat(surveyData.height) * 0.3048;
+    const weightInKg = convertToKg(surveyData.weight, surveyData.weightUnit);
+    const bmi = (weightInKg / (heightInM * heightInM)).toFixed(1);
+    
+    // Get activity level description
+    const activityLevelInfo = activityLevelOptions.find(level => level.value === surveyData.activityLevel);
+    
+    const userProfile = {
+      name: 'New User',
+      email: 'user@example.com',
+      age: calculateAge(surveyData.birthdate),
+      birthdate: surveyData.birthdate,
+      gender: surveyData.gender,
+      height: surveyData.height,
+      heightUnit: surveyData.heightUnit,
+      weight: surveyData.weight,
+      weightUnit: surveyData.weightUnit,
+      bmi: bmi,
+      fitnessLevel: surveyData.fitnessLevel,
+      activityLevel: surveyData.activityLevel,
+      activityLevelDescription: activityLevelInfo ? activityLevelInfo.description : '',
+      fitnessGoal: surveyData.performanceGoal,
+      weightGoal: surveyData.weightGoal,
+      targetWeight: surveyData.targetWeight,
+      timeline: surveyData.timeline,
+      weeklyRate: goalAnalysis ? `${goalAnalysis.weeklyRate} kg/week` : null,
+      workoutTypes: surveyData.workoutTypes, // Now a string
+      workoutLocation: surveyData.workoutLocation,
+      workoutDuration: surveyData.workoutDuration,
+      workoutTime: surveyData.workoutTime,
+      limitations: surveyData.limitations,
+      equipment: surveyData.equipment
+    };
+    
+    localStorage.setItem('userProfile', JSON.stringify(userProfile));
+    
+    if (setCurrentUser) {
+      setCurrentUser(getUserProfile());
+    }
+    navigate('/profile');
+  } else {
+    setErrors(stepErrors);
+  }
+};
 
   // Handle single selection for workout types
 const selectWorkoutType = (type) => {
