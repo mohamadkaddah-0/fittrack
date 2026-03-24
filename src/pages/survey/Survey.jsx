@@ -426,7 +426,7 @@ const Surveys = ({ setCurrentUser }) => {
       }
     }
     
-    // Save survey data to localStorage with consistent field names
+    // Create survey data object with ALL fields
     const surveyToSave = {
       // Step 1: Basic Info
       birthdate: surveyData.birthdate,
@@ -442,10 +442,10 @@ const Surveys = ({ setCurrentUser }) => {
       targetWeight: surveyData.targetWeight,
       timeline: surveyData.timeline,
       
-      // Step 3: Workout Preferences - Keep as string for single selection
-      workoutTypes: surveyData.workoutTypes, // This is a string now
+      // Step 3: Workout Preferences
+      workoutTypes: surveyData.workoutTypes,
       workoutLocation: surveyData.workoutLocation,
-      workoutDuration: surveyData.workoutDuration, // This is what profile expects as workoutFrequency
+      workoutDuration: surveyData.workoutDuration,
       workoutTime: surveyData.workoutTime,
       
       // Step 4: Experience Level
@@ -455,10 +455,11 @@ const Surveys = ({ setCurrentUser }) => {
       equipment: surveyData.equipment
     };
     
+    // Save survey data to localStorage
     localStorage.setItem('userSurveyData', JSON.stringify(surveyToSave));
-    console.log('Survey saved:', surveyToSave); // Debug log
+    console.log('✅ Survey saved successfully with all data:', surveyToSave);
     
-    // Calculate BMI
+    // Calculate BMI for user profile
     const heightInM = surveyData.heightUnit === 'cm' 
       ? parseFloat(surveyData.height) / 100 
       : parseFloat(surveyData.height) * 0.3048;
@@ -468,6 +469,7 @@ const Surveys = ({ setCurrentUser }) => {
     // Get activity level description
     const activityLevelInfo = activityLevelOptions.find(level => level.value === surveyData.activityLevel);
     
+    // Create user profile object with all data
     const userProfile = {
       name: 'New User',
       email: 'user@example.com',
@@ -482,12 +484,12 @@ const Surveys = ({ setCurrentUser }) => {
       fitnessLevel: surveyData.fitnessLevel,
       activityLevel: surveyData.activityLevel,
       activityLevelDescription: activityLevelInfo ? activityLevelInfo.description : '',
-      fitnessGoal: surveyData.performanceGoal,
       weightGoal: surveyData.weightGoal,
+      performanceGoal: surveyData.performanceGoal,
       targetWeight: surveyData.targetWeight,
       timeline: surveyData.timeline,
       weeklyRate: goalAnalysis ? `${goalAnalysis.weeklyRate} kg/week` : null,
-      workoutTypes: surveyData.workoutTypes, // Now a string
+      workoutTypes: surveyData.workoutTypes,
       workoutLocation: surveyData.workoutLocation,
       workoutDuration: surveyData.workoutDuration,
       workoutTime: surveyData.workoutTime,
@@ -495,14 +497,26 @@ const Surveys = ({ setCurrentUser }) => {
       equipment: surveyData.equipment
     };
     
+    // Save user profile to localStorage
     localStorage.setItem('userProfile', JSON.stringify(userProfile));
+    console.log('✅ User profile saved:', userProfile);
     
+    // Verify data was saved
+    const verifySurvey = localStorage.getItem('userSurveyData');
+    const verifyProfile = localStorage.getItem('userProfile');
+    console.log('Verification - Survey saved:', verifySurvey ? 'Yes' : 'No');
+    console.log('Verification - Profile saved:', verifyProfile ? 'Yes' : 'No');
+    
+    // Update current user if function exists
     if (setCurrentUser) {
       setCurrentUser(getUserProfile());
     }
-    navigate('/profile');
+    
+    // Navigate to home page
+    navigate('/dashboard');
   } else {
     setErrors(stepErrors);
+    console.log('Validation errors:', stepErrors);
   }
 };
 
