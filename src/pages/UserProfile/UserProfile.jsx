@@ -30,191 +30,138 @@ const SimplifiedProfile = ({ user: propUser }) => {
   };
 
   // Load user data from multiple sources
-const loadUserData = () => {
-  
-  // First check if user was passed as prop
-  if (propUser) {
-    console.log('Using prop user data');
-    return propUser;
-  }
-  
-  // Check for survey data first
-  const surveyDataRaw = localStorage.getItem('userSurveyData');
-  console.log('Raw survey data from localStorage:', surveyDataRaw);
-  
-  let survey = null;
-  if (surveyDataRaw) {
-    try {
-      survey = JSON.parse(surveyDataRaw);
-      console.log('Parsed survey data:', survey);
-    } catch (error) {
-      console.error('Error parsing survey data:', error);
-    }
-  } else {
-    console.log('No survey data found in localStorage');
-  }
-  
-  // Check localStorage for profile
-  const savedProfile = localStorage.getItem('userProfile');
-  let profile = null;
-  if (savedProfile) {
-    try {
-      profile = JSON.parse(savedProfile);
-      console.log('Parsed profile data:', profile);
-    } catch (error) {
-      console.error('Error parsing profile data:', error);
-    }
-  }
-  
-  // Get session user for name/email
-  const sessionUserRaw = sessionStorage.getItem('currentUser');
-  const sessionUser = sessionUserRaw ? JSON.parse(sessionUserRaw) : {};
-  console.log('Session user:', sessionUser);
-  
-  // Prioritize survey data for fitness preferences
-  if (survey) {
-    console.log('✅ Using survey data for fitness preferences');
+  const loadUserData = () => {
+    console.log('=== LOADING USER DATA ===');
     
-    // Format workout types (handle both string and array)
-    let workoutTypeDisplay = 'Not specified';
-    if (survey.workoutTypes) {
-      workoutTypeDisplay = formatWorkoutTypes(survey.workoutTypes);
-      console.log('Workout types:', survey.workoutTypes, 'Formatted:', workoutTypeDisplay);
+    // First check if user was passed as prop
+    if (propUser) {
+      console.log('Using prop user data');
+      return propUser;
     }
     
-    // Map workout duration (profile expects workoutFrequency)
-    let workoutFrequency = survey.workoutDuration || 'Not specified';
-    console.log('Workout duration:', workoutFrequency);
+    // Check for survey data first
+    const surveyDataRaw = localStorage.getItem('userSurveyData');
+    console.log('Raw survey data:', surveyDataRaw);
     
-    // Map fitness level (convert to proper case)
-    let fitnessLevel = survey.fitnessLevel || 'Beginner';
-    if (fitnessLevel) {
-      fitnessLevel = fitnessLevel.charAt(0).toUpperCase() + fitnessLevel.slice(1).toLowerCase();
+    let survey = null;
+    if (surveyDataRaw) {
+      try {
+        survey = JSON.parse(surveyDataRaw);
+        console.log('Parsed survey data:', survey);
+      } catch (error) {
+        console.error('Error parsing survey data:', error);
+      }
     }
-    console.log('Fitness level:', fitnessLevel);
     
-    // Map primary goal - check both weightGoal and performanceGoal
-    let primaryGoal = 'General Fitness';
-    if (survey.performanceGoal) {
-      // Map performance goal to display name
-      const goalMap = {
-        'buildStrength': 'Build Strength',
-        'improveEndurance': 'Improve Endurance',
-        'improveFlexibility': 'Improve Flexibility',
-        'generalFitness': 'General Fitness'
+    // Get session user for name/email
+    const sessionUserRaw = sessionStorage.getItem('currentUser');
+    const sessionUser = sessionUserRaw ? JSON.parse(sessionUserRaw) : {};
+    console.log('Session user:', sessionUser);
+    
+    // If we have survey data, use it
+    if (survey) {
+      console.log('✅ Using survey data');
+      
+      // Format workout types
+      let workoutTypeDisplay = 'Not specified';
+      if (survey.workoutTypes) {
+        workoutTypeDisplay = formatWorkoutTypes(survey.workoutTypes);
+      }
+      
+      // Map workout duration
+      let workoutDuration = survey.workoutDuration || 'Not specified';
+      
+      // Format fitness level
+      let fitnessLevel = survey.fitnessLevel || 'Beginner';
+      if (fitnessLevel) {
+        fitnessLevel = fitnessLevel.charAt(0).toUpperCase() + fitnessLevel.slice(1).toLowerCase();
+      }
+      
+      // Map primary goal
+      let primaryGoal = 'General Fitness';
+      if (survey.performanceGoal) {
+        const goalMap = {
+          'buildStrength': 'Build Strength',
+          'improveEndurance': 'Improve Endurance',
+          'improveFlexibility': 'Improve Flexibility',
+          'generalFitness': 'General Fitness'
+        };
+        primaryGoal = goalMap[survey.performanceGoal] || survey.performanceGoal;
+      } else if (survey.weightGoal) {
+        const weightGoalMap = {
+          'lose': 'Weight Loss',
+          'gain': 'Weight Gain',
+          'maintain': 'Weight Maintenance',
+          'buildMuscle': 'Build Muscle'
+        };
+        primaryGoal = weightGoalMap[survey.weightGoal] || survey.weightGoal;
+      }
+      
+      const userData = {
+        // Personal info
+        name: sessionUser.name || survey.name || 'New User',
+        username: sessionUser.username || 'newuser',
+        email: sessionUser.email || 'user@example.com',
+        phone: '',
+        
+        // Physical stats from survey
+        birthdate: survey.birthdate,
+        height: survey.height ? parseFloat(survey.height) : 0,
+        weight: survey.weight ? parseFloat(survey.weight) : 0,
+        weightUnit: survey.weightUnit || 'kg',
+        heightUnit: survey.heightUnit || 'cm',
+        
+        // Fitness preferences
+        fitnessLevel: fitnessLevel,
+        primaryGoal: primaryGoal,
+        workoutFrequency: workoutDuration,
+        workoutType: workoutTypeDisplay,
+        workoutLocation: survey.workoutLocation || 'Not specified',
+        preferredTime: survey.workoutTime || 'Not specified',
+        
+        // Additional data
+        limitations: survey.limitations || [],
+        equipment: survey.equipment || [],
+        timeline: survey.timeline || 'Not specified',
+        weightGoal: survey.weightGoal || 'maintain',
+        targetWeight: survey.targetWeight || null,
+        performanceGoal: survey.performanceGoal || null,
+        activityLevel: survey.activityLevel || null,
+        
+        // Location
+        location: 'Not specified'
       };
-      primaryGoal = goalMap[survey.performanceGoal] || survey.performanceGoal;
-      console.log('Performance goal:', survey.performanceGoal, 'Mapped to:', primaryGoal);
-    } else if (survey.weightGoal) {
-      // Fallback to weight goal
-      const weightGoalMap = {
-        'lose': 'Weight Loss',
-        'gain': 'Weight Gain',
-        'maintain': 'Weight Maintenance',
-        'buildMuscle': 'Build Muscle'
-      };
-      primaryGoal = weightGoalMap[survey.weightGoal] || survey.weightGoal;
-      console.log('Weight goal:', survey.weightGoal, 'Mapped to:', primaryGoal);
+      
+      console.log('Final user data:', userData);
+      return userData;
     }
     
-    const userData = {
-      // Personal info from session or profile
-      name: sessionUser.name || profile?.name || survey.name || 'New User',
-      username: sessionUser.username || profile?.username || 'newuser',
-      email: sessionUser.email || profile?.email || 'user@example.com',
-      phone: profile?.phone || '',
-      memberSince: profile?.memberSince || survey.memberSince || new Date().toLocaleDateString('default', { month: 'long', year: 'numeric' }),
-      
-      // Physical stats from survey
-      birthdate: survey.birthdate || profile?.birthdate,
-      height: survey.height ? parseFloat(survey.height) : (profile?.height || 0),
-      weight: survey.weight ? parseFloat(survey.weight) : (profile?.weight || 0),
-      weightUnit: survey.weightUnit || 'kg',
-      heightUnit: survey.heightUnit || 'cm',
-      
-      // Fitness preferences from survey - map correctly
-      fitnessLevel: fitnessLevel,
-      primaryGoal: primaryGoal,
-      workoutFrequency: workoutFrequency, // This maps workoutDuration to workoutFrequency
-      workoutType: workoutTypeDisplay,
-      workoutLocation: survey.workoutLocation || profile?.workoutLocation || 'Not specified',
-      preferredTime: survey.workoutTime || profile?.preferredTime || 'Not specified',
-      
-      // Additional data from survey
-      limitations: survey.limitations || [],
-      equipment: survey.equipment || [],
-      timeline: survey.timeline || 'Not specified',
-      weightGoal: survey.weightGoal || 'maintain',
-      targetWeight: survey.targetWeight || null,
-      performanceGoal: survey.performanceGoal || null,
-      activityLevel: survey.activityLevel || null,
-      
-      // Location (if any)
-      location: profile?.location || 'Not specified'
-    };
-    
-    console.log('Final user data from survey:', userData);
-    return userData;
-  }
-  
-  // Fallback to profile data if no survey
-  if (profile) {
-    console.log('Using profile data as fallback');
+    // Default fallback
+    console.log('Using default fallback data');
     return {
-      name: sessionUser.name || profile.name || 'New User',
-      username: sessionUser.username || profile.username || 'newuser',
-      email: sessionUser.email || profile.email || 'user@example.com',
-      phone: profile.phone || '',
-      memberSince: profile.memberSince || new Date().toLocaleDateString('default', { month: 'long', year: 'numeric' }),
-      birthdate: profile.birthdate,
-      height: profile.height || 0,
-      weight: profile.weight || 0,
-      weightUnit: profile.weightUnit || 'kg',
-      heightUnit: profile.heightUnit || 'cm',
-      fitnessLevel: profile.fitnessLevel || 'Beginner',
-      primaryGoal: profile.primaryGoal || 'General Fitness',
-      workoutFrequency: profile.workoutDuration || 'Not specified',
-      workoutType: profile.workoutTypes || 'Not specified',
-      workoutLocation: profile.workoutLocation || 'Not specified',
-      preferredTime: profile.workoutTime || 'Not specified',
-      limitations: profile.limitations || [],
-      equipment: profile.equipment || [],
-      location: profile.location || 'Not specified'
+      name: sessionUser.name || 'Alex Johnson',
+      username: sessionUser.username || 'alexjohnson',
+      email: sessionUser.email || 'alex.johnson@example.com',
+      phone: '',
+      birthdate: '1996-05-15',
+      height: 180,
+      weight: 75,
+      weightUnit: 'kg',
+      heightUnit: 'cm',
+      fitnessLevel: 'Intermediate',
+      primaryGoal: 'Weight Loss',
+      workoutFrequency: '3-4 days/week',
+      workoutType: 'Mixed',
+      workoutLocation: 'Gym',
+      preferredTime: 'Morning',
+      limitations: [],
+      equipment: [],
+      location: 'Not specified'
     };
-  }
-  
-  // Default fallback
-  console.log('Using default fallback data');
-  return {
-    name: sessionUser.name || 'Alex Johnson',
-    username: sessionUser.username || 'alexjohnson',
-    email: sessionUser.email || 'alex.johnson@example.com',
-    phone: '+1 (555) 123-4567',
-    memberSince: new Date().toLocaleDateString('default', { month: 'long', year: 'numeric' }),
-    birthdate: '1996-05-15',
-    height: 180,
-    weight: 75,
-    weightUnit: 'kg',
-    heightUnit: 'cm',
-    fitnessLevel: 'Intermediate',
-    primaryGoal: 'Weight Loss',
-    workoutFrequency: '3-4 days/week',
-    workoutType: 'Mixed',
-    workoutLocation: 'Gym',
-    preferredTime: 'Morning',
-    limitations: [],
-    equipment: [],
-    location: 'Not specified'
   };
-};
 
   const [user, setUser] = useState(loadUserData());
   const [editForm, setEditForm] = useState({ ...user });
-
-  // Save to localStorage whenever user changes
-  useEffect(() => {
-    localStorage.setItem('userProfile', JSON.stringify(user));
-  }, [user]);
 
   // Debug: Log what's being displayed
   useEffect(() => {
@@ -305,7 +252,6 @@ const loadUserData = () => {
         <div className="profile-title-section">
           <h1 className="profile-name">{user.name}</h1>
           <p className="profile-username">@{user.username}</p>
-          <p className="profile-member">Member since {user.memberSince}</p>
           {age && <p className="profile-age">{age} years old</p>}
         </div>
 
@@ -369,12 +315,6 @@ const loadUserData = () => {
                   <span className="info-label">Weight</span>
                   <span className="info-value">{user.weight} {user.weightUnit}</span>
                 </div>
-                <div className="info-item">
-                  <span className="info-label">From Survey</span>
-                  <span className="info-value" style={{ color: 'var(--lime)' }}>
-                    ✓ Data imported
-                  </span>
-                </div>
                 {user.targetWeight && (
                   <div className="info-item">
                     <span className="info-label">Target Weight</span>
@@ -384,7 +324,7 @@ const loadUserData = () => {
               </div>
             </div>
 
-            {/* Fitness Preferences - Now properly showing survey data */}
+            {/* Fitness Preferences */}
             <div className="info-section">
               <h2>Fitness Preferences</h2>
               <div className="info-grid">
@@ -415,7 +355,7 @@ const loadUserData = () => {
               </div>
             </div>
 
-            {/* Limitations & Equipment - Additional info from survey */}
+            {/* Limitations & Equipment */}
             {user.limitations && user.limitations.length > 0 && !user.limitations.includes('No limitations') && (
               <div className="info-section">
                 <h2>Physical Limitations</h2>
@@ -441,7 +381,7 @@ const loadUserData = () => {
             )}
           </div>
         ) : (
-          /* EDIT MODE - Keep your existing edit form or add a simple one */
+          /* EDIT MODE */
           <div className="edit-mode">
             <div className="info-section">
               <h2>Edit Personal Information</h2>
@@ -517,11 +457,10 @@ const loadUserData = () => {
         )}
       </div>
 
-      {/* Footer Note */}
+      {/* Footer */}
       <div className="profile-footer">
-        <p>Member since {user.memberSince}</p>
         <p style={{ fontSize: '10px', color: 'var(--dim)' }}>
-          Profile data from survey • Age calculated from birthdate
+          Profile data from fitness survey
         </p>
       </div>
     </div>
