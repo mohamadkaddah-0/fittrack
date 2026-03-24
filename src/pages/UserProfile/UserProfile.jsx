@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './UserProfile.css';
 
 const SimplifiedProfile = ({ user: propUser }) => {
   const [isEditing, setIsEditing] = useState(false);
   const fileInputRef = useRef(null);
+  const navigate = useNavigate();
   
   // Calculate age from birthdate
   const calculateAge = (birthdate) => {
@@ -45,6 +46,22 @@ const SimplifiedProfile = ({ user: propUser }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEditForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    // Clear user session
+    sessionStorage.removeItem('currentUser');
+    sessionStorage.removeItem('userLoggedIn');
+    
+    // Optional: Clear any other user-related data
+    localStorage.removeItem('userProfile');
+    
+    // Navigate to welcome page
+    navigate('/');
+    
+    // Optional: Show logout confirmation (you can customize this)
+    console.log('User logged out successfully');
   };
 
   // Load user data from multiple sources
@@ -356,16 +373,23 @@ const SimplifiedProfile = ({ user: propUser }) => {
           {age && <p className="profile-age">{age} years old</p>}
         </div>
 
-        {!isEditing ? (
-          <button className="edit-profile-btn" onClick={() => setIsEditing(true)}>
-            Edit Profile
-          </button>
-        ) : (
-          <div className="edit-actions">
-            <button className="save-btn" onClick={handleSave}>Save Changes</button>
-            <button className="cancel-btn" onClick={handleCancel}>Cancel</button>
-          </div>
-        )}
+        <div className="profile-actions">
+          {!isEditing ? (
+            <>
+              <button className="edit-profile-btn" onClick={() => setIsEditing(true)}>
+                Edit Profile
+              </button>
+              <button className="logout-btn" onClick={handleLogout}>
+                Logout
+              </button>
+            </>
+          ) : (
+            <div className="edit-actions">
+              <button className="save-btn" onClick={handleSave}>Save Changes</button>
+              <button className="cancel-btn" onClick={handleCancel}>Cancel</button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Profile Content */}
