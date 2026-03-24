@@ -812,12 +812,7 @@ const Surveys = ({ setCurrentUser }) => {
                 </div>
               )}
 
-              {/* For maintain weight, show info message */}
-              {surveyData.weightGoal === 'maintain' && (
-                <div className="info-message" style={{ backgroundColor: '#e8f5e9', padding: '12px', borderRadius: '8px', marginBottom: '20px' }}>
-                  <p>✅ Great choice! You're focusing on maintaining your current weight of {surveyData.weight} {surveyData.weightUnit}.</p>
-                </div>
-              )}
+              
 
               <div className="form-group">
                 <label>Performance Goal *</label>
