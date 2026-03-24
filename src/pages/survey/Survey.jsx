@@ -16,8 +16,8 @@ const Surveys = ({ setCurrentUser }) => {
     weightUnit: 'kg',
     
     // Step 2: Fitness Goals
-    weightGoal: '', // 'lose', 'gain', 'maintain'
-    performanceGoal: '', // separate goal from other options
+    weightGoal: '', // 'lose', 'gain', 'maintain', 'buildMuscle'
+    performanceGoal: '',
     targetWeight: '',
     timeline: '',
     
@@ -29,7 +29,7 @@ const Surveys = ({ setCurrentUser }) => {
     
     // Step 4: Experience Level
     fitnessLevel: '',
-    activityLevel: '', // Added activity level
+    activityLevel: '',
     limitations: [],
     equipment: []
   });
@@ -86,7 +86,6 @@ const Surveys = ({ setCurrentUser }) => {
   
   const fitnessLevelOptions = ['Beginner', 'Intermediate', 'Advanced', 'Athlete'];
   
-  // Activity level options with descriptions
   const activityLevelOptions = [
     { 
       value: 'sedentary', 
@@ -149,12 +148,6 @@ const Surveys = ({ setCurrentUser }) => {
   const convertToKg = (weight, unit) => {
     if (!weight) return null;
     return unit === 'lbs' ? parseFloat(weight) * 0.453592 : parseFloat(weight);
-  };
-
-  // Convert kg to target unit for display
-  const convertFromKg = (weightKg, unit) => {
-    if (!weightKg) return null;
-    return unit === 'lbs' ? (weightKg / 0.453592).toFixed(1) : weightKg.toFixed(1);
   };
 
   // Analyze goal whenever relevant fields change
@@ -352,11 +345,6 @@ const Surveys = ({ setCurrentUser }) => {
             errors.targetWeight = 'Target weight must be less than current weight for weight loss';
           } else if (surveyData.weightGoal === 'gain' && targetWeight <= currentWeight) {
             errors.targetWeight = 'Target weight must be greater than current weight for weight gain';
-          } else if (surveyData.weightGoal === 'maintain' && targetWeight) {
-            // Optional validation only if user enters a target weight
-            if (Math.abs(targetWeight - currentWeight) > 2) {
-              errors.targetWeight = 'For maintenance, target weight should be close to current weight (±2kg)';
-            }
           }
         }
         
@@ -405,139 +393,172 @@ const Surveys = ({ setCurrentUser }) => {
   };
 
   const handleSubmit = () => {
-  const stepErrors = validateStep(4);
-  
-  if (Object.keys(stepErrors).length === 0) {
-    // Check if goal is impossible (only for lose/gain goals with target weight)
-    if (goalAnalysis && goalAnalysis.status === 'impossible' && surveyData.targetWeight) {
-      alert('Please fix the impossible goal before continuing.');
-      return;
-    }
+    const stepErrors = validateStep(4);
     
-    // Check if goal is ambitious and confirm (only for lose/gain goals with target weight)
-    if (goalAnalysis && goalAnalysis.status === 'ambitious' && surveyData.targetWeight) {
-      if (!window.confirm(
-        'This goal is ambitious and may be difficult to achieve.\n\n' +
-        `Weekly rate: ${goalAnalysis.weeklyRate} kg/week\n` +
-        `Recommended safe rate: ${goalAnalysis.safeRate} kg/week\n\n` +
-        'Do you want to continue with this ambitious goal?'
-      )) {
+    if (Object.keys(stepErrors).length === 0) {
+      // Check if goal is impossible (only for lose/gain goals with target weight)
+      if (goalAnalysis && goalAnalysis.status === 'impossible' && surveyData.targetWeight) {
+        alert('Please fix the impossible goal before continuing.');
         return;
       }
+      
+      // Check if goal is ambitious and confirm (only for lose/gain goals with target weight)
+      if (goalAnalysis && goalAnalysis.status === 'ambitious' && surveyData.targetWeight) {
+        if (!window.confirm(
+          'This goal is ambitious and may be difficult to achieve.\n\n' +
+          `Weekly rate: ${goalAnalysis.weeklyRate} kg/week\n` +
+          `Recommended safe rate: ${goalAnalysis.safeRate} kg/week\n\n` +
+          'Do you want to continue with this ambitious goal?'
+        )) {
+          return;
+        }
+      }
+      
+      // Get session user data for name and email
+      const sessionUserRaw = sessionStorage.getItem('currentUser');
+      const sessionUser = sessionUserRaw ? JSON.parse(sessionUserRaw) : {};
+      
+      // Create survey data object with ALL fields
+      const surveyToSave = {
+        // Step 1: Basic Info
+        birthdate: surveyData.birthdate,
+        gender: surveyData.gender,
+        height: surveyData.height,
+        heightUnit: surveyData.heightUnit,
+        weight: surveyData.weight,
+        weightUnit: surveyData.weightUnit,
+        
+        // Step 2: Fitness Goals
+        weightGoal: surveyData.weightGoal,
+        performanceGoal: surveyData.performanceGoal,
+        targetWeight: surveyData.weightGoal === 'maintain' ? surveyData.weight : surveyData.targetWeight, // For maintain, set target as current weight
+        timeline: surveyData.timeline,
+        
+        // Step 3: Workout Preferences
+        workoutTypes: surveyData.workoutTypes,
+        workoutLocation: surveyData.workoutLocation,
+        workoutDuration: surveyData.workoutDuration,
+        workoutTime: surveyData.workoutTime,
+        
+        // Step 4: Experience Level
+        fitnessLevel: surveyData.fitnessLevel,
+        activityLevel: surveyData.activityLevel,
+        limitations: surveyData.limitations,
+        equipment: surveyData.equipment
+      };
+      
+      // Save survey data to localStorage
+      localStorage.setItem('userSurveyData', JSON.stringify(surveyToSave));
+      console.log('✅ Survey saved successfully with all data:', surveyToSave);
+      
+      // Calculate BMI for user profile
+      const heightInM = surveyData.heightUnit === 'cm' 
+        ? parseFloat(surveyData.height) / 100 
+        : parseFloat(surveyData.height) * 0.3048;
+      const weightInKg = convertToKg(surveyData.weight, surveyData.weightUnit);
+      const bmi = (weightInKg / (heightInM * heightInM)).toFixed(1);
+      
+      // Get activity level description
+      const activityLevelInfo = activityLevelOptions.find(level => level.value === surveyData.activityLevel);
+      
+      // Map primary goal
+      let primaryGoal = 'General Fitness';
+      if (surveyData.performanceGoal && surveyData.performanceGoal !== '') {
+        const goalMap = {
+          'buildStrength': 'Build Strength',
+          'improveEndurance': 'Improve Endurance',
+          'improveFlexibility': 'Improve Flexibility',
+          'generalFitness': 'General Fitness'
+        };
+        primaryGoal = goalMap[surveyData.performanceGoal] || surveyData.performanceGoal;
+      } else if (surveyData.weightGoal && surveyData.weightGoal !== '') {
+        const weightGoalMap = {
+          'lose': 'Weight Loss',
+          'gain': 'Weight Gain',
+          'maintain': 'Weight Maintenance',
+          'buildMuscle': 'Build Muscle'
+        };
+        primaryGoal = weightGoalMap[surveyData.weightGoal] || surveyData.weightGoal;
+      }
+      
+      // Format workout types
+      let workoutTypeDisplay = 'Not specified';
+      if (surveyData.workoutTypes && surveyData.workoutTypes !== '') {
+        workoutTypeDisplay = surveyData.workoutTypes;
+      }
+      
+      // Create user profile object with all data including name and email from session
+      const userProfile = {
+        name: sessionUser.name || 'New User',
+        username: sessionUser.username || 'newuser',
+        email: sessionUser.email || 'user@example.com',
+        age: calculateAge(surveyData.birthdate),
+        birthdate: surveyData.birthdate,
+        gender: surveyData.gender,
+        height: surveyData.height,
+        heightUnit: surveyData.heightUnit,
+        weight: surveyData.weight,
+        weightUnit: surveyData.weightUnit,
+        bmi: bmi,
+        fitnessLevel: surveyData.fitnessLevel,
+        activityLevel: surveyData.activityLevel,
+        activityLevelDescription: activityLevelInfo ? activityLevelInfo.description : '',
+        weightGoal: surveyData.weightGoal,
+        performanceGoal: surveyData.performanceGoal,
+        primaryGoal: primaryGoal,
+        targetWeight: surveyData.weightGoal === 'maintain' ? surveyData.weight : surveyData.targetWeight,
+        timeline: surveyData.timeline,
+        weeklyRate: goalAnalysis ? `${goalAnalysis.weeklyRate} kg/week` : null,
+        workoutTypes: surveyData.workoutTypes,
+        workoutType: workoutTypeDisplay,
+        workoutLocation: surveyData.workoutLocation,
+        workoutDuration: surveyData.workoutDuration,
+        workoutFrequency: surveyData.workoutDuration,
+        workoutTime: surveyData.workoutTime,
+        preferredTime: surveyData.workoutTime,
+        limitations: surveyData.limitations,
+        equipment: surveyData.equipment
+      };
+      
+      // Save user profile to localStorage
+      localStorage.setItem('userProfile', JSON.stringify(userProfile));
+      console.log('✅ User profile saved:', userProfile);
+      console.log('✅ Name saved:', userProfile.name);
+      console.log('✅ Email saved:', userProfile.email);
+      console.log('✅ Weight Goal:', userProfile.weightGoal);
+      console.log('✅ Target Weight:', userProfile.targetWeight);
+      
+      // Update current user if function exists
+      if (setCurrentUser) {
+        setCurrentUser(getUserProfile());
+      }
+      
+      // Navigate to dashboard
+      navigate('/dashboard');
+    } else {
+      setErrors(stepErrors);
+      console.log('Validation errors:', stepErrors);
     }
-    
-    // Create survey data object with ALL fields
-    const surveyToSave = {
-      // Step 1: Basic Info
-      birthdate: surveyData.birthdate,
-      gender: surveyData.gender,
-      height: surveyData.height,
-      heightUnit: surveyData.heightUnit,
-      weight: surveyData.weight,
-      weightUnit: surveyData.weightUnit,
-      
-      // Step 2: Fitness Goals
-      weightGoal: surveyData.weightGoal,
-      performanceGoal: surveyData.performanceGoal,
-      targetWeight: surveyData.targetWeight,
-      timeline: surveyData.timeline,
-      
-      // Step 3: Workout Preferences
-      workoutTypes: surveyData.workoutTypes,
-      workoutLocation: surveyData.workoutLocation,
-      workoutDuration: surveyData.workoutDuration,
-      workoutTime: surveyData.workoutTime,
-      
-      // Step 4: Experience Level
-      fitnessLevel: surveyData.fitnessLevel,
-      activityLevel: surveyData.activityLevel,
-      limitations: surveyData.limitations,
-      equipment: surveyData.equipment
-    };
-    
-    // Save survey data to localStorage
-    localStorage.setItem('userSurveyData', JSON.stringify(surveyToSave));
-    console.log('✅ Survey saved successfully with all data:', surveyToSave);
-    
-    // Calculate BMI for user profile
-    const heightInM = surveyData.heightUnit === 'cm' 
-      ? parseFloat(surveyData.height) / 100 
-      : parseFloat(surveyData.height) * 0.3048;
-    const weightInKg = convertToKg(surveyData.weight, surveyData.weightUnit);
-    const bmi = (weightInKg / (heightInM * heightInM)).toFixed(1);
-    
-    // Get activity level description
-    const activityLevelInfo = activityLevelOptions.find(level => level.value === surveyData.activityLevel);
-    
-    // Create user profile object with all data
-    const userProfile = {
-      name: 'New User',
-      email: 'user@example.com',
-      age: calculateAge(surveyData.birthdate),
-      birthdate: surveyData.birthdate,
-      gender: surveyData.gender,
-      height: surveyData.height,
-      heightUnit: surveyData.heightUnit,
-      weight: surveyData.weight,
-      weightUnit: surveyData.weightUnit,
-      bmi: bmi,
-      fitnessLevel: surveyData.fitnessLevel,
-      activityLevel: surveyData.activityLevel,
-      activityLevelDescription: activityLevelInfo ? activityLevelInfo.description : '',
-      weightGoal: surveyData.weightGoal,
-      performanceGoal: surveyData.performanceGoal,
-      targetWeight: surveyData.targetWeight,
-      timeline: surveyData.timeline,
-      weeklyRate: goalAnalysis ? `${goalAnalysis.weeklyRate} kg/week` : null,
-      workoutTypes: surveyData.workoutTypes,
-      workoutLocation: surveyData.workoutLocation,
-      workoutDuration: surveyData.workoutDuration,
-      workoutTime: surveyData.workoutTime,
-      limitations: surveyData.limitations,
-      equipment: surveyData.equipment
-    };
-    
-    // Save user profile to localStorage
-    localStorage.setItem('userProfile', JSON.stringify(userProfile));
-    console.log('✅ User profile saved:', userProfile);
-    
-    // Verify data was saved
-    const verifySurvey = localStorage.getItem('userSurveyData');
-    const verifyProfile = localStorage.getItem('userProfile');
-    console.log('Verification - Survey saved:', verifySurvey ? 'Yes' : 'No');
-    console.log('Verification - Profile saved:', verifyProfile ? 'Yes' : 'No');
-    
-    // Update current user if function exists
-    if (setCurrentUser) {
-      setCurrentUser(getUserProfile());
-    }
-    
-    // Navigate to home page
-    navigate('/dashboard');
-  } else {
-    setErrors(stepErrors);
-    console.log('Validation errors:', stepErrors);
-  }
-};
+  };
 
   // Handle single selection for workout types
-const selectWorkoutType = (type) => {
-  setSurveyData(prev => ({
-    ...prev,
-    workoutTypes: type // Direct assignment instead of array toggling
-  }));
-};
+  const selectWorkoutType = (type) => {
+    setSurveyData(prev => ({
+      ...prev,
+      workoutTypes: type
+    }));
+  };
 
-// Handle multi-select options (limitations, equipment)
-const toggleSelection = (field, value) => {
-  setSurveyData(prev => {
-    const current = prev[field] || [];
-    const newValue = current.includes(value)
-      ? current.filter(item => item !== value)
-      : [...current, value];
-    return { ...prev, [field]: newValue };
-  });
-};
+  // Handle multi-select options (limitations, equipment)
+  const toggleSelection = (field, value) => {
+    setSurveyData(prev => {
+      const current = prev[field] || [];
+      const newValue = current.includes(value)
+        ? current.filter(item => item !== value)
+        : [...current, value];
+      return { ...prev, [field]: newValue };
+    });
+  };
 
   // Progress percentage
   const progressPercentage = (currentStep / 4) * 100;
@@ -701,7 +722,7 @@ const toggleSelection = (field, value) => {
                 {errors.weightGoal && <span className="error-message">{errors.weightGoal}</span>}
               </div>
 
-              {/* Target Weight Input - Required for lose/gain, Optional for maintain */}
+              {/* Target Weight Input - Required for lose/gain, hidden for maintain */}
               {(surveyData.weightGoal === 'lose' || surveyData.weightGoal === 'gain') && (
                 <div className="form-group target-weight-group">
                   <label>
@@ -722,7 +743,12 @@ const toggleSelection = (field, value) => {
                 </div>
               )}
 
-            
+              {/* For maintain weight, show info message */}
+              {surveyData.weightGoal === 'maintain' && (
+                <div className="info-message" style={{ backgroundColor: '#e8f5e9', padding: '12px', borderRadius: '8px', marginBottom: '20px' }}>
+                  <p>✅ Great choice! You're focusing on maintaining your current weight of {surveyData.weight} {surveyData.weightUnit}.</p>
+                </div>
+              )}
 
               <div className="form-group">
                 <label>Performance Goal *</label>
@@ -795,81 +821,80 @@ const toggleSelection = (field, value) => {
           )}
 
           {/* Step 3: Workout Preferences */}
-{currentStep === 3 && (
-  <div className="survey-step">
-    <h3 className="step-title">Workout Preferences</h3>
-    
-    <div className="form-group">
-      <label>Preferred Workout Type *</label>
-      <div className="button-grid">
-        {workoutTypeOptions.map(type => (
-          <button
-            key={type}
-            type="button"
-            className={`select-button ${surveyData.workoutTypes === type ? 'selected' : ''}`}
-            onClick={() => selectWorkoutType(type)}
-          >
-            {type}
-          </button>
-        ))}
-      </div>
-      {errors.workoutTypes && <span className="error-message">{errors.workoutTypes}</span>}
-      
-    </div>
+          {currentStep === 3 && (
+            <div className="survey-step">
+              <h3 className="step-title">Workout Preferences</h3>
+              
+              <div className="form-group">
+                <label>Preferred Workout Type *</label>
+                <div className="button-grid">
+                  {workoutTypeOptions.map(type => (
+                    <button
+                      key={type}
+                      type="button"
+                      className={`select-button ${surveyData.workoutTypes === type ? 'selected' : ''}`}
+                      onClick={() => selectWorkoutType(type)}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+                {errors.workoutTypes && <span className="error-message">{errors.workoutTypes}</span>}
+              </div>
 
-    <div className="form-row">
-      <div className="form-group">
-        <label>Workout Location *</label>
-        <div className="button-grid">
-          {locationOptions.map(location => (
-            <button
-              key={location}
-              type="button"
-              className={`select-button ${surveyData.workoutLocation === location ? 'selected' : ''}`}
-              onClick={() => setSurveyData({...surveyData, workoutLocation: location})}
-            >
-              {location}
-            </button>
-          ))}
-        </div>
-        {errors.workoutLocation && <span className="error-message">{errors.workoutLocation}</span>}
-      </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Workout Location *</label>
+                  <div className="button-grid">
+                    {locationOptions.map(location => (
+                      <button
+                        key={location}
+                        type="button"
+                        className={`select-button ${surveyData.workoutLocation === location ? 'selected' : ''}`}
+                        onClick={() => setSurveyData({...surveyData, workoutLocation: location})}
+                      >
+                        {location}
+                      </button>
+                    ))}
+                  </div>
+                  {errors.workoutLocation && <span className="error-message">{errors.workoutLocation}</span>}
+                </div>
 
-      <div className="form-group">
-        <label>Workout Duration *</label>
-        <div className="button-grid">
-          {durationOptions.map(duration => (
-            <button
-              key={duration}
-              type="button"
-              className={`select-button ${surveyData.workoutDuration === duration ? 'selected' : ''}`}
-              onClick={() => setSurveyData({...surveyData, workoutDuration: duration})}
-            >
-              {duration}
-            </button>
-          ))}
-        </div>
-        {errors.workoutDuration && <span className="error-message">{errors.workoutDuration}</span>}
-      </div>
-    </div>
+                <div className="form-group">
+                  <label>Workout Duration *</label>
+                  <div className="button-grid">
+                    {durationOptions.map(duration => (
+                      <button
+                        key={duration}
+                        type="button"
+                        className={`select-button ${surveyData.workoutDuration === duration ? 'selected' : ''}`}
+                        onClick={() => setSurveyData({...surveyData, workoutDuration: duration})}
+                      >
+                        {duration}
+                      </button>
+                    ))}
+                  </div>
+                  {errors.workoutDuration && <span className="error-message">{errors.workoutDuration}</span>}
+                </div>
+              </div>
 
-    <div className="form-group">
-      <label>Preferred Workout Time (Optional)</label>
-      <div className="button-grid">
-        {timeOptions.map(time => (
-          <button
-            key={time}
-            type="button"
-            className={`select-button ${surveyData.workoutTime === time ? 'selected' : ''}`}
-            onClick={() => setSurveyData({...surveyData, workoutTime: time})}
-          >
-            {time}
-          </button>
-        ))}
-      </div>
-    </div>
-  </div>
-)}
+              <div className="form-group">
+                <label>Preferred Workout Time (Optional)</label>
+                <div className="button-grid">
+                  {timeOptions.map(time => (
+                    <button
+                      key={time}
+                      type="button"
+                      className={`select-button ${surveyData.workoutTime === time ? 'selected' : ''}`}
+                      onClick={() => setSurveyData({...surveyData, workoutTime: time})}
+                    >
+                      {time}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Step 4: Experience Level */}
           {currentStep === 4 && (
