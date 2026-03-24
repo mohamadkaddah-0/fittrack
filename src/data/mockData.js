@@ -759,15 +759,24 @@ export function getExercisePlan(exercise, userLevel = "beginner") {
  */
 export const EXERCISES = [
   {
-    id: 1, name: "Jump Rope", category: "Cardio", difficulty: "Beginner",
-    logType: "duration", met: 11.8,
+    id: 1, 
+    name: "Jump Rope", 
+    category: "Cardio", 
+    difficulty: "Beginner",
+    logType: "duration",  // Keep this as "duration" for timed sets
+    met: 11.8,            // MET value for jump rope
+    // Add this to handle per-set duration correctly
+    defaultDurationPerSet: 60,  // 60 seconds per set
     goals: ["weight loss", "general fitness"],
-    link: "/exercise/1", kcalRange: "70–90", muscles: "Full Body",
+    link: "/exercise/1", 
+    kcalRange: "70–90", 
+    muscles: "Full Body",
     desc: "A cardio movement for endurance, rhythm, and calorie burn.",
     limitedFor: ["Knee issues", "Joint pain"],
     image: "https://images.unsplash.com/photo-1599058917212-d750089bc07e?w=600&q=80",
     videoId: "u3zgHI8QnqE",
-    equipmentName: "Jump rope", type: "Cardio endurance",
+    equipmentName: "Jump rope", 
+    type: "Cardio endurance",
     primaryMuscles: ["Calves", "Shoulders", "Core"],
     secondaryMuscles: ["Forearms", "Quads"],
     steps: [
