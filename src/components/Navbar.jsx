@@ -1,3 +1,4 @@
+// Navbar.jsx
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -21,9 +22,68 @@ export default function Navbar() {
 
   const [menuOpen,    setMenuOpen]    = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
-  const [loggedIn,    setLoggedIn]    = useState(false);
+  const [user, setUser] = useState(null);
 
   const accountRef = useRef(null);
+
+  // Check authentication function - FIXED
+  const checkAuth = () => {
+    // Check for currentUser in sessionStorage (where your login saves it)
+    const currentUser = sessionStorage.getItem('currentUser');
+    
+    if (currentUser) {
+      try {
+        const parsedUser = JSON.parse(currentUser);
+        setUser(parsedUser);
+        console.log('User logged in:', parsedUser.name);
+        return;
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+      }
+    }
+    
+    // Also check localStorage for backward compatibility
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        return;
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+      }
+    }
+    
+    setUser(null);
+    console.log('No user logged in');
+  };
+
+  // Check auth on mount and route changes
+  useEffect(() => {
+    checkAuth();
+  }, [location.pathname]);
+
+  // Listen for storage events (when user logs in/out in another tab)
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'currentUser' || e.key === 'user' || e.key === null) {
+        checkAuth();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Custom event listener for login/logout within the same tab
+  useEffect(() => {
+    const handleAuthChange = () => {
+      checkAuth();
+    };
+    
+    window.addEventListener('auth-change', handleAuthChange);
+    return () => window.removeEventListener('auth-change', handleAuthChange);
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -41,8 +101,18 @@ export default function Navbar() {
   }, [location.pathname]);
 
   function handleLogout() {
-    setLoggedIn(false);
+    // Clear all auth data from both storage types
+    sessionStorage.removeItem('currentUser');
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
+    
+    setUser(null);
     setAccountOpen(false);
+    
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new Event('auth-change'));
+    
     navigate("/login");
   }
 
@@ -50,6 +120,12 @@ export default function Navbar() {
     setAccountOpen(false);
     navigate(to);
   }
+
+  // Helper function to get user's display name
+  const getUserDisplayName = () => {
+    if (!user) return "Guest";
+    return user.name || user.username || user.email || "User";
+  };
 
   return (
     <>
@@ -122,7 +198,7 @@ export default function Navbar() {
                   <div className="px-4 py-3 border-b border-[#1E1E1E]">
                     <div className="text-[8px] tracking-[0.2em] uppercase text-[#555]">Signed in as</div>
                     <div className="text-[10px] text-[#ECECEC] mt-1 truncate">
-                      {loggedIn ? "demo@fittrack.io" : "Guest"}
+                      {getUserDisplayName()}
                     </div>
                   </div>
                   {ACCOUNT_MENU.map(({ label, to }) => (
@@ -134,7 +210,7 @@ export default function Navbar() {
                       {label}
                     </button>
                   ))}
-                  {loggedIn ? (
+                  {user ? (
                     <button
                       onClick={handleLogout}
                       className="w-full text-left px-4 py-3 text-[9px] tracking-[0.18em] uppercase text-[#FF2A5E] hover:bg-[#111] transition-colors cursor-pointer bg-transparent"
@@ -188,10 +264,17 @@ export default function Navbar() {
                 className="w-full text-left px-6 py-4 text-[10px] tracking-[0.18em] uppercase text-[#555] hover:text-[#ECECEC] hover:bg-[#111] border-b border-[#1E1E1E] transition-colors cursor-pointer bg-transparent">
                 My Profile
               </button>
-              <button onClick={() => { navigate("/login"); setMenuOpen(false); }}
-                className="w-full text-left px-6 py-4 text-[10px] tracking-[0.18em] uppercase text-[#C6F135] hover:bg-[#111] transition-colors cursor-pointer bg-transparent">
-                Login
-              </button>
+              {user ? (
+                <button onClick={() => { handleLogout(); setMenuOpen(false); }}
+                  className="w-full text-left px-6 py-4 text-[10px] tracking-[0.18em] uppercase text-[#FF2A5E] hover:bg-[#111] transition-colors cursor-pointer bg-transparent">
+                  Logout
+                </button>
+              ) : (
+                <button onClick={() => { navigate("/login"); setMenuOpen(false); }}
+                  className="w-full text-left px-6 py-4 text-[10px] tracking-[0.18em] uppercase text-[#C6F135] hover:bg-[#111] transition-colors cursor-pointer bg-transparent">
+                  Login
+                </button>
+              )}
             </div>
           </div>
         )}
