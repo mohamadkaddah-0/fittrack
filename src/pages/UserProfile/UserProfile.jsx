@@ -65,191 +65,178 @@ const SimplifiedProfile = ({ user: propUser }) => {
   };
 
   // Load user data from multiple sources
-  const loadUserData = () => {
-    console.log('=== LOADING USER DATA ===');
+const loadUserData = () => {
+  console.log('=== LOADING USER DATA ===');
+  
+  // First check if user was passed as prop
+  if (propUser && propUser.name) {
+    console.log('Using prop user data:', propUser);
+    return propUser;
+  }
+  
+  // Check for survey data
+  const surveyDataRaw = localStorage.getItem('userSurveyData');
+  console.log('Raw survey data:', surveyDataRaw);
+  
+  let survey = null;
+  if (surveyDataRaw) {
+    try {
+      survey = JSON.parse(surveyDataRaw);
+      console.log('Parsed survey data:', survey);
+    } catch (error) {
+      console.error('Error parsing survey data:', error);
+    }
+  }
+  
+  // Get session user for name/email
+  const sessionUserRaw = sessionStorage.getItem('currentUser');
+  const sessionUser = sessionUserRaw ? JSON.parse(sessionUserRaw) : {};
+  console.log('Session user:', sessionUser);
+  
+  // If we have survey data, use it
+  if (survey) {
+    console.log('✅ Using survey data');
     
-    // First check if user was passed as prop
-    if (propUser && propUser.name) {
-      console.log('Using prop user data:', propUser);
-      return propUser;
+    // Log all survey fields
+    console.log('=== SURVEY FIELDS ===');
+    console.log('fitnessLevel:', survey.fitnessLevel);
+    console.log('workoutDuration:', survey.workoutDuration);
+    console.log('workoutTypes:', survey.workoutTypes);
+    console.log('workoutLocation:', survey.workoutLocation);
+    console.log('workoutTime:', survey.workoutTime);
+    console.log('weightGoal:', survey.weightGoal);
+    console.log('performanceGoal:', survey.performanceGoal);
+    console.log('birthdate:', survey.birthdate);
+    
+    // Get fitness level directly from survey (it's already properly formatted)
+    let fitnessLevel = 'Not specified';
+    if (survey.fitnessLevel && survey.fitnessLevel !== '') {
+      // Capitalize first letter
+      fitnessLevel = survey.fitnessLevel.charAt(0).toUpperCase() + survey.fitnessLevel.slice(1).toLowerCase();
     }
     
-    // Check for survey data
-    const surveyDataRaw = localStorage.getItem('userSurveyData');
-    console.log('Raw survey data:', surveyDataRaw);
-    
-    let survey = null;
-    if (surveyDataRaw) {
-      try {
-        survey = JSON.parse(surveyDataRaw);
-        console.log('Parsed survey data:', survey);
-      } catch (error) {
-        console.error('Error parsing survey data:', error);
-      }
+    // Get workout duration directly from survey
+    let workoutDuration = 'Not specified';
+    if (survey.workoutDuration && survey.workoutDuration !== '') {
+      workoutDuration = survey.workoutDuration;
     }
     
-    // Check for user profile data
-    const userProfileRaw = localStorage.getItem('userProfile');
-    let userProfile = null;
-    if (userProfileRaw) {
-      try {
-        userProfile = JSON.parse(userProfileRaw);
-        console.log('User profile from localStorage:', userProfile);
-      } catch (error) {
-        console.error('Error parsing user profile:', error);
-      }
+    // Get workout type
+    let workoutTypeDisplay = 'Not specified';
+    if (survey.workoutTypes && survey.workoutTypes !== '') {
+      workoutTypeDisplay = survey.workoutTypes;
     }
     
-    // Get session user for name/email
-    const sessionUserRaw = sessionStorage.getItem('currentUser');
-    const sessionUser = sessionUserRaw ? JSON.parse(sessionUserRaw) : {};
-    console.log('Session user:', sessionUser);
+    // Get workout location
+    let workoutLocation = 'Not specified';
+    if (survey.workoutLocation && survey.workoutLocation !== '') {
+      workoutLocation = survey.workoutLocation;
+    }
     
-    // If we have survey data, use it (priority: survey data over userProfile)
-    if (survey) {
-      console.log('✅ Using survey data');
-      
-      // Log all fitness preference fields
-      console.log('Workout Types from survey:', survey.workoutTypes);
-      console.log('Workout Duration from survey:', survey.workoutDuration);
-      console.log('Workout Location from survey:', survey.workoutLocation);
-      console.log('Workout Time from survey:', survey.workoutTime);
-      console.log('Fitness Level from survey:', survey.fitnessLevel);
-      console.log('Performance Goal from survey:', survey.performanceGoal);
-      console.log('Weight Goal from survey:', survey.weightGoal);
-      
-      // Format workout types
-      let workoutTypeDisplay = 'Not specified';
-      if (survey.workoutTypes && survey.workoutTypes !== '') {
-        workoutTypeDisplay = formatWorkoutTypes(survey.workoutTypes);
-      }
-      
-      // Map workout duration
-      let workoutDuration = 'Not specified';
-      if (survey.workoutDuration && survey.workoutDuration !== '') {
-        workoutDuration = survey.workoutDuration;
-      }
-      
-      // Format fitness level
-      let fitnessLevel = 'Not specified';
-      if (survey.fitnessLevel && survey.fitnessLevel !== '') {
-        fitnessLevel = survey.fitnessLevel.charAt(0).toUpperCase() + survey.fitnessLevel.slice(1).toLowerCase();
-      }
-      
-      // Map primary goal - prioritize performanceGoal over weightGoal
-      let primaryGoal = 'General Fitness';
-      if (survey.performanceGoal && survey.performanceGoal !== '') {
-        const goalMap = {
-          'buildStrength': 'Build Strength',
-          'improveEndurance': 'Improve Endurance',
-          'improveFlexibility': 'Improve Flexibility',
-          'generalFitness': 'General Fitness'
-        };
-        primaryGoal = goalMap[survey.performanceGoal] || survey.performanceGoal;
-      } else if (survey.weightGoal && survey.weightGoal !== '') {
-        const weightGoalMap = {
-          'lose': 'Weight Loss',
-          'gain': 'Weight Gain',
-          'maintain': 'Weight Maintenance',
-          'buildMuscle': 'Build Muscle'
-        };
-        primaryGoal = weightGoalMap[survey.weightGoal] || survey.weightGoal;
-      }
-      
-      // Map workout location
-      let workoutLocation = 'Not specified';
-      if (survey.workoutLocation && survey.workoutLocation !== '') {
-        workoutLocation = survey.workoutLocation;
-      }
-      
-      // Map preferred time
-      let preferredTime = 'Not specified';
-      if (survey.workoutTime && survey.workoutTime !== '') {
-        preferredTime = survey.workoutTime;
-      }
-      
-      const userData = {
-        // Personal info - prioritize session user data
-        name: sessionUser.name || userProfile?.name || 'New User',
-        username: sessionUser.username || userProfile?.username || 'newuser',
-        email: sessionUser.email || userProfile?.email || 'user@example.com',
-        phone: userProfile?.phone || '',
-        
-        // Physical stats from survey
-        birthdate: survey.birthdate || '',
-        height: survey.height ? parseFloat(survey.height) : 0,
-        weight: survey.weight ? parseFloat(survey.weight) : 0,
-        weightUnit: survey.weightUnit || 'kg',
-        heightUnit: survey.heightUnit || 'cm',
-        
-        // Fitness preferences
-        fitnessLevel: fitnessLevel,
-        primaryGoal: primaryGoal,
-        workoutFrequency: workoutDuration,
-        workoutType: workoutTypeDisplay,
-        workoutLocation: workoutLocation,
-        preferredTime: preferredTime,
-        
-        // Additional data
-        limitations: survey.limitations || [],
-        equipment: survey.equipment || [],
-        timeline: survey.timeline || 'Not specified',
-        weightGoal: survey.weightGoal || 'maintain',
-        targetWeight: survey.targetWeight || null,
-        performanceGoal: survey.performanceGoal || null,
-        activityLevel: survey.activityLevel || null,
-        
-        // Location
-        location: userProfile?.location || 'Not specified'
+    // Get preferred time
+    let preferredTime = 'Not specified';
+    if (survey.workoutTime && survey.workoutTime !== '') {
+      preferredTime = survey.workoutTime;
+    }
+    
+    // Map primary goal - combine performanceGoal and weightGoal
+    let primaryGoal = 'General Fitness';
+    
+    // First try performanceGoal (more specific)
+    if (survey.performanceGoal && survey.performanceGoal !== '') {
+      const goalMap = {
+        'buildStrength': 'Build Strength',
+        'improveEndurance': 'Improve Endurance',
+        'improveFlexibility': 'Improve Flexibility',
+        'generalFitness': 'General Fitness'
       };
-      
-      console.log('Final user data:', userData);
-      console.log('Fitness preferences:', {
-        fitnessLevel: userData.fitnessLevel,
-        primaryGoal: userData.primaryGoal,
-        workoutFrequency: userData.workoutFrequency,
-        workoutType: userData.workoutType,
-        workoutLocation: userData.workoutLocation,
-        preferredTime: userData.preferredTime
-      });
-      
-      return userData;
-    }
-    
-    // Check if we have userProfile data
-    if (userProfile) {
-      console.log('✅ Using userProfile data');
-      return {
-        ...userProfile,
-        name: sessionUser.name || userProfile.name || 'New User',
-        email: sessionUser.email || userProfile.email || 'user@example.com',
-        username: sessionUser.username || userProfile.username || 'newuser',
+      primaryGoal = goalMap[survey.performanceGoal] || survey.performanceGoal;
+      console.log('Primary goal from performanceGoal:', primaryGoal);
+    } 
+    // Fallback to weightGoal
+    else if (survey.weightGoal && survey.weightGoal !== '') {
+      const weightGoalMap = {
+        'lose': 'Weight Loss',
+        'gain': 'Weight Gain',
+        'maintain': 'Weight Maintenance',
+        'buildMuscle': 'Build Muscle'
       };
+      primaryGoal = weightGoalMap[survey.weightGoal] || survey.weightGoal;
+      console.log('Primary goal from weightGoal:', primaryGoal);
     }
     
-    // Default fallback
-    console.log('Using default fallback data');
-    return {
-      name: sessionUser.name || 'Alex Johnson',
-      username: sessionUser.username || 'alexjohnson',
-      email: sessionUser.email || 'alex.johnson@example.com',
+    const userData = {
+      // Personal info from session
+      name: sessionUser.name || 'New User',
+      username: sessionUser.username || sessionUser.name?.toLowerCase().replace(/\s/g, '') || 'newuser',
+      email: sessionUser.email || 'user@example.com',
       phone: '',
-      birthdate: '1996-05-15',
-      height: 180,
-      weight: 75,
-      weightUnit: 'kg',
-      heightUnit: 'cm',
-      fitnessLevel: 'Intermediate',
-      primaryGoal: 'Weight Loss',
-      workoutFrequency: '3-4 days/week',
-      workoutType: 'Mixed',
-      workoutLocation: 'Gym',
-      preferredTime: 'Morning',
-      limitations: [],
-      equipment: [],
+      
+      // Physical stats from survey
+      birthdate: survey.birthdate || '',
+      height: survey.height ? parseFloat(survey.height) : 0,
+      weight: survey.weight ? parseFloat(survey.weight) : 0,
+      weightUnit: survey.weightUnit || 'kg',
+      heightUnit: survey.heightUnit || 'cm',
+      
+      // Fitness preferences - DIRECT MAPPING
+      fitnessLevel: fitnessLevel,
+      primaryGoal: primaryGoal,
+      workoutFrequency: workoutDuration,  // workoutDuration maps to workoutFrequency
+      workoutType: workoutTypeDisplay,
+      workoutLocation: workoutLocation,
+      preferredTime: preferredTime,
+      
+      // Additional data
+      limitations: survey.limitations || [],
+      equipment: survey.equipment || [],
+      timeline: survey.timeline || 'Not specified',
+      weightGoal: survey.weightGoal || 'maintain',
+      targetWeight: survey.targetWeight || null,
+      performanceGoal: survey.performanceGoal || null,
+      activityLevel: survey.activityLevel || null,
+      
+      // Location
       location: 'Not specified'
     };
+    
+    console.log('=== FINAL USER DATA ===');
+    console.log('Name:', userData.name);
+    console.log('Username:', userData.username);
+    console.log('Age will be calculated from birthdate:', userData.birthdate);
+    console.log('Fitness Level:', userData.fitnessLevel);
+    console.log('Primary Goal:', userData.primaryGoal);
+    console.log('Workout Duration:', userData.workoutFrequency);
+    console.log('Workout Type:', userData.workoutType);
+    console.log('Workout Location:', userData.workoutLocation);
+    console.log('Preferred Time:', userData.preferredTime);
+    
+    return userData;
+  }
+  
+  // Default fallback
+  console.log('Using default fallback data');
+  return {
+    name: sessionUser.name || 'Alex Johnson',
+    username: sessionUser.username || 'alexjohnson',
+    email: sessionUser.email || 'alex.johnson@example.com',
+    phone: '',
+    birthdate: '1996-05-15',
+    height: 180,
+    weight: 75,
+    weightUnit: 'kg',
+    heightUnit: 'cm',
+    fitnessLevel: 'Intermediate',
+    primaryGoal: 'Weight Loss',
+    workoutFrequency: '3-4 days/week',
+    workoutType: 'Mixed',
+    workoutLocation: 'Gym',
+    preferredTime: 'Morning',
+    limitations: [],
+    equipment: [],
+    location: 'Not specified'
   };
+};
 
   const [user, setUser] = useState(loadUserData());
   const [editForm, setEditForm] = useState({ ...user });
@@ -331,7 +318,10 @@ const SimplifiedProfile = ({ user: propUser }) => {
       .slice(0, 2);
   };
 
+
   const age = calculateAge(user.birthdate);
+  console.log('Birthdate:', user.birthdate);
+  console.log('Calculated age:', age);
 
   return (
     <div className="simplified-profile">
