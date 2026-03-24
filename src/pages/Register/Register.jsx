@@ -25,47 +25,50 @@ const Register = () => {
   });
   const [message, setMessage] = useState({ text: '', type: '' });
 
-  // Save form data to localStorage whenever it changes
+  // Check if we're coming back from terms/privacy pages
   useEffect(() => {
-    const saveTimeout = setTimeout(() => {
-      localStorage.setItem('register_form_data', JSON.stringify(formData));
-    }, 100);
-    
-    return () => clearTimeout(saveTimeout);
-  }, [formData]);
-
-  // Load saved form data on component mount
-  useEffect(() => {
-    const savedData = localStorage.getItem('register_form_data');
-    if (savedData) {
-      try {
-        const parsedData = JSON.parse(savedData);
-        setFormData(parsedData);
-        
-        // Re-check password strength if password exists
-        if (parsedData.password) {
-          setPasswordStrength(checkPasswordStrength(parsedData.password));
+    const fromTerms = sessionStorage.getItem('from_terms_page');
+    if (fromTerms === 'true') {
+      sessionStorage.removeItem('from_terms_page');
+      // Load saved form data only when coming back from terms/privacy
+      const savedData = sessionStorage.getItem('register_form_temp');
+      if (savedData) {
+        try {
+          const parsedData = JSON.parse(savedData);
+          setFormData(parsedData);
+          
+          // Re-check password strength if password exists
+          if (parsedData.password) {
+            setPasswordStrength(checkPasswordStrength(parsedData.password));
+          }
+        } catch (error) {
+          console.error('Error loading saved form data:', error);
         }
-      } catch (error) {
-        console.error('Error loading saved form data:', error);
       }
     }
   }, []);
 
-  // Clear saved form data when registration is successful
+  // Save form data temporarily when leaving for terms/privacy
   useEffect(() => {
-    if (message.type === 'success') {
-      localStorage.removeItem('register_form_data');
+    // Only save if we have any form data
+    const hasFormData = Object.values(formData).some(value => 
+      typeof value === 'string' ? value.trim() !== '' : value === true
+    );
+    
+    if (hasFormData) {
+      sessionStorage.setItem('register_form_temp', JSON.stringify(formData));
     }
-  }, [message.type]);
+  }, [formData]);
 
-  // Check if returning from terms/privacy pages
+  // Clear temporary storage when component unmounts (user leaves page normally)
   useEffect(() => {
-    const fromTerms = localStorage.getItem('from_terms_page');
-    if (fromTerms === 'true') {
-      localStorage.removeItem('from_terms_page');
-      // Form data is already loaded from the other useEffect
-    }
+    return () => {
+      // Don't clear if we're going to terms/privacy
+      const isLeavingToTerms = sessionStorage.getItem('from_terms_page') === 'true';
+      if (!isLeavingToTerms) {
+        sessionStorage.removeItem('register_form_temp');
+      }
+    };
   }, []);
 
   // Password strength checker - sanitized and secure
@@ -141,9 +144,9 @@ const Register = () => {
   // Handle navigation to terms/privacy with form data preservation
   const handleLinkClick = (e, path) => {
     e.preventDefault();
-    // Set flag that we're coming from registration page
-    localStorage.setItem('from_terms_page', 'true');
-    // Form data is already being saved automatically
+    // Set flag that we're going to terms/privacy page
+    sessionStorage.setItem('from_terms_page', 'true');
+    // Form data is already being saved automatically in useEffect
     navigate(path);
   };
 
@@ -272,8 +275,20 @@ const Register = () => {
           id: newUser.id
         }));
         
-        // Clear saved form data on success
-        localStorage.removeItem('register_form_data');
+        // Clear temporary form data on successful registration
+        sessionStorage.removeItem('register_form_temp');
+        sessionStorage.removeItem('from_terms_page');
+        
+        // Reset form data
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          username: '',
+          password: '',
+          confirmPassword: '',
+          acceptTerms: false
+        });
         
         // Redirect to login after 2 seconds
         setTimeout(() => {
