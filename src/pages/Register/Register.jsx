@@ -212,13 +212,13 @@ const Register = () => {
     
     // Create new user object
     const newUser = {
-      id: Date.now(),
+      id: Date.now(), // Make sure this ID is properly set
       firstName: formData.firstName,
       lastName: formData.lastName,
       name: `${formData.firstName} ${formData.lastName}`,
       email: formData.email,
       username: formData.username,
-      password: formData.password, // In production, this should be hashed
+      password: formData.password,
       createdAt: new Date().toISOString(),
       profilePicture: null,
       isLoggedIn: false
@@ -269,10 +269,10 @@ const Register = () => {
         
         // Store current user in session
         sessionStorage.setItem('currentUser', JSON.stringify({
+          id: newUser.id,  // Include the ID
           name: newUser.name,
           email: newUser.email,
-          username: newUser.username,
-          id: newUser.id
+          username: newUser.username
         }));
         
         // Clear temporary form data on successful registration
@@ -293,7 +293,7 @@ const Register = () => {
         // Redirect to login after 2 seconds
         setTimeout(() => {
           window.scrollTo(0, 0);
-          navigate('/login');
+          navigate('/ready-survey');
         }, 2000);
       }
     } catch (error) {
