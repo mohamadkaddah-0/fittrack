@@ -37,6 +37,29 @@ const Surveys = ({ setCurrentUser }) => {
   const [errors, setErrors] = useState({});
   const [goalAnalysis, setGoalAnalysis] = useState(null);
 
+  // NEW: Check if user is logged in and hasn't completed survey yet
+  useEffect(() => {
+    // Check if user is logged in
+    const sessionUser = sessionStorage.getItem('currentUser');
+    
+    if (!sessionUser) {
+      // No user logged in, redirect to login
+      navigate('/login');
+      return;
+    }
+    
+    const currentUser = JSON.parse(sessionUser);
+    const userId = currentUser.id;
+    
+    // Check if user has already completed the survey
+    const existingSurvey = localStorage.getItem(`userSurveyData_${userId}`);
+    
+    if (existingSurvey) {
+      // User has already taken the survey, redirect to dashboard
+      navigate('/dashboard');
+    }
+  }, [navigate]);
+
   // Constants for validation
   const VALIDATION = {
     MAX_AGE: 100,
@@ -150,22 +173,7 @@ const Surveys = ({ setCurrentUser }) => {
     return unit === 'lbs' ? parseFloat(weight) * 0.453592 : parseFloat(weight);
   };
 
-  // Analyze goal whenever relevant fields change
-  useEffect(() => {
-    if (
-      surveyData.weight && 
-      surveyData.targetWeight && 
-      surveyData.timeline && 
-      surveyData.timeline !== 'Ongoing' &&
-      surveyData.weightGoal &&
-      (surveyData.weightGoal === 'lose' || surveyData.weightGoal === 'gain')
-    ) {
-      analyzeGoal();
-    } else {
-      setGoalAnalysis(null);
-    }
-  }, [surveyData.weight, surveyData.targetWeight, surveyData.timeline, surveyData.weightGoal, surveyData.weightUnit]);
-
+  // YOUR EXISTING analyzeGoal function (kept exactly as is)
   const analyzeGoal = () => {
     const weeks = timelineWeeks[surveyData.timeline];
     if (!weeks) return;
@@ -264,6 +272,22 @@ const Surveys = ({ setCurrentUser }) => {
     }
   };
 
+  // YOUR EXISTING useEffect (kept exactly as is)
+  useEffect(() => {
+    if (
+      surveyData.weight && 
+      surveyData.targetWeight && 
+      surveyData.timeline && 
+      surveyData.timeline !== 'Ongoing' &&
+      surveyData.weightGoal &&
+      (surveyData.weightGoal === 'lose' || surveyData.weightGoal === 'gain')
+    ) {
+      analyzeGoal();
+    } else {
+      setGoalAnalysis(null);
+    }
+  }, [surveyData.weight, surveyData.targetWeight, surveyData.timeline, surveyData.weightGoal, surveyData.weightUnit]);
+
   // Get recommended timeline string
   const getRecommendedTimeline = (weeks) => {
     if (weeks <= 4) return '1 month';
@@ -273,7 +297,7 @@ const Surveys = ({ setCurrentUser }) => {
     return '2 years';
   };
 
-  // Validate current step
+  // Validate current step (your existing function)
   const validateStep = (step) => {
     const errors = {};
     const age = calculateAge(surveyData.birthdate);
@@ -374,7 +398,7 @@ const Surveys = ({ setCurrentUser }) => {
     return errors;
   };
 
-  // Handle next step
+  // Handle next step (your existing function)
   const handleNext = () => {
     const stepErrors = validateStep(currentStep);
     if (Object.keys(stepErrors).length === 0) {
@@ -385,13 +409,14 @@ const Surveys = ({ setCurrentUser }) => {
     }
   };
 
-  // Handle previous step
+  // Handle previous step (your existing function)
   const handlePrevious = () => {
     setCurrentStep(prev => prev - 1);
     setErrors({});
     window.scrollTo(0, 0);
   };
 
+  // UPDATED handleSubmit with user linking
   const handleSubmit = () => {
     const stepErrors = validateStep(4);
     
@@ -418,8 +443,33 @@ const Surveys = ({ setCurrentUser }) => {
       const sessionUserRaw = sessionStorage.getItem('currentUser');
       const sessionUser = sessionUserRaw ? JSON.parse(sessionUserRaw) : {};
       
+      // Get the current user ID from session
+      const currentUserId = sessionUser.id;
+      
+      if (!currentUserId) {
+        console.error('No user ID found. User may not be logged in.');
+        alert('Please log in again to complete the survey.');
+        navigate('/login');
+        return;
+      }
+      
+      // Get existing users from localStorage
+      const existingUsers = JSON.parse(localStorage.getItem('fittrack_users') || '[]');
+      
+      // Find the current user
+      const currentUser = existingUsers.find(user => user.id === currentUserId);
+      
+      if (!currentUser) {
+        console.error('Current user not found in database');
+        alert('User data not found. Please try logging in again.');
+        navigate('/login');
+        return;
+      }
+      
       // Create survey data object with ALL fields
       const surveyToSave = {
+        userId: currentUserId, // Link to user ID
+        completedAt: new Date().toISOString(),
         // Step 1: Basic Info
         birthdate: surveyData.birthdate,
         gender: surveyData.gender,
@@ -431,7 +481,7 @@ const Surveys = ({ setCurrentUser }) => {
         // Step 2: Fitness Goals
         weightGoal: surveyData.weightGoal,
         performanceGoal: surveyData.performanceGoal,
-        targetWeight: surveyData.weightGoal === 'maintain' ? surveyData.weight : surveyData.targetWeight, // For maintain, set target as current weight
+        targetWeight: surveyData.weightGoal === 'maintain' ? surveyData.weight : surveyData.targetWeight,
         timeline: surveyData.timeline,
         
         // Step 3: Workout Preferences
@@ -447,9 +497,9 @@ const Surveys = ({ setCurrentUser }) => {
         equipment: surveyData.equipment
       };
       
-      // Save survey data to localStorage
-      localStorage.setItem('userSurveyData', JSON.stringify(surveyToSave));
-      console.log('✅ Survey saved successfully with all data:', surveyToSave);
+      // Save survey data to localStorage - keyed by user ID
+      localStorage.setItem(`userSurveyData_${currentUserId}`, JSON.stringify(surveyToSave));
+      console.log(`✅ Survey saved for user ${currentUserId}:`, surveyToSave);
       
       // Calculate BMI for user profile
       const heightInM = surveyData.heightUnit === 'cm' 
@@ -487,11 +537,12 @@ const Surveys = ({ setCurrentUser }) => {
         workoutTypeDisplay = surveyData.workoutTypes;
       }
       
-      // Create user profile object with all data including name and email from session
+      // Create user profile object with all data linked to user ID
       const userProfile = {
-        name: sessionUser.name || 'New User',
-        username: sessionUser.username || 'newuser',
-        email: sessionUser.email || 'user@example.com',
+        userId: currentUserId,
+        name: sessionUser.name || currentUser.name || 'New User',
+        username: sessionUser.username || currentUser.username || 'newuser',
+        email: sessionUser.email || currentUser.email || 'user@example.com',
         age: calculateAge(surveyData.birthdate),
         birthdate: surveyData.birthdate,
         gender: surveyData.gender,
@@ -517,20 +568,37 @@ const Surveys = ({ setCurrentUser }) => {
         workoutTime: surveyData.workoutTime,
         preferredTime: surveyData.workoutTime,
         limitations: surveyData.limitations,
-        equipment: surveyData.equipment
+        equipment: surveyData.equipment,
+        surveyCompletedAt: new Date().toISOString()
       };
       
-      // Save user profile to localStorage
-      localStorage.setItem('userProfile', JSON.stringify(userProfile));
-      console.log('✅ User profile saved:', userProfile);
-      console.log('✅ Name saved:', userProfile.name);
-      console.log('✅ Email saved:', userProfile.email);
-      console.log('✅ Weight Goal:', userProfile.weightGoal);
-      console.log('✅ Target Weight:', userProfile.targetWeight);
+      // Save user profile to localStorage - keyed by user ID
+      localStorage.setItem(`userProfile_${currentUserId}`, JSON.stringify(userProfile));
+      
+      // Also update the user in the main users array
+      const updatedUsers = existingUsers.map(user => {
+        if (user.id === currentUserId) {
+          return {
+            ...user,
+            profileCompleted: true,
+            surveyCompleted: true,
+            surveyData: surveyToSave,
+            profile: userProfile
+          };
+        }
+        return user;
+      });
+      localStorage.setItem('fittrack_users', JSON.stringify(updatedUsers));
+      
+      // Store that this user has completed the survey
+      sessionStorage.setItem(`surveyCompleted_${currentUserId}`, 'true');
+      
+      console.log('✅ User profile saved for user:', currentUserId);
+      console.log('✅ Survey completed for user:', currentUser.name);
       
       // Update current user if function exists
       if (setCurrentUser) {
-        setCurrentUser(getUserProfile());
+        setCurrentUser(userProfile);
       }
       
       // Navigate to dashboard
@@ -563,6 +631,7 @@ const Surveys = ({ setCurrentUser }) => {
   // Progress percentage
   const progressPercentage = (currentStep / 4) * 100;
 
+  // Rest of your JSX remains the same...
   return (
     <section className="survey-section">
       <div className="survey-card">
