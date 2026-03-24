@@ -263,7 +263,7 @@ const Register = () => {
       if (newUser) {
         // Set success message
         setMessage({
-          text: `Welcome, ${newUser.name}! Redirecting to setup...`,
+          text: `Welcome, ${newUser.name}! Redirecting to survey...`,
           type: 'success'
         });
         
