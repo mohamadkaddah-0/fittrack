@@ -757,16 +757,7 @@ export default function LogWorkoutPage({ addWorkoutToCalendar }) {
                     calories={previewCalories}
                   />
 
-                  <button onClick={handleAddExercise}
-                    style={{ width: "100%", marginTop: "16px", padding: "14px",
-                      background: "#C6F135", border: 0, borderRadius: "10px",
-                      fontSize: "12px", fontWeight: 700, letterSpacing: "0.12em",
-                      textTransform: "uppercase", color: "#080808", cursor: "pointer",
-                      transition: "opacity 0.2s" }}
-                    onMouseEnter={e => { e.currentTarget.style.opacity = "0.85"; }}
-                    onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}>
-                    + Add to Today's Log
-                  </button>
+                  
                 </div>
               )}
 
