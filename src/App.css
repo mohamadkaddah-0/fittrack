@@ -329,7 +329,8 @@ body::before {
 }
 
 /* Navigation */
-nav {
+/* Legacy nav grid — scoped so it doesn't affect the React Navbar component */
+nav.legacy-nav {
   display: grid;
   grid-template-columns: auto 1fr auto auto;
   align-items: center;
@@ -340,6 +341,13 @@ nav {
   z-index: 200;
   background: rgba(8, 8, 8, 0.92);
   backdrop-filter: blur(12px);
+}
+
+/* React Navbar component — reset ALL inherited grid/flex from global nav rule */
+nav#fittrack-nav {
+  display: block !important;
+  grid-template-columns: unset !important;
+  height: auto !important;
 }
 
 .nav-logo {
@@ -776,7 +784,7 @@ footer {
 
 /* Responsive Design */
 @media (max-width: 700px) {
-  nav {
+  nav.legacy-nav {
     grid-template-columns: 1fr auto;
   }
   

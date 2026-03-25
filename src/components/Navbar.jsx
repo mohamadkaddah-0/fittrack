@@ -22,258 +22,212 @@ export default function Navbar() {
 
   const [menuOpen,    setMenuOpen]    = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
-  const [user, setUser] = useState(null);
+  const [user,        setUser]        = useState(null);
 
   const accountRef = useRef(null);
 
-  // Check authentication function - FIXED
   const checkAuth = () => {
-    // Check for currentUser in sessionStorage (where your login saves it)
-    const currentUser = sessionStorage.getItem('currentUser');
-    
+    const currentUser = sessionStorage.getItem("currentUser");
     if (currentUser) {
-      try {
-        const parsedUser = JSON.parse(currentUser);
-        setUser(parsedUser);
-        console.log('User logged in:', parsedUser.name);
-        return;
-      } catch (e) {
-        console.error('Error parsing user data:', e);
-      }
+      try { setUser(JSON.parse(currentUser)); return; } catch (e) {}
     }
-    
-    // Also check localStorage for backward compatibility
-    const storedUser = localStorage.getItem('user');
+    const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-        return;
-      } catch (e) {
-        console.error('Error parsing user data:', e);
-      }
+      try { setUser(JSON.parse(storedUser)); return; } catch (e) {}
     }
-    
     setUser(null);
-    console.log('No user logged in');
   };
 
-  // Check auth on mount and route changes
+  useEffect(() => { checkAuth(); }, [location.pathname]);
   useEffect(() => {
-    checkAuth();
-  }, [location.pathname]);
-
-  // Listen for storage events (when user logs in/out in another tab)
-  useEffect(() => {
-    const handleStorageChange = (e) => {
-      if (e.key === 'currentUser' || e.key === 'user' || e.key === null) {
-        checkAuth();
-      }
+    window.addEventListener("storage", checkAuth);
+    window.addEventListener("auth-change", checkAuth);
+    return () => {
+      window.removeEventListener("storage", checkAuth);
+      window.removeEventListener("auth-change", checkAuth);
     };
-    
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
-
-  // Custom event listener for login/logout within the same tab
   useEffect(() => {
-    const handleAuthChange = () => {
-      checkAuth();
+    const close = (e) => {
+      if (accountRef.current && !accountRef.current.contains(e.target)) setAccountOpen(false);
     };
-    
-    window.addEventListener('auth-change', handleAuthChange);
-    return () => window.removeEventListener('auth-change', handleAuthChange);
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
   }, []);
-
-  useEffect(() => {
-    function handleClickOutside(e) {
-      if (accountRef.current && !accountRef.current.contains(e.target)) {
-        setAccountOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [location.pathname]);
+  useEffect(() => { setMenuOpen(false); setAccountOpen(false); }, [location.pathname]);
 
   function handleLogout() {
-    // Clear all auth data from both storage types
-    sessionStorage.removeItem('currentUser');
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    sessionStorage.removeItem('token');
-    
+    ["currentUser", "user", "token"].forEach((k) => {
+      sessionStorage.removeItem(k);
+      localStorage.removeItem(k);
+    });
     setUser(null);
     setAccountOpen(false);
-    
-    // Dispatch custom event to notify other components
-    window.dispatchEvent(new Event('auth-change'));
-    
+    window.dispatchEvent(new Event("auth-change"));
     navigate("/login");
   }
 
-  function handleAccountNav(to) {
-    setAccountOpen(false);
-    navigate(to);
-  }
-
-  // Helper function to get user's display name
-  const getUserDisplayName = () => {
-    if (!user) return "Guest";
-    return user.name || user.username || user.email || "User";
-  };
+  const displayName = () => user
+    ? (user.name || user.username || user.email || "User")
+    : "Guest";
 
   return (
     <>
-      {/* Ticker bar */}
-      <div className="bg-[#C6F135] text-black text-[10px] font-bold tracking-[0.2em] uppercase py-2 overflow-hidden whitespace-nowrap">
-        <div className="inline-flex animate-[ticker_22s_linear_infinite]">
+      {/* ── Ticker ── */}
+      <div style={{ background: "#C6F135", color: "#000", fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", padding: "8px 0", overflow: "hidden", whiteSpace: "nowrap" }}>
+        <div style={{ display: "inline-flex", animation: "ticker 22s linear infinite" }}>
           {[...Array(2)].flatMap((_, ai) =>
-            ["FitTrack", "* * *", "Track Your Limits", "* * *", "Stay Consistent", "* * *", "v3.0.0", "* * *"].map(
-              (t, i) => <span key={`${ai}-${i}`} className="px-8">{t}</span>
+            ["FitTrack","* * *","Track Your Limits","* * *","Stay Consistent","* * *","v3.0.0","* * *"].map(
+              (t, i) => <span key={`${ai}-${i}`} style={{ padding: "0 32px" }}>{t}</span>
             )
           )}
         </div>
       </div>
 
-      {/* Navbar */}
-      <nav className="sticky top-0 z-50 border-b border-[#1E1E1E] bg-[rgba(8,8,8,0.92)] backdrop-blur-xl">
-        <div className="h-[60px] flex items-center justify-between px-6">
+      {/* ── Navbar wrapper — sticky, full width, no overflow clipping ── */}
+      <nav id="fittrack-nav" style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 50,
+        borderBottom: "1px solid #1E1E1E",
+        background: "rgba(8,8,8,0.92)",
+        backdropFilter: "blur(20px)",
+        width: "100%",
+        display: "block",
+      }}>
+
+        {/* ── Top bar — always exactly 60px tall, logo left, controls right ── */}
+        <div style={{
+          height: 60,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 16px",
+          boxSizing: "border-box",
+          width: "100%",
+        }}>
 
           {/* Logo */}
           <button
             onClick={() => navigate("/dashboard")}
-            className="font-['Barlow_Condensed'] text-2xl font-black tracking-wider uppercase text-[#C6F135] bg-transparent border-none cursor-pointer"
+            style={{ flexShrink: 0, fontFamily: "'Barlow Condensed', sans-serif", fontSize: 24, fontWeight: 900, letterSpacing: "0.08em", textTransform: "uppercase", color: "#C6F135", background: "none", border: "none", cursor: "pointer", lineHeight: 1 }}
           >
-            FitTrack<sup className="text-xs">™</sup>
+            FitTrack<sup style={{ fontSize: 10 }}>™</sup>
           </button>
 
-          {/* Desktop nav links */}
-          <ul className="hidden md:flex items-center gap-8 list-none">
+          {/* Desktop nav links — hidden on mobile */}
+          <ul className="hidden md:flex" style={{ listStyle: "none", display: "flex", alignItems: "center", gap: 32, margin: 0, padding: 0 }}>
             {NAV_LINKS.map(({ label, to }) => {
-              const isActive = location.pathname === to;
+              const active = location.pathname === to;
               return (
                 <li key={to}>
                   <button
                     onClick={() => navigate(to)}
-                    className={`text-[10px] tracking-[0.18em] uppercase transition-colors relative group bg-transparent border-none cursor-pointer ${
-                      isActive ? "text-[#ECECEC]" : "text-[#555] hover:text-[#ECECEC]"
-                    }`}
+                    style={{ fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", background: "none", border: "none", cursor: "pointer", color: active ? "#ECECEC" : "#555", position: "relative", padding: 0 }}
+                    onMouseEnter={e => { if (!active) e.currentTarget.style.color = "#ECECEC"; }}
+                    onMouseLeave={e => { if (!active) e.currentTarget.style.color = "#555"; }}
                   >
                     {label}
-                    <span className={`absolute -bottom-1 left-0 right-0 h-px bg-[#C6F135] transition-transform origin-left ${
-                      isActive ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
-                    }`} />
                   </button>
                 </li>
               );
             })}
           </ul>
 
-          {/* Right side */}
-          <div className="flex items-center gap-4">
+          {/* Right side controls */}
+          <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 12 }}>
 
-            {/* Live dot */}
-            <div className="hidden md:flex items-center gap-2 text-[9px] tracking-[0.15em] uppercase text-[#555]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#C6F135] animate-pulse" />
+            {/* Live dot — desktop only */}
+            <div className="hidden md:flex" style={{ alignItems: "center", gap: 8, fontSize: 9, letterSpacing: "0.15em", textTransform: "uppercase", color: "#555" }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#C6F135", display: "inline-block", animation: "pulse 2s infinite" }} />
               Live
             </div>
 
-            {/* Account button + dropdown */}
-            <div className="relative" ref={accountRef}>
+            {/* Account dropdown */}
+            <div style={{ position: "relative" }} ref={accountRef}>
               <button
                 onClick={() => setAccountOpen(!accountOpen)}
-                className="bg-[#C6F135] text-black font-bold text-[10px] tracking-[0.18em] uppercase px-4 py-2 hover:bg-[#FF2A5E] hover:text-white transition-colors cursor-pointer flex items-center gap-2"
+                style={{ background: "#C6F135", color: "#000", fontWeight: 700, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", padding: "8px 14px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#FF2A5E"; e.currentTarget.style.color = "#fff"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "#C6F135"; e.currentTarget.style.color = "#000"; }}
               >
-                Account
-                <span className={`text-[8px] transition-transform duration-200 ${accountOpen ? "rotate-180" : ""}`}>▼</span>
+                Account <span style={{ fontSize: 8, display: "inline-block", transform: accountOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▼</span>
               </button>
 
               {accountOpen && (
-                <div className="absolute right-0 top-full mt-1 w-48 border border-[#2A2A2A] bg-[#0D0D0D] z-50">
-                  <div className="px-4 py-3 border-b border-[#1E1E1E]">
-                    <div className="text-[8px] tracking-[0.2em] uppercase text-[#555]">Signed in as</div>
-                    <div className="text-[10px] text-[#ECECEC] mt-1 truncate">
-                      {getUserDisplayName()}
-                    </div>
+                <div style={{ position: "absolute", right: 0, top: "calc(100% + 4px)", width: 192, border: "1px solid #2A2A2A", background: "#0D0D0D", zIndex: 999 }}>
+                  <div style={{ padding: "12px 16px", borderBottom: "1px solid #1E1E1E" }}>
+                    <div style={{ fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: "#555" }}>Signed in as</div>
+                    <div style={{ fontSize: 10, color: "#ECECEC", marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName()}</div>
                   </div>
                   {ACCOUNT_MENU.map(({ label, to }) => (
-                    <button
-                      key={to}
-                      onClick={() => handleAccountNav(to)}
-                      className="w-full text-left px-4 py-3 text-[9px] tracking-[0.18em] uppercase text-[#555] hover:text-[#ECECEC] hover:bg-[#111] border-b border-[#1E1E1E] transition-colors cursor-pointer bg-transparent"
-                    >
-                      {label}
-                    </button>
+                    <button key={to} onClick={() => { setAccountOpen(false); navigate(to); }}
+                      style={{ width: "100%", textAlign: "left", padding: "12px 16px", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: "#555", background: "none", border: "none", borderBottom: "1px solid #1E1E1E", cursor: "pointer" }}
+                      onMouseEnter={e => { e.currentTarget.style.color = "#ECECEC"; e.currentTarget.style.background = "#111"; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = "#555"; e.currentTarget.style.background = "none"; }}
+                    >{label}</button>
                   ))}
                   {user ? (
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-4 py-3 text-[9px] tracking-[0.18em] uppercase text-[#FF2A5E] hover:bg-[#111] transition-colors cursor-pointer bg-transparent"
-                    >
-                      Logout
-                    </button>
+                    <button onClick={handleLogout}
+                      style={{ width: "100%", textAlign: "left", padding: "12px 16px", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: "#FF2A5E", background: "none", border: "none", cursor: "pointer" }}
+                      onMouseEnter={e => e.currentTarget.style.background = "#111"}
+                      onMouseLeave={e => e.currentTarget.style.background = "none"}
+                    >Logout</button>
                   ) : (
-                    <button
-                      onClick={() => { setAccountOpen(false); navigate("/login"); }}
-                      className="w-full text-left px-4 py-3 text-[9px] tracking-[0.18em] uppercase text-[#C6F135] hover:bg-[#111] transition-colors cursor-pointer bg-transparent"
-                    >
-                      Login
-                    </button>
+                    <button onClick={() => { setAccountOpen(false); navigate("/login"); }}
+                      style={{ width: "100%", textAlign: "left", padding: "12px 16px", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: "#C6F135", background: "none", border: "none", cursor: "pointer" }}
+                      onMouseEnter={e => e.currentTarget.style.background = "#111"}
+                      onMouseLeave={e => e.currentTarget.style.background = "none"}
+                    >Login</button>
                   )}
                 </div>
               )}
             </div>
 
-            {/* Burger — mobile only */}
+            {/* Hamburger — mobile only */}
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="md:hidden flex flex-col gap-1.5 p-1 cursor-pointer bg-transparent border-none"
               aria-label="Toggle menu"
+              style={{ flexShrink: 0, display: "flex", flexDirection: "column", gap: 6, padding: 4, background: "none", border: "none", cursor: "pointer" }}
+              className="md:hidden"
             >
-              <span className={`block w-6 h-0.5 bg-[#ECECEC] transition-all duration-300 ${menuOpen ? "rotate-45 translate-y-2" : ""}`} />
-              <span className={`block w-6 h-0.5 bg-[#ECECEC] transition-all duration-300 ${menuOpen ? "opacity-0" : ""}`} />
-              <span className={`block w-6 h-0.5 bg-[#ECECEC] transition-all duration-300 ${menuOpen ? "-rotate-45 -translate-y-2" : ""}`} />
+              <span style={{ display: "block", width: 24, height: 2, background: "#ECECEC", transition: "all 0.3s", transform: menuOpen ? "rotate(45deg) translateY(8px)" : "none" }} />
+              <span style={{ display: "block", width: 24, height: 2, background: "#ECECEC", transition: "all 0.3s", opacity: menuOpen ? 0 : 1 }} />
+              <span style={{ display: "block", width: 24, height: 2, background: "#ECECEC", transition: "all 0.3s", transform: menuOpen ? "rotate(-45deg) translateY(-8px)" : "none" }} />
             </button>
           </div>
         </div>
 
-        {/* Mobile dropdown — full-width, flush under the navbar */}
+        {/* ── Mobile menu — full-width block, sits directly below the 60px bar ── */}
         {menuOpen && (
-          <div className="md:hidden border-t border-[#1E1E1E] bg-[#0D0D0D]">
+          <div
+            className="md:hidden"
+            style={{ borderTop: "1px solid #1E1E1E", background: "#0D0D0D", width: "100%" }}
+          >
             {NAV_LINKS.map(({ label, to }) => {
-              const isActive = location.pathname === to;
+              const active = location.pathname === to;
               return (
                 <button
                   key={to}
                   onClick={() => { navigate(to); setMenuOpen(false); }}
-                  className={`w-full text-left px-6 py-4 text-[10px] tracking-[0.18em] uppercase border-b border-[#1E1E1E] transition-colors cursor-pointer bg-transparent ${
-                    isActive ? "text-[#C6F135]" : "text-[#555] hover:text-[#ECECEC] hover:bg-[#111]"
-                  }`}
+                  style={{ width: "100%", textAlign: "left", padding: "16px 24px", fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", borderBottom: "1px solid #1E1E1E", background: "none", border: "none", borderBottom: "1px solid #1E1E1E", cursor: "pointer", color: active ? "#C6F135" : "#555", display: "block", boxSizing: "border-box" }}
                 >
                   {label}
                 </button>
               );
             })}
-            <div className="border-t border-[#2A2A2A]">
+            <div style={{ borderTop: "1px solid #2A2A2A" }}>
               <button onClick={() => { navigate("/profile"); setMenuOpen(false); }}
-                className="w-full text-left px-6 py-4 text-[10px] tracking-[0.18em] uppercase text-[#555] hover:text-[#ECECEC] hover:bg-[#111] border-b border-[#1E1E1E] transition-colors cursor-pointer bg-transparent">
-                My Profile
-              </button>
+                style={{ width: "100%", textAlign: "left", padding: "16px 24px", fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "#555", background: "none", border: "none", borderBottom: "1px solid #1E1E1E", cursor: "pointer", display: "block", boxSizing: "border-box" }}
+              >My Profile</button>
               {user ? (
                 <button onClick={() => { handleLogout(); setMenuOpen(false); }}
-                  className="w-full text-left px-6 py-4 text-[10px] tracking-[0.18em] uppercase text-[#FF2A5E] hover:bg-[#111] transition-colors cursor-pointer bg-transparent">
-                  Logout
-                </button>
+                  style={{ width: "100%", textAlign: "left", padding: "16px 24px", fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "#FF2A5E", background: "none", border: "none", cursor: "pointer", display: "block", boxSizing: "border-box" }}
+                >Logout</button>
               ) : (
                 <button onClick={() => { navigate("/login"); setMenuOpen(false); }}
-                  className="w-full text-left px-6 py-4 text-[10px] tracking-[0.18em] uppercase text-[#C6F135] hover:bg-[#111] transition-colors cursor-pointer bg-transparent">
-                  Login
-                </button>
+                  style={{ width: "100%", textAlign: "left", padding: "16px 24px", fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "#C6F135", background: "none", border: "none", cursor: "pointer", display: "block", boxSizing: "border-box" }}
+                >Login</button>
               )}
             </div>
           </div>
@@ -284,6 +238,19 @@ export default function Navbar() {
         @keyframes ticker {
           from { transform: translateX(0); }
           to   { transform: translateX(-50%); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
+        /* Hide hamburger on desktop, show on mobile */
+        @media (min-width: 768px) {
+          button[aria-label="Toggle menu"] { display: none !important; }
+        }
+        /* Hide desktop nav on mobile */
+        @media (max-width: 767px) {
+          nav ul { display: none !important; }
+          nav .live-dot { display: none !important; }
         }
       `}</style>
     </>

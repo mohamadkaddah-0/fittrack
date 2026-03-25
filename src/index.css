@@ -1,3 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* Prevent horizontal page scroll on mobile without clipping positioned dropdowns */
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}

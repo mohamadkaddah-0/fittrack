@@ -589,7 +589,15 @@ export function getUserProfile() {
   };
 
   try {
-    const savedJson = localStorage.getItem("userProfile");
+    // Resolve the logged-in user's ID so we can load their survey-based profile
+    const _sessionRaw = sessionStorage.getItem('currentUser');
+    const _uid = _sessionRaw
+      ? (() => { try { return JSON.parse(_sessionRaw).id; } catch (e) { return null; } })()
+      : null;
+    // Prefer the user-specific key (saved by Survey.jsx), fall back to generic key
+    const savedJson = _uid
+      ? (localStorage.getItem(`userProfile_${_uid}`) || localStorage.getItem("userProfile"))
+      : localStorage.getItem("userProfile");
     if (!savedJson) return defaultProfile;
 
     const p = JSON.parse(savedJson);
