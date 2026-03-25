@@ -65,18 +65,76 @@ A key part of my contribution involved working with the shared mock data (mockDa
 
 *Mohammad Kaddah:*
 
-Primarily responsible for:
-1. HomePage.jsx
-Developed the main dashboard of the application. Displays categorized workout options (e.g., chest, abs, shoulders) along with relevant details such as duration.Designed to provide a clear and simple navigation experience, allowing users to easily browse and select workouts.
+1-HomePage.jsx 
 
-2. LogWorkoutPage.jsx
-Implemented the workout logging interface. Enables users to input and record workout data (e.g., exercises, duration, sets). Supports tracking of user activity over time, forming the basis for progress monitoring and future analytics features.
+Developed the main dashboard of the application.
 
-As well as being in control of the App.jsx file.
+- Displays the user's daily fitness stats including calories intake, calories burnt, water intake, exercises done, and steps taken
+- All stat cards are interactive â€” the user clicks any card to input today's value
+- Shows the user's current workout plan progress through a circular ring meter and a 7-day tracker
+- The plan name is dynamically derived from the user's survey goal (e.g. Muscle Gain, Fat Loss, Maintenance)
+- Includes an achievements section displaying unlocked and locked milestones
+- Features a full interactive activity calendar that visualizes logged meals and workouts per day, shared with the Diet Program page
+- Designed to provide a clear and simple navigation experience, allowing users to easily browse their daily and weekly progress
 
-Future Plans (Phase 2):
+**Mock Data:**
+All data is managed through React local state (`useState`). Stats initialize at `0` and are updated by user input. Achievements, goals, and plan mappings are defined as hardcoded constants at the top of the component. Calendar data is received as a prop from `App.jsx`, shared across the Diet Program and Log Workout pages.
+
+---
+
+ 2. LogWorkoutPage.jsx ” Log New Workout (`/log`)
+
+Implemented the workout logging interface.
+
+- Enables users to log multiple exercises in a single workout session
+- Each exercise is selected from a searchable, filterable database of exercises
+- Input fields adapt based on exercise type:
+  - Weighted exercises show Sets, Reps, and Weight
+  - Bodyweight exercises show Sets and Reps
+  - Cardio exercises show Sets and Duration
+  - Distance exercises show Distance and Duration with auto-calculated speed
+- Calories burned are automatically estimated per exercise based on type and user weight, and are locked once logged
+- Includes a built-in rest timer between sets
+- All logged exercises are saved to the shared activity calendar on the homepage
+- Supports tracking of user activity over time, forming the basis for progress monitoring and future analytics features
+
+**Mock Data:**
+Imports `EXERCISES` from the shared `mockData.js` file to populate the exercise picker. Uses `getUserProfile()` to retrieve the user's weight for calorie estimation. Today's workout log is persisted in `localStorage` to simulate session continuity within the browser.
+
+---
+
+3. App.jsx â€” Application Root
+
+Responsible for managing the overall application structure.
+
+- Sets up all client-side routing using React Router
+- Manages shared state across all pages including calendar data, logged meals, and user profile
+- Controls which pages display the navbar and footer (hidden on auth and onboarding pages)
+- Passes shared functions such as `addWorkoutToCalendar`, `deleteMealFromDay`, and `togglePlanMeal` as props to the relevant pages
+- Integrates all four team members' pages into a single cohesive application
+
+
+
+## Future Plans ( Phase 2)
+
 The next phase will focus on expanding functionality and improving the overall tracking system.
-Planned Enhancements: Achievement Section Functionality. Activate and connect the achievement system to user activity. Introduce dynamic progress tracking and milestone-based rewards. Step Tracking Integration. Implement a system to track steps taken by the user. Use step data as an additional metric for activity tracking. Advanced Calorie Calculation. Improve total calorie burn estimation by combining: Steps taken, Logged workouts, and Logged meals. Provide a more accurate representation of user activity and fitness progress.
+
+### Achievement Section Functionality
+- Activate and connect the achievement system to real user activity
+- Achievements will unlock dynamically based on milestones such as number of workouts completed, consecutive active days, and calorie goals reached
+- Introduce progress tracking and milestone-based rewards
+
+### Step Tracking Integration
+- Implement a system to track steps taken by the user
+- Use step data as an additional metric for daily activity tracking
+- Steps will contribute to total calories burned alongside logged workouts
+
+### Advanced Calorie Calculation
+- Improve total calorie burn estimation by combining:
+  - Steps taken
+  - Logged workouts
+  - Logged meals from the Diet Program
+- Provide a more accurate and unified representation of the user's daily calorie balance and fitness progress
 
 
 *Mohammad Moghnieh:*
