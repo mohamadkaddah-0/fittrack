@@ -45,9 +45,9 @@ function getCatColor(category) {
  * Beginner → lime, Intermediate → amber, Advanced → pink, Athlete → purple.
  */
 function getDiffColor(difficulty) {
-  if (difficulty === "Beginner")     return "#C6F135";
+  if (difficulty === "Beginner") return "#C6F135";
   if (difficulty === "Intermediate") return "#FFAA00";
-  if (difficulty === "Advanced")     return "#FF2A5E";
+  if (difficulty === "Advanced") return "#FF2A5E";
   return "#A855F7";
 }
 
@@ -58,28 +58,27 @@ function getDiffColor(difficulty) {
  * This is used both to build the plan and to filter the ALL EXERCISES grid.
  */
 const EXERCISE_EQUIPMENT_MAP = {
-  1:  "none",            // Jump Rope
-  2:  "none",            // High Knees
-  3:  "none",            // Burpees
-  4:  "none",            // Mountain Climbers
-  5:  "none",            // Jumping Jacks
-  6:  "none",            // Running in Place
-  7:  "stationary bike", // Cycling
-  8:  "treadmill",       // Treadmill Walk
-  9:  "rowing machine",  // Rowing Machine
-  10: "none",            // Stair Climber
-  11: "none",            // Push Up
-  12: "barbell",         // Bench Press
-  13: "pull-up bar",     // Pull Up
-  14: "pull-up bar",     // Pull Up
-  15: "none",            // Squat
-  16: "none",            // Lunges
-  17: "barbell",         // Deadlift
-  18: "none",            // Leg Press (machine — treated as none)
-  19: "dumbbells",       // Shoulder Press
-  20: "dumbbells",       // Biceps Curl
+  1: "none", // Jump Rope
+  2: "none", // High Knees
+  3: "none", // Burpees
+  4: "none", // Mountain Climbers
+  5: "none", // Jumping Jacks
+  6: "none", // Running in Place
+  7: "stationary bike", // Cycling
+  8: "treadmill", // Treadmill Walk
+  9: "rowing machine", // Rowing Machine
+  10: "none", // Stair Climber
+  11: "none", // Push Up
+  12: "barbell", // Bench Press
+  13: "pull-up bar", // Pull Up
+  14: "pull-up bar", // Pull Up
+  15: "none", // Squat
+  16: "none", // Lunges
+  17: "barbell", // Deadlift
+  18: "none", // Leg Press (machine — treated as none)
+  19: "dumbbells", // Shoulder Press
+  20: "dumbbells", // Biceps Curl
 };
-
 
 function normaliseEquipment(equipList) {
   if (!equipList || equipList.length === 0) return ["none"];
@@ -91,7 +90,7 @@ function normaliseEquipment(equipList) {
  * Bodyweight exercises ("none") are always allowed regardless of equipment.
  */
 function userHasEquipmentForExercise(exerciseId, userEquipment) {
-  const needed     = EXERCISE_EQUIPMENT_MAP[exerciseId] || "none";
+  const needed = EXERCISE_EQUIPMENT_MAP[exerciseId] || "none";
   if (needed === "none") return true;
   const normalised = normaliseEquipment(userEquipment);
   if (normalised.length === 1 && normalised[0] === "none") return false;
@@ -104,13 +103,13 @@ function userHasEquipmentForExercise(exerciseId, userEquipment) {
  * activity level from the survey.
  */
 function getEffectiveLevel(fitnessLevel, activityLevel) {
-  const level    = (fitnessLevel || "beginner").toLowerCase();
+  const level = (fitnessLevel || "beginner").toLowerCase();
   const activity = (activityLevel || "").toLowerCase();
 
   if (activity === "very_active") {
-    if (level === "beginner")     return "intermediate";
+    if (level === "beginner") return "intermediate";
     if (level === "intermediate") return "advanced";
-    if (level === "advanced")     return "athlete";
+    if (level === "advanced") return "athlete";
   }
 
   if (activity === "sedentary" && level !== "beginner") return "beginner";
@@ -125,7 +124,7 @@ function getEffectiveLevel(fitnessLevel, activityLevel) {
  * I use this when building the daily exercise picks so each day gets variety.
  */
 function pickRandom(array, count) {
-  const copy   = [...array];
+  const copy = [...array];
   const result = [];
   while (result.length < count && copy.length > 0) {
     const index = Math.floor(Math.random() * copy.length);
@@ -147,10 +146,12 @@ function getMatchingExercises(goal, level, weightGoal, userEquipment, activityLe
   const effectiveLevel = getEffectiveLevel(level, activityLevel);
 
   const byLevel = exercises.filter((exercise) => {
-    if (effectiveLevel === "beginner")     return exercise.difficulty === "Beginner";
-    if (effectiveLevel === "intermediate") return exercise.difficulty === "Beginner" || exercise.difficulty === "Intermediate";
-    if (effectiveLevel === "advanced")     return exercise.difficulty !== "Athlete";
-    if (effectiveLevel === "athlete")      return true;
+    if (effectiveLevel === "beginner") return exercise.difficulty === "Beginner";
+    if (effectiveLevel === "intermediate") {
+      return exercise.difficulty === "Beginner" || exercise.difficulty === "Intermediate";
+    }
+    if (effectiveLevel === "advanced") return exercise.difficulty !== "Athlete";
+    if (effectiveLevel === "athlete") return true;
     return true;
   });
 
@@ -158,11 +159,11 @@ function getMatchingExercises(goal, level, weightGoal, userEquipment, activityLe
     userHasEquipmentForExercise(exercise.id, userEquipment)
   );
 
-  const cardioPool   = byEquipment.filter((ex) => ex.category === "Cardio");
+  const cardioPool = byEquipment.filter((ex) => ex.category === "Cardio");
   const strengthPool = byEquipment.filter((ex) => ex.category === "Weightlifting");
-  const ratio        = getCardioRatio(weightGoal || "maintain");
-  const total        = byEquipment.length;
-  const cardioCount  = Math.round(total * ratio);
+  const ratio = getCardioRatio(weightGoal || "maintain");
+  const total = byEquipment.length;
+  const cardioCount = Math.round(total * ratio);
   const strengthCount = total - cardioCount;
 
   return [
@@ -185,17 +186,18 @@ function getTodayKey() {
  * Falls back to all bodyweight exercises if the pool is empty after filtering.
  */
 function buildPlanDays(pool) {
-  const safePool = pool.length > 0
-    ? pool
-    : exercises.filter((ex) => EXERCISE_EQUIPMENT_MAP[ex.id] === "none");
+  const safePool =
+    pool.length > 0
+      ? pool
+      : exercises.filter((ex) => EXERCISE_EQUIPMENT_MAP[ex.id] === "none");
 
   const lastUsed = {};
-  const days     = [];
+  const days = [];
 
   for (let day = 1; day <= 14; day++) {
     const isRest = day % 4 === 0 && day !== 14;
-    const count  = day % 3 === 0 ? 3 : 2;
-    let   picks  = [];
+    const count = day % 3 === 0 ? 3 : 2;
+    let picks = [];
 
     if (!isRest) {
       const available = safePool.filter(
@@ -203,7 +205,9 @@ function buildPlanDays(pool) {
       );
       const source = available.length >= count ? available : safePool;
       picks = pickRandom(source, count);
-      picks.forEach((ex) => { lastUsed[ex.id] = day; });
+      picks.forEach((ex) => {
+        lastUsed[ex.id] = day;
+      });
     }
 
     days.push({ day, isRest, picks });
@@ -214,15 +218,15 @@ function buildPlanDays(pool) {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const MONTHS_FULL  = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTHS_FULL = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 /** Meal category colours — must match Sara's diet page exactly. */
 const CAT_COLORS = {
   breakfast: "#FFAA00",
-  lunch:     "#C6F135",
-  snack:     "#00E5FF",
-  dinner:    "#FF2A5E",
+  lunch: "#C6F135",
+  snack: "#00E5FF",
+  dinner: "#FF2A5E",
 };
 
 /** Purple dots for exercise entries — different from all four meal colours. */
@@ -238,15 +242,8 @@ function PulseDot() {
   return (
     <span
       aria-hidden="true"
-      style={{
-        display: "inline-block",
-        width: "8px",
-        height: "8px",
-        borderRadius: "50%",
-        flexShrink: 0,
-        background: "#C6F135",
-        animation: "pulse 2s ease-in-out infinite",
-      }}
+      className="inline-block h-2 w-2 shrink-0 rounded-full animate-pulse"
+      style={{ background: "#C6F135" }}
     />
   );
 }
@@ -269,65 +266,41 @@ function PulseDot() {
  *  - Hover effect scales the card and highlights its border
  */
 function ExerciseCard({ ex, mockUser }) {
-  const catColor   = getCatColor(ex.category);
-  const diffColor  = getDiffColor(ex.difficulty);
+  const catColor = getCatColor(ex.category);
+  const diffColor = getDiffColor(ex.difficulty);
   const hasWarning = isRiskyForUser(ex, mockUser.limitations);
   const [imgErr, setImgErr] = useState(false);
 
-  const initials    = ex.name.split(" ").map((w) => w[0]).join("").slice(0, 2);
+  const initials = ex.name.split(" ").map((w) => w[0]).join("").slice(0, 2);
   const equipNeeded = EXERCISE_EQUIPMENT_MAP[ex.id];
 
   return (
     <article
       aria-label={`Exercise: ${ex.name}, ${ex.category}, ${ex.difficulty}${hasWarning ? ", caution for your limitations" : ""}`}
-      style={{
-        background: "#0D0D0D",
-        border: `1px solid ${hasWarning ? "#FFAA00" : "#1E1E1E"}`,
-        borderRadius: "12px",
-        overflow: "hidden",
-        transition: "all 0.3s",
-        cursor: "pointer",
-      }}
+      className="cursor-pointer overflow-hidden rounded-xl border bg-[#0D0D0D] transition-all duration-300 hover:scale-[1.02]"
+      style={{ borderColor: hasWarning ? "#FFAA00" : "#1E1E1E" }}
       onMouseEnter={(e) => {
         e.currentTarget.style.borderColor = hasWarning ? "#FF2A5E" : "#C6F135";
-        e.currentTarget.style.transform = "scale(1.02)";
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.borderColor = hasWarning ? "#FFAA00" : "#1E1E1E";
-        e.currentTarget.style.transform = "scale(1)";
       }}
     >
-      <Link to={ex.link} style={{ display: "block", textDecoration: "none" }}>
+      <Link to={ex.link} className="block no-underline">
         {/* Exercise thumbnail image — falls back to initials on error */}
-        <div
-          style={{
-            height: "144px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            position: "relative",
-            overflow: "hidden",
-            background: "#111111",
-            borderBottom: "1px solid #1E1E1E",
-          }}
-        >
+        <div className="relative flex h-36 items-center justify-center overflow-hidden border-b border-[#1E1E1E] bg-[#111111]">
           {!imgErr && ex.image ? (
             <img
               src={ex.image}
               alt={`${ex.name} exercise demonstration`}
               onError={() => setImgErr(true)}
-              style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.75 }}
+              className="h-full w-full object-cover opacity-75"
             />
           ) : (
             <span
               aria-hidden="true"
-              style={{
-                fontFamily: "'Barlow Condensed',sans-serif",
-                fontWeight: 900,
-                fontSize: "56px",
-                color: "#2A2A2A",
-                userSelect: "none",
-              }}
+              className="select-none text-[56px] font-black leading-none text-[#2A2A2A]"
+              style={{ fontFamily: "'Barlow Condensed',sans-serif" }}
             >
               {initials}
             </span>
@@ -336,11 +309,10 @@ function ExerciseCard({ ex, mockUser }) {
           {/* Difficulty badge */}
           <span
             aria-hidden="true"
+            className="absolute right-2 top-2 rounded-md px-2 py-1 text-[9px] font-bold uppercase tracking-[0.1em]"
             style={{
-              position: "absolute", top: "8px", right: "8px",
-              fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em",
-              textTransform: "uppercase", padding: "4px 8px", borderRadius: "6px",
-              border: `1px solid ${diffColor}66`, color: diffColor,
+              border: `1px solid ${diffColor}66`,
+              color: diffColor,
               background: "rgba(0,0,0,0.7)",
             }}
           >
@@ -351,27 +323,22 @@ function ExerciseCard({ ex, mockUser }) {
           {hasWarning && (
             <span
               role="alert"
-              style={{
-                position: "absolute", top: "8px", left: "8px",
-                fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em",
-                textTransform: "uppercase", padding: "4px 8px", borderRadius: "6px",
-                background: "#FFAA00", color: "#080808",
-              }}
+              className="absolute left-2 top-2 rounded-md bg-[#FFAA00] px-2 py-1 text-[9px] font-bold uppercase tracking-[0.1em] text-[#080808]"
             >
               ⚠ Caution
             </span>
           )}
         </div>
 
-        <div style={{ padding: "16px" }}>
+        <div className="p-4">
           {hasWarning && (
             <div
               role="alert"
+              className="mb-3 rounded-lg border px-3 py-2 text-xs leading-6"
               style={{
-                borderRadius: "8px", padding: "8px 12px", marginBottom: "12px",
-                fontSize: "12px", lineHeight: 1.6,
                 background: "rgba(255,170,0,0.1)",
-                border: "1px solid rgba(255,170,0,0.4)", color: "#FFAA00",
+                borderColor: "rgba(255,170,0,0.4)",
+                color: "#FFAA00",
               }}
             >
               ⚠ Not suitable for your limitations. Consult your doctor first.
@@ -379,45 +346,35 @@ function ExerciseCard({ ex, mockUser }) {
           )}
 
           <h3
-            style={{
-              fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900,
-              fontSize: "20px", color: "#ECECEC", margin: "0 0 4px",
-            }}
+            className="mb-1 text-[20px] font-black text-[#ECECEC]"
+            style={{ fontFamily: "'Barlow Condensed',sans-serif" }}
           >
             {ex.name}
           </h3>
 
-          <p
-            style={{
-              display: "flex", alignItems: "center", gap: "8px",
-              fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.1em",
-              color: "#555555", margin: "0 0 8px",
-            }}
-          >
+          <p className="mb-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.1em] text-[#555555]">
             <span
               aria-hidden="true"
-              style={{ width: "7px", height: "7px", borderRadius: "50%", flexShrink: 0, display: "inline-block", background: catColor }}
+              className="inline-block h-[7px] w-[7px] shrink-0 rounded-full"
+              style={{ background: catColor }}
             />
             {ex.category}
           </p>
 
-          <p style={{ fontSize: "12px", lineHeight: 1.7, color: "#555555", margin: "0 0 12px" }}>
-            {ex.desc}
-          </p>
+          <p className="mb-3 text-xs leading-7 text-[#555555]">{ex.desc}</p>
 
           <span
             aria-label={`Calorie burn: ${ex.kcalRange} per 10 minutes`}
+            className="mb-3 inline-block rounded-md border px-2 py-1 text-[9px] font-bold uppercase tracking-[0.1em]"
             style={{
-              display: "inline-block", fontSize: "9px", fontWeight: 700,
-              letterSpacing: "0.1em", textTransform: "uppercase",
-              padding: "4px 8px", borderRadius: "6px", marginBottom: "12px",
-              color: "#FFAA00", border: "1px solid rgba(255,170,0,0.3)",
+              color: "#FFAA00",
+              borderColor: "rgba(255,170,0,0.3)",
             }}
           >
             {ex.kcalRange} kcal / 10 min
           </span>
 
-          <p style={{ fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.1em", color: "#333333", margin: "0 0 8px" }}>
+          <p className="mb-2 text-[10px] uppercase tracking-[0.1em] text-[#333333]">
             {ex.muscles}
           </p>
 
@@ -425,21 +382,13 @@ function ExerciseCard({ ex, mockUser }) {
           {equipNeeded && equipNeeded !== "none" && (
             <p
               aria-label={`Equipment needed: ${equipNeeded}`}
-              style={{
-                fontSize: "10px", textTransform: "uppercase",
-                letterSpacing: "0.1em", color: "#A855F7", margin: "0 0 12px",
-              }}
+              className="mb-3 text-[10px] uppercase tracking-[0.1em] text-[#A855F7]"
             >
               ⚙ Needs: {equipNeeded}
             </p>
           )}
 
-          <p
-            style={{
-              fontSize: "12px", fontWeight: 700, textTransform: "uppercase",
-              letterSpacing: "0.1em", color: "#00E5FF", margin: 0,
-            }}
-          >
+          <p className="m-0 text-xs font-bold uppercase tracking-[0.1em] text-[#00E5FF]">
             Open exercise page →
           </p>
         </div>
@@ -494,26 +443,27 @@ function PlanDayCard({
       role={isDay14 ? "button" : undefined}
       aria-label={isDay14 ? "Day 14 — tap to finish plan" : `Day ${day}${isRest ? ", rest day" : ""}`}
       tabIndex={isDay14 ? 0 : undefined}
+      className="rounded-xl bg-[#0D0D0D] p-3 transition-transform duration-200 hover:-translate-y-1"
       style={{
-        background: "#0D0D0D", borderRadius: "12px", padding: "12px",
-        transition: "transform 0.2s", cursor: isDay14 ? "pointer" : "default",
-        border: allDone ? "1px solid #C6F135"
-          : isDay14   ? "1px solid #C6F135"
-          : isToday   ? "1px solid #00E5FF"
+        cursor: isDay14 ? "pointer" : "default",
+        border: allDone
+          ? "1px solid #C6F135"
+          : isDay14
+          ? "1px solid #C6F135"
+          : isToday
+          ? "1px solid #00E5FF"
           : "1px solid #1E1E1E",
       }}
       onClick={isDay14 ? onDay14Click : undefined}
       onKeyDown={isDay14 ? (e) => { if (e.key === "Enter" || e.key === " ") onDay14Click(); } : undefined}
-      onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-4px)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}
     >
       {/* Day number — cyan when today */}
       <p
         aria-hidden="true"
+        className="mb-2 text-[30px] font-black leading-none"
         style={{
-          fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900,
-          fontSize: "30px", lineHeight: 1, color: isToday ? "#00E5FF" : "#2A2A2A",
-          marginBottom: "8px",
+          fontFamily: "'Barlow Condensed',sans-serif",
+          color: isToday ? "#00E5FF" : "#2A2A2A",
         }}
       >
         {String(day).padStart(2, "0")}
@@ -521,7 +471,7 @@ function PlanDayCard({
 
       {/* "Today" label shown on the current plan day */}
       {isToday && !allDone && (
-        <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#00E5FF", marginBottom: "6px" }}>
+        <p className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.1em] text-[#00E5FF]">
           Today
         </p>
       )}
@@ -530,15 +480,14 @@ function PlanDayCard({
       {allDone && (
         <div
           aria-label="Day complete"
+          className="mb-2 flex items-center gap-1.5 rounded-md border px-2 py-1"
           style={{
-            display: "flex", alignItems: "center", gap: "6px",
-            marginBottom: "8px", padding: "4px 8px",
-            background: "rgba(198,241,53,0.1)", border: "1px solid rgba(198,241,53,0.4)",
-            borderRadius: "6px",
+            background: "rgba(198,241,53,0.1)",
+            borderColor: "rgba(198,241,53,0.4)",
           }}
         >
-          <span aria-hidden="true" style={{ color: "#C6F135", fontSize: "11px", fontWeight: 700 }}>✓</span>
-          <span style={{ color: "#C6F135", fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+          <span aria-hidden="true" className="text-[11px] font-bold text-[#C6F135]">✓</span>
+          <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-[#C6F135]">
             Day Complete
           </span>
         </div>
@@ -546,28 +495,28 @@ function PlanDayCard({
 
       {/* Rest day label */}
       {isRest ? (
-        <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#333333" }}>
+        <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-[#333333]">
           Rest Day
         </p>
       ) : (
         picks.map((ex) => {
-          const done    = completedPlanItems[`${day}-${ex.id}`];
+          const done = completedPlanItems[`${day}-${ex.id}`];
           const canTick = isToday;
 
           return (
-            <div key={ex.id} style={{ marginBottom: "6px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginBottom: "2px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "5px", minWidth: 0 }}>
-                  <span aria-hidden="true" style={{ display: "inline-block", width: "7px", height: "7px", borderRadius: "50%", flexShrink: 0, background: getCatColor(ex.category) }} />
+            <div key={ex.id} className="mb-1.5">
+              <div className="mb-0.5 flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <span
+                    aria-hidden="true"
+                    className="inline-block h-[7px] w-[7px] shrink-0 rounded-full"
+                    style={{ background: getCatColor(ex.category) }}
+                  />
                   <Link
                     to={ex.link}
                     onClick={(e) => e.stopPropagation()}
-                    style={{
-                      fontSize: "11px", fontWeight: 700,
-                      color: done ? "#C6F135" : "#00E5FF",
-                      textDecoration: "none", overflow: "hidden",
-                      textOverflow: "ellipsis", whiteSpace: "nowrap",
-                    }}
+                    className="truncate whitespace-nowrap text-[11px] font-bold no-underline"
+                    style={{ color: done ? "#C6F135" : "#00E5FF" }}
                     onMouseEnter={(e) => { e.target.style.color = "#C6F135"; }}
                     onMouseLeave={(e) => { e.target.style.color = done ? "#C6F135" : "#00E5FF"; }}
                   >
@@ -581,14 +530,12 @@ function PlanDayCard({
                     onClick={(e) => { e.stopPropagation(); onToggleDone(day, ex.id); }}
                     aria-label={done ? `Unmark ${ex.name} as done` : `Mark ${ex.name} as done`}
                     aria-pressed={done}
+                    className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
                     style={{
-                      width: "18px", height: "18px", borderRadius: "50%",
                       border: `1px solid ${done ? "#C6F135" : "#555555"}`,
                       background: done ? "#C6F135" : "transparent",
                       color: done ? "#080808" : "#555555",
-                      fontSize: "11px", fontWeight: "bold",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      flexShrink: 0, cursor: "pointer",
+                      cursor: "pointer",
                     }}
                   >
                     {done ? "✓" : ""}
@@ -598,10 +545,9 @@ function PlanDayCard({
 
               {/* Calorie range — boosted if user applied intensity boosts */}
               <p
+                className="ml-3 text-[9px]"
                 style={{
-                  fontSize: "9px",
                   color: intensityBoostCount > 0 ? "#FFAA00" : "#555555",
-                  marginLeft: "12px",
                   textDecoration: done ? "line-through" : "none",
                   opacity: done ? 0.7 : 1,
                 }}
@@ -615,12 +561,7 @@ function PlanDayCard({
 
       {/* "Tap to Finish" prompt on Day 14 */}
       {isDay14 && !allDone && (
-        <p
-          style={{
-            fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em",
-            textTransform: "uppercase", color: "#C6F135", marginTop: "8px",
-          }}
-        >
+        <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.1em] text-[#C6F135]">
           Tap to Finish
         </p>
       )}
@@ -645,8 +586,8 @@ function PlanDayCard({
  *  onClose             — callback to dismiss without choosing
  */
 function PlanCompleteModal({ userLevel, intensityBoostCount, onContinue, onClose }) {
-  const totalKcal    = workoutLog.reduce((sum, entry) => sum + (entry.caloriesBurned || 0), 0);
-  const levels       = ["beginner", "intermediate", "advanced", "athlete"];
+  const totalKcal = workoutLog.reduce((sum, entry) => sum + (entry.caloriesBurned || 0), 0);
+  const levels = ["beginner", "intermediate", "advanced", "athlete"];
   const currentIndex = levels.indexOf(userLevel);
 
   function getBtnLabel() {
@@ -666,75 +607,68 @@ function PlanCompleteModal({ userLevel, intensityBoostCount, onContinue, onClose
       role="dialog"
       aria-modal="true"
       aria-label="Plan complete — choose your next step"
-      style={{
-        position: "fixed", inset: 0, zIndex: 50,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "24px", background: "rgba(0,0,0,0.85)",
-      }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-6"
     >
-      <div
-        style={{
-          borderRadius: "16px", width: "100%", maxWidth: "512px",
-          padding: "32px", background: "#0D0D0D", border: "1px solid #1E1E1E",
-        }}
-      >
+      <div className="w-full max-w-[512px] rounded-2xl border border-[#1E1E1E] bg-[#0D0D0D] p-8">
         {/* Checkmark icon */}
         <div
           aria-hidden="true"
+          className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full"
           style={{
-            width: "64px", height: "64px", borderRadius: "50%",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            margin: "0 auto 24px",
-            background: "rgba(198,241,53,0.1)", border: "2px solid #C6F135",
+            background: "rgba(198,241,53,0.1)",
+            border: "2px solid #C6F135",
           }}
         >
-          <span style={{ fontSize: "24px", fontWeight: 700, color: "#C6F135" }}>✓</span>
+          <span className="text-2xl font-bold text-[#C6F135]">✓</span>
         </div>
 
-        <h2 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: "36px", textAlign: "center", color: "#ECECEC", margin: "0 0 8px" }}>
+        <h2
+          className="mb-2 text-center text-4xl font-black text-[#ECECEC]"
+          style={{ fontFamily: "'Barlow Condensed',sans-serif" }}
+        >
           PLAN COMPLETE
         </h2>
-        <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", textAlign: "center", color: "#555555", margin: "0 0 32px" }}>
+        <p className="mb-8 text-center text-[11px] font-bold uppercase tracking-[0.1em] text-[#555555]">
           14 days finished
         </p>
 
         {/* Stats grid */}
-        <div
-          style={{
-            display: "grid", gridTemplateColumns: "repeat(3,1fr)",
-            gap: "1px", borderRadius: "12px", overflow: "hidden",
-            background: "#1E1E1E", marginBottom: "32px",
-          }}
-        >
+        <div className="mb-8 grid grid-cols-3 gap-px overflow-hidden rounded-xl bg-[#1E1E1E]">
           {[
-            { label: "Workouts Logged", value: workoutLog.length,                  color: "#C6F135" },
-            { label: "Calories Burned", value: totalKcal,                          color: "#FFAA00" },
-            { label: "Current Level",   value: userLevel.slice(0, 3).toUpperCase(), color: "#00E5FF" },
+            { label: "Workouts Logged", value: workoutLog.length, color: "#C6F135" },
+            { label: "Calories Burned", value: totalKcal, color: "#FFAA00" },
+            { label: "Current Level", value: userLevel.slice(0, 3).toUpperCase(), color: "#00E5FF" },
           ].map((stat) => (
-            <div key={stat.label} style={{ padding: "20px 16px", textAlign: "center", background: "#111111" }}>
-              <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#555555", margin: "0 0 8px" }}>
+            <div key={stat.label} className="bg-[#111111] px-4 py-5 text-center">
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.1em] text-[#555555]">
                 {stat.label}
               </p>
-              <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: "32px", fontWeight: 700, lineHeight: 1, color: stat.color, margin: 0 }}>
+              <p
+                className="m-0 text-[32px] font-bold leading-none"
+                style={{ fontFamily: "'Barlow Condensed',sans-serif", color: stat.color }}
+              >
                 {stat.value}
               </p>
             </div>
           ))}
         </div>
 
-        <p style={{ fontSize: "14px", textAlign: "center", lineHeight: 1.7, color: "#555555", margin: "0 0 24px" }}>
-          Great work finishing your 14-day plan.<br />What would you like to do next?
+        <p className="mb-6 text-center text-sm leading-7 text-[#555555]">
+          Great work finishing your 14-day plan.
+          <br />
+          What would you like to do next?
         </p>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <div className="flex flex-col gap-3">
           <button
             onClick={onContinue}
             aria-label={getBtnLabel()}
+            className="w-full rounded-xl px-4 py-4 text-[11px] font-bold uppercase tracking-[0.1em]"
             style={{
-              width: "100%", padding: "16px",
-              fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em",
-              textTransform: "uppercase", borderRadius: "12px", border: 0, cursor: "pointer",
-              background: getBtnColor(), color: getBtnColor() === "#A855F7" ? "#ECECEC" : "#080808",
+              background: getBtnColor(),
+              color: getBtnColor() === "#A855F7" ? "#ECECEC" : "#080808",
+              border: 0,
+              cursor: "pointer",
             }}
           >
             {getBtnLabel()}
@@ -743,12 +677,7 @@ function PlanCompleteModal({ userLevel, intensityBoostCount, onContinue, onClose
           <Link
             to="/profile"
             aria-label="Go to profile to update your plan settings"
-            style={{
-              display: "block", width: "100%", textAlign: "center",
-              fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em",
-              textTransform: "uppercase", padding: "16px", borderRadius: "12px",
-              textDecoration: "none", border: "1px solid #00E5FF", color: "#00E5FF",
-            }}
+            className="block w-full rounded-xl border border-[#00E5FF] px-4 py-4 text-center text-[11px] font-bold uppercase tracking-[0.1em] text-[#00E5FF] no-underline"
           >
             Update My Profile — Fresh Plan →
           </Link>
@@ -756,13 +685,8 @@ function PlanCompleteModal({ userLevel, intensityBoostCount, onContinue, onClose
           <button
             onClick={onClose}
             aria-label="Close this dialog and decide later"
-            style={{
-              width: "100%", padding: "16px",
-              fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em",
-              textTransform: "uppercase", borderRadius: "12px",
-              border: "1px solid #2A2A2A", color: "#555555",
-              background: "transparent", cursor: "pointer",
-            }}
+            className="w-full rounded-xl border border-[#2A2A2A] bg-transparent px-4 py-4 text-[11px] font-bold uppercase tracking-[0.1em] text-[#555555]"
+            style={{ cursor: "pointer" }}
           >
             I'll Decide Later
           </button>
@@ -789,10 +713,10 @@ function PlanCompleteModal({ userLevel, intensityBoostCount, onContinue, onClose
  *  - Clicking a day shows a side panel with that day's meals and exercises
  */
 function WorkoutCalendar({ calendarData, exerciseLogByDate }) {
-  const todayKey  = getTodayKey();
+  const todayKey = getTodayKey();
   const todayDate = new Date();
 
-  const [calYear,  setCalYear]  = useState(todayDate.getFullYear());
+  const [calYear, setCalYear] = useState(todayDate.getFullYear());
   const [calMonth, setCalMonth] = useState(todayDate.getMonth());
   const [selected, setSelected] = useState(todayKey);
 
@@ -802,8 +726,8 @@ function WorkoutCalendar({ calendarData, exerciseLogByDate }) {
   function changeMonth(direction) {
     setCalMonth((prev) => {
       let newMonth = prev + direction;
-      if (newMonth < 0)  { setCalYear((y) => y - 1); return 11; }
-      if (newMonth > 11) { setCalYear((y) => y + 1); return 0;  }
+      if (newMonth < 0) { setCalYear((y) => y - 1); return 11; }
+      if (newMonth > 11) { setCalYear((y) => y + 1); return 0; }
       return newMonth;
     });
   }
@@ -814,12 +738,12 @@ function WorkoutCalendar({ calendarData, exerciseLogByDate }) {
    * from the next month to fill a complete 7-column grid.
    */
   function buildCells() {
-    const firstDay       = new Date(calYear, calMonth, 1).getDay();
-    const daysInMonth    = new Date(calYear, calMonth + 1, 0).getDate();
+    const firstDay = new Date(calYear, calMonth, 1).getDay();
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
     const daysInPrevMonth = new Date(calYear, calMonth, 0).getDate();
-    const total          = firstDay + daysInMonth;
-    const gridSize       = total + ((7 - (total % 7)) % 7);
-    const cells          = [];
+    const total = firstDay + daysInMonth;
+    const gridSize = total + ((7 - (total % 7)) % 7);
+    const cells = [];
 
     for (let i = 0; i < gridSize; i++) {
       let day, month = calMonth, year = calYear, other = false;
@@ -838,14 +762,14 @@ function WorkoutCalendar({ calendarData, exerciseLogByDate }) {
         day = i - firstDay + 1;
       }
 
-      const dateKey        = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-      const entries        = allCalendar[dateKey] || [];
-      const meals          = entries.filter((entry) => entry.type !== "workout");
-      const exForDate      = exerciseLogByDate[dateKey] || [];
+      const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const entries = allCalendar[dateKey] || [];
+      const meals = entries.filter((entry) => entry.type !== "workout");
+      const exForDate = exerciseLogByDate[dateKey] || [];
 
       cells.push({
         day, dateKey, other,
-        isToday:    dateKey === todayKey,
+        isToday: dateKey === todayKey,
         isSelected: dateKey === selected,
         meals,
         exCount: exForDate.length,
@@ -858,48 +782,45 @@ function WorkoutCalendar({ calendarData, exerciseLogByDate }) {
   const cells = buildCells();
 
   // Side panel data — reads from BOTH sources for the selected date
-  const selectedEntry     = allCalendar[selected] || [];
-  const selectedMeals     = selectedEntry.filter((entry) => entry.type !== "workout");
+  const selectedEntry = allCalendar[selected] || [];
+  const selectedMeals = selectedEntry.filter((entry) => entry.type !== "workout");
   const selectedExercises = exerciseLogByDate[selected] || [];
 
   return (
-    <section aria-label="Calendar showing meals and exercises" style={{ marginBottom: "64px" }}>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "12px", marginBottom: "24px" }}>
-        <h2 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: "clamp(28px,5vw,36px)", color: "#ECECEC", margin: 0 }}>
+    <section aria-label="Calendar showing meals and exercises" className="mb-16">
+      <div className="mb-6 flex flex-wrap items-baseline gap-3">
+        <h2
+          className="m-0 text-[clamp(28px,5vw,36px)] font-black text-[#ECECEC]"
+          style={{ fontFamily: "'Barlow Condensed',sans-serif" }}
+        >
           CALENDAR
         </h2>
-        <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#333333" }}>
+        <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#333333]">
           exercises + meals
         </span>
       </div>
 
-      <div className="cal-grid">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_300px]">
         {/* ── Calendar grid ── */}
-        <div style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid #1E1E1E" }}>
-
+        <div className="overflow-hidden rounded-xl border border-[#1E1E1E]">
           {/* Month navigation header */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", borderBottom: "1px solid #1E1E1E", background: "#0D0D0D" }}>
-            <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: "20px", margin: 0 }}>
-              <span style={{ color: "#C6F135" }}>{MONTHS_FULL[calMonth]}</span>
-              <span style={{ color: "#555555", fontSize: "16px", marginLeft: "8px" }}>{calYear}</span>
+          <div className="flex items-center justify-between border-b border-[#1E1E1E] bg-[#0D0D0D] px-5 py-3">
+            <p
+              className="m-0 text-[20px] font-black"
+              style={{ fontFamily: "'Barlow Condensed',sans-serif" }}
+            >
+              <span className="text-[#C6F135]">{MONTHS_FULL[calMonth]}</span>
+              <span className="ml-2 text-base text-[#555555]">{calYear}</span>
             </p>
 
-            <div style={{ display: "flex" }} role="group" aria-label="Month navigation">
+            <div className="flex" role="group" aria-label="Month navigation">
               {[["‹", -1, "Previous month"], ["›", 1, "Next month"]].map(([label, direction, ariaLabel]) => (
                 <button
                   key={label}
                   onClick={() => changeMonth(direction)}
                   aria-label={ariaLabel}
-                  style={{
-                    width: "32px", height: "32px",
-                    border: "1px solid #1E1E1E",
-                    borderRight: direction === -1 ? "none" : "1px solid #1E1E1E",
-                    color: "#555555", background: "transparent",
-                    cursor: "pointer", fontSize: "14px",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "#C6F135"; e.currentTarget.style.color = "#080808"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#555555"; }}
+                  className="flex h-8 w-8 items-center justify-center border border-[#1E1E1E] bg-transparent text-sm text-[#555555] hover:bg-[#C6F135] hover:text-[#080808]"
+                  style={{ borderRight: direction === -1 ? "none" : "1px solid #1E1E1E" }}
                 >
                   {label}
                 </button>
@@ -908,13 +829,13 @@ function WorkoutCalendar({ calendarData, exerciseLogByDate }) {
           </div>
 
           {/* Day-of-week headers */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", borderBottom: "1px solid #1E1E1E" }} role="row">
-            {["Su","Mo","Tu","We","Th","Fr","Sa"].map((dayName) => (
+          <div className="grid grid-cols-7 border-b border-[#1E1E1E]" role="row">
+            {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((dayName) => (
               <div
                 key={dayName}
                 role="columnheader"
                 aria-label={dayName}
-                style={{ padding: "8px 0", textAlign: "center", fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "#555555", borderRight: "1px solid #1E1E1E" }}
+                className="border-r border-[#1E1E1E] py-2 text-center text-[11px] uppercase tracking-[0.1em] text-[#555555]"
               >
                 {dayName}
               </div>
@@ -922,7 +843,7 @@ function WorkoutCalendar({ calendarData, exerciseLogByDate }) {
           </div>
 
           {/* Day cells */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", background: "#080808" }}>
+          <div className="grid grid-cols-7 bg-[#080808]">
             {cells.map((cell) => (
               <button
                 key={cell.dateKey}
@@ -930,27 +851,38 @@ function WorkoutCalendar({ calendarData, exerciseLogByDate }) {
                 onClick={() => !cell.other && setSelected(cell.dateKey)}
                 aria-label={`${cell.day} ${MONTHS_SHORT[calMonth]} — ${cell.meals.length} meal${cell.meals.length !== 1 ? "s" : ""}, ${cell.exCount} exercise${cell.exCount !== 1 ? "s" : ""}`}
                 aria-pressed={cell.isSelected}
+                className="flex min-h-[44px] flex-col items-start border-b border-r border-[#1E1E1E] p-1"
                 style={{
-                  borderRight: "1px solid #1E1E1E", borderBottom: "1px solid #1E1E1E",
-                  borderTop: "none", borderLeft: "none",
-                  minHeight: "44px", padding: "4px",
-                  display: "flex", flexDirection: "column", alignItems: "flex-start",
-                  background: cell.isSelected ? "rgba(198,241,53,0.1)" : cell.isToday ? "rgba(198,241,53,0.05)" : "transparent",
+                  background: cell.isSelected
+                    ? "rgba(198,241,53,0.1)"
+                    : cell.isToday
+                    ? "rgba(198,241,53,0.05)"
+                    : "transparent",
                   opacity: cell.other ? 0.2 : 1,
                   cursor: cell.other ? "default" : "pointer",
                 }}
               >
-                <span style={{ fontSize: "12px", fontWeight: 700, lineHeight: 1, marginBottom: "4px", color: cell.isToday ? "#C6F135" : "#ECECEC" }}>
+                <span className="mb-1 text-xs font-bold leading-none" style={{ color: cell.isToday ? "#C6F135" : "#ECECEC" }}>
                   {cell.day}
                 </span>
 
                 {/* Coloured dots — meals first (category colours), then exercises (purple) */}
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "2px" }} aria-hidden="true">
+                <div className="flex flex-wrap gap-[2px]" aria-hidden="true">
                   {cell.meals.slice(0, 3).map((meal, index) => (
-                    <div key={`m-${index}`} style={{ width: "4px", height: "4px", borderRadius: "50%", background: CAT_COLORS[meal.cat] || "#555" }} title={meal.name} />
+                    <div
+                      key={`m-${index}`}
+                      className="h-1 w-1 rounded-full"
+                      style={{ background: CAT_COLORS[meal.cat] || "#555" }}
+                      title={meal.name}
+                    />
                   ))}
                   {Array.from({ length: Math.min(cell.exCount, 3) }).map((_, index) => (
-                    <div key={`e-${index}`} style={{ width: "4px", height: "4px", borderRadius: "50%", background: EXERCISE_DOT_COLOR }} title="Exercise done" />
+                    <div
+                      key={`e-${index}`}
+                      className="h-1 w-1 rounded-full"
+                      style={{ background: EXERCISE_DOT_COLOR }}
+                      title="Exercise done"
+                    />
                   ))}
                 </div>
               </button>
@@ -961,13 +893,9 @@ function WorkoutCalendar({ calendarData, exerciseLogByDate }) {
         {/* ── Side panel ── */}
         <aside
           aria-label={`Details for ${MONTHS_SHORT[parseInt(selected.split("-")[1]) - 1]} ${parseInt(selected.split("-")[2])}`}
-          style={{
-            borderRadius: "12px", padding: "16px",
-            display: "flex", flexDirection: "column", gap: "12px",
-            background: "#0D0D0D", border: "1px solid #1E1E1E",
-          }}
+          className="flex flex-col gap-3 rounded-xl border border-[#1E1E1E] bg-[#0D0D0D] p-4"
         >
-          <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#FF2A5E", margin: 0 }}>
+          <p className="m-0 text-[11px] font-bold uppercase tracking-[0.1em] text-[#FF2A5E]">
             {MONTHS_SHORT[parseInt(selected.split("-")[1]) - 1]}{" "}
             {parseInt(selected.split("-")[2])},{" "}
             {selected.split("-")[0]}
@@ -976,15 +904,21 @@ function WorkoutCalendar({ calendarData, exerciseLogByDate }) {
           {/* Meals section */}
           {selectedMeals.length > 0 && (
             <div>
-              <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#555555", margin: "0 0 8px" }}>
+              <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.1em] text-[#555555]">
                 Meals
               </p>
               {selectedMeals.map((meal, index) => (
-                <div key={index} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 0", borderBottom: "1px solid #1E1E1E" }}>
-                  <div aria-hidden="true" style={{ width: "6px", height: "6px", borderRadius: "50%", flexShrink: 0, background: CAT_COLORS[meal.cat] || "#555" }} />
+                <div key={index} className="flex items-center gap-2 border-b border-[#1E1E1E] py-1.5">
+                  <div
+                    aria-hidden="true"
+                    className="h-1.5 w-1.5 shrink-0 rounded-full"
+                    style={{ background: CAT_COLORS[meal.cat] || "#555" }}
+                  />
                   <div>
-                    <p style={{ fontSize: "12px", fontWeight: 700, color: "#ECECEC", margin: 0 }}>{meal.name}</p>
-                    <p style={{ fontSize: "10px", color: "#555555", margin: 0 }}>{meal.cat} · {meal.kcal} kcal</p>
+                    <p className="m-0 text-xs font-bold text-[#ECECEC]">{meal.name}</p>
+                    <p className="m-0 text-[10px] text-[#555555]">
+                      {meal.cat} · {meal.kcal} kcal
+                    </p>
                   </div>
                 </div>
               ))}
@@ -994,13 +928,17 @@ function WorkoutCalendar({ calendarData, exerciseLogByDate }) {
           {/* Exercises done section — only exercises ticked on this specific date */}
           {selectedExercises.length > 0 && (
             <div>
-              <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#555555", margin: "0 0 8px" }}>
+              <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.1em] text-[#555555]">
                 Exercises Done
               </p>
               {selectedExercises.map((exercise, index) => (
-                <div key={index} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 0", borderBottom: "1px solid #1E1E1E" }}>
-                  <div aria-hidden="true" style={{ width: "6px", height: "6px", borderRadius: "50%", flexShrink: 0, background: EXERCISE_DOT_COLOR }} />
-                  <p style={{ fontSize: "12px", fontWeight: 700, color: "#C6F135", margin: 0 }}>
+                <div key={index} className="flex items-center gap-2 border-b border-[#1E1E1E] py-1.5">
+                  <div
+                    aria-hidden="true"
+                    className="h-1.5 w-1.5 shrink-0 rounded-full"
+                    style={{ background: EXERCISE_DOT_COLOR }}
+                  />
+                  <p className="m-0 text-xs font-bold text-[#C6F135]">
                     ✓ {exercise.name}
                   </p>
                 </div>
@@ -1009,22 +947,24 @@ function WorkoutCalendar({ calendarData, exerciseLogByDate }) {
           )}
 
           {selectedMeals.length === 0 && selectedExercises.length === 0 && (
-            <p style={{ fontSize: "12px", color: "#333333" }}>Nothing logged this day.</p>
+            <p className="text-xs text-[#333333]">Nothing logged this day.</p>
           )}
 
           {/* Colour legend */}
-          <div style={{ marginTop: "8px", paddingTop: "12px", borderTop: "1px solid #1E1E1E" }}>
-            <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#333333", margin: "0 0 8px" }}>Legend</p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+          <div className="mt-2 border-t border-[#1E1E1E] pt-3">
+            <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.1em] text-[#333333]">
+              Legend
+            </p>
+            <div className="flex flex-wrap gap-2.5">
               {Object.entries(CAT_COLORS).map(([category, color]) => (
-                <div key={category} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                  <div aria-hidden="true" style={{ width: "6px", height: "6px", borderRadius: "50%", background: color }} />
-                  <span style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.1em", color: "#555555" }}>{category}</span>
+                <div key={category} className="flex items-center gap-1">
+                  <div aria-hidden="true" className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
+                  <span className="text-[9px] uppercase tracking-[0.1em] text-[#555555]">{category}</span>
                 </div>
               ))}
-              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                <div aria-hidden="true" style={{ width: "6px", height: "6px", borderRadius: "50%", background: EXERCISE_DOT_COLOR }} />
-                <span style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.1em", color: "#555555" }}>exercise</span>
+              <div className="flex items-center gap-1">
+                <div aria-hidden="true" className="h-1.5 w-1.5 rounded-full" style={{ background: EXERCISE_DOT_COLOR }} />
+                <span className="text-[9px] uppercase tracking-[0.1em] text-[#555555]">exercise</span>
               </div>
             </div>
           </div>
@@ -1057,15 +997,15 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
   const mockUser = currentUser || getUserProfile();
 
   // ── Filter state for the ALL EXERCISES section ──
-  const [search,     setSearch]     = useState("");
-  const [filterCat,  setFilterCat]  = useState("All");
+  const [search, setSearch] = useState("");
+  const [filterCat, setFilterCat] = useState("All");
   const [filterDiff, setFilterDiff] = useState("All");
 
   // ── Plan progression state ──
-  const [userLevel,  setUserLevel]  = useState(mockUser.level);
+  const [userLevel, setUserLevel] = useState(mockUser.level);
   const [boostCount, setBoostCount] = useState(0);
-  const [planOpen,   setPlanOpen]   = useState(false);
-  const [toastMsg,   setToastMsg]   = useState(null);
+  const [planOpen, setPlanOpen] = useState(false);
+  const [toastMsg, setToastMsg] = useState(null);
 
   // ── Tick tracking — pure React state, no localStorage ──
   // completedPlanItems stores which exercises the user has ticked today
@@ -1082,7 +1022,6 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
     return buildPlanDays(pool);
   });
 
- 
   useEffect(() => {
     const pool = getMatchingExercises(
       mockUser.goal, userLevel, mockUser.weightGoal,
@@ -1092,7 +1031,6 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
     // Reset completed ticks when the plan changes so nothing is pre-ticked
     setCompletedPlanItems({});
   }, [userLevel, boostCount]);
-
 
   const todayPlanDay = 1;
 
@@ -1108,10 +1046,10 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
   function toggleExerciseDone(day, exerciseId) {
     if (day !== todayPlanDay) return;
 
-    const key      = `${day}-${exerciseId}`;
-    const isDone   = !completedPlanItems[key];
+    const key = `${day}-${exerciseId}`;
+    const isDone = !completedPlanItems[key];
     const exercise = exercises.find((item) => item.id === exerciseId);
-    const today    = getTodayKey();
+    const today = getTodayKey();
 
     // Update the tick state using functional update
     setCompletedPlanItems((prev) => ({ ...prev, [key]: isDone }));
@@ -1129,23 +1067,23 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
       // Push to shared App.jsx calendarData so the dashboard also shows it
       if (addWorkoutToCalendar) {
         const rangeParts = (exercise?.kcalRange || "0").replace("–", "-").split("-");
-        const kcalMid    = rangeParts.length === 2
+        const kcalMid = rangeParts.length === 2
           ? Math.round((parseFloat(rangeParts[0]) + parseFloat(rangeParts[1])) / 2)
           : parseFloat(rangeParts[0]) || 0;
 
         addWorkoutToCalendar(today, {
-          name:           exercise?.name || "Exercise",
-          category:       exercise?.category || "Cardio",
+          name: exercise?.name || "Exercise",
+          category: exercise?.category || "Cardio",
           caloriesBurned: kcalMid,
-          cat:            "workout",
-          type:           "workout",
+          cat: "workout",
+          type: "workout",
         });
       }
     } else {
       // Remove from date log when unticked
       setExerciseLogByDate((prev) => {
         const existing = prev[today] || [];
-        const index    = existing.findIndex((item) => item.name === (exercise?.name || "Exercise"));
+        const index = existing.findIndex((item) => item.name === (exercise?.name || "Exercise"));
         if (index === -1) return prev;
         const updated = [...existing];
         updated.splice(index, 1);
@@ -1160,7 +1098,7 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
    * At Athlete level keeps adding reps indefinitely.
    */
   function handlePlanContinue() {
-    const levels       = ["beginner", "intermediate", "advanced", "athlete"];
+    const levels = ["beginner", "intermediate", "advanced", "athlete"];
     const currentIndex = levels.indexOf(userLevel);
 
     if (boostCount < 3) {
@@ -1189,9 +1127,9 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
    */
   const filtered = exercises.filter((exercise) => {
     const matchSearch = exercise.name.toLowerCase().includes(search.toLowerCase());
-    const matchCat    = filterCat  === "All" || exercise.category  === filterCat;
-    const matchDiff   = filterDiff === "All" || exercise.difficulty === filterDiff;
-    const matchEquip  = userHasEquipmentForExercise(exercise.id, mockUser.equipment);
+    const matchCat = filterCat === "All" || exercise.category === filterCat;
+    const matchDiff = filterDiff === "All" || exercise.difficulty === filterDiff;
+    const matchEquip = userHasEquipmentForExercise(exercise.id, mockUser.equipment);
     return matchSearch && matchCat && matchDiff && matchEquip;
   });
 
@@ -1206,117 +1144,101 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=JetBrains+Mono:wght@400;700&display=swap');
 
-        * { box-sizing: border-box; }
         body { font-family: 'JetBrains Mono', monospace; }
 
-        /* Fade-up entrance animations — applied to hero text sections */
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(20px); }
           to   { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Pulsing glow animation for the PulseDot component */
-        @keyframes pulse {
-          0%,100% { box-shadow: 0 0 0 0 rgba(198,241,53,0.5); }
-          50%     { box-shadow: 0 0 0 6px rgba(198,241,53,0); }
         }
 
         .a1 { animation: fadeUp 0.5s ease 0.10s both; }
         .a2 { animation: fadeUp 0.5s ease 0.25s both; }
         .a3 { animation: fadeUp 0.5s ease 0.40s both; }
 
-        /* Subtle scanline texture overlay for the page background */
         body::before {
-          content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
-          background: repeating-linear-gradient(0deg, transparent 0px, transparent 3px, rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px);
+          content: '';
+          position: fixed;
+          inset: 0;
+          pointer-events: none;
+          z-index: 9999;
+          background: repeating-linear-gradient(
+            0deg,
+            transparent 0px,
+            transparent 3px,
+            rgba(0,0,0,0.06) 3px,
+            rgba(0,0,0,0.06) 4px
+          );
         }
 
-        select option { background: #0D0D0D; color: #ECECEC; }
-
-        /* 14-day plan grid — 2 columns on mobile, 4 on tablet, 7 on desktop */
-        .plan-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
-        @media (min-width: 640px)  { .plan-grid { grid-template-columns: repeat(4,1fr); } }
-        @media (min-width: 1024px) { .plan-grid { grid-template-columns: repeat(7,1fr); } }
-
-        /* Exercise cards grid — 1 column mobile, 2 tablet, 3 laptop, 4 desktop */
-        .exercise-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
-        @media (min-width: 640px)  { .exercise-grid { grid-template-columns: repeat(2,1fr); } }
-        @media (min-width: 1024px) { .exercise-grid { grid-template-columns: repeat(3,1fr); } }
-        @media (min-width: 1280px) { .exercise-grid { grid-template-columns: repeat(4,1fr); } }
-
-        /* Plan summary stats row — stacked on mobile, 4 cols on desktop */
-        .plan-summary { display: grid; grid-template-columns: 1fr; gap: 1px; border-radius: 12px; overflow: hidden; background: #1E1E1E; margin-bottom: 16px; }
-        @media (min-width: 640px)  { .plan-summary { grid-template-columns: repeat(2,1fr); } }
-        @media (min-width: 1024px) { .plan-summary { grid-template-columns: repeat(4,1fr); } }
-
-        /* Calendar layout — stacked on mobile, side-panel on desktop */
-        .cal-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
-        @media (min-width: 1024px) { .cal-grid { grid-template-columns: 1fr 300px; } }
-
-        /* Filter bar — stacked on mobile, 3 columns on tablet */
-        .filter-grid { display: grid; grid-template-columns: 1fr; gap: 12px; background: #0D0D0D; border: 1px solid #1E1E1E; border-radius: 12px; padding: 16px; margin-bottom: 24px; }
-        @media (min-width: 640px) { .filter-grid { grid-template-columns: repeat(3,1fr); } }
+        select option {
+          background: #0D0D0D;
+          color: #ECECEC;
+        }
       `}</style>
 
-      <div
-        style={{
-          background: "#080808", color: "#ECECEC",
-          minHeight: "100vh", overflowX: "hidden",
-          fontFamily: "'JetBrains Mono', monospace",
-        }}
-      >
-        <main style={{ maxWidth: "1200px", margin: "0 auto", padding: "clamp(24px,5vw,48px) clamp(16px,4vw,40px)" }}>
-
+      <div className="min-h-screen overflow-x-hidden bg-[#080808] text-[#ECECEC]" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+        <main className="mx-auto max-w-[1200px] px-4 py-[clamp(24px,5vw,48px)] sm:px-6 lg:px-10">
           {/* ── Hero section ── */}
-          <header style={{ position: "relative", marginBottom: "56px" }}>
+          <header className="relative mb-14">
             {/* Ghost text behind the title — decorative, hidden from screen readers */}
             <span
               aria-hidden="true"
+              className="pointer-events-none absolute left-[-5px] top-[-10px] z-0 select-none font-black leading-none text-transparent"
               style={{
-                fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900,
-                fontSize: "clamp(90px,20vw,200px)", color: "transparent",
-                WebkitTextStroke: "1px #1E1E1E", lineHeight: 1,
-                userSelect: "none", pointerEvents: "none",
-                position: "absolute", top: "-10px", left: "-5px", zIndex: 0,
+                fontFamily: "'Barlow Condensed',sans-serif",
+                fontSize: "clamp(90px,20vw,200px)",
+                WebkitTextStroke: "1px #1E1E1E",
               }}
             >
               EX
             </span>
 
-            <div style={{ position: "relative", zIndex: 10 }}>
-              <p className="a1" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#FF2A5E", marginBottom: "12px" }}>
+            <div className="relative z-10">
+              <p className="a1 mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] text-[#FF2A5E]">
                 <PulseDot /> Welcome back, {mockUser.name}
               </p>
 
-              <h1 className="a2" style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: "clamp(56px,10vw,100px)", lineHeight: 1.05, marginBottom: "16px" }}>
-                EXERCISE<br />
-                <span style={{ color: "transparent", WebkitTextStroke: "2px #C6F135" }}>LIBRARY</span>
+              <h1
+                className="a2 mb-4 font-black leading-[1.05]"
+                style={{
+                  fontFamily: "'Barlow Condensed',sans-serif",
+                  fontSize: "clamp(56px,10vw,100px)",
+                }}
+              >
+                EXERCISE
+                <br />
+                <span style={{ color: "transparent", WebkitTextStroke: "2px #C6F135" }}>
+                  LIBRARY
+                </span>
               </h1>
 
-              <p className="a3" style={{ fontSize: "14px", lineHeight: 1.7, maxWidth: "480px", color: "#555555" }}>
+              <p className="a3 max-w-[480px] text-sm leading-7 text-[#555555]">
                 Your personalized 14-day plan is built from your profile. Only exercises you can do with your available equipment are included.
               </p>
             </div>
           </header>
 
           {/* ── Plan summary stats ── */}
-          <section className="a3" aria-label="Your plan summary" style={{ marginBottom: "40px" }}>
-            <h2 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: "clamp(28px,5vw,36px)", color: "#ECECEC", marginBottom: "24px" }}>
+          <section className="a3 mb-10" aria-label="Your plan summary">
+            <h2
+              className="mb-6 text-[clamp(28px,5vw,36px)] font-black text-[#ECECEC]"
+              style={{ fontFamily: "'Barlow Condensed',sans-serif" }}
+            >
               YOUR PLAN
             </h2>
 
-            <div className="plan-summary">
+            <div className="mb-4 grid grid-cols-1 gap-px overflow-hidden rounded-xl bg-[#1E1E1E] sm:grid-cols-2 lg:grid-cols-4">
               {[
-                { label: "Goal",          value: mockUser.goal.toUpperCase(),          color: "#C6F135" },
-                { label: "Level",         value: userLevel.toUpperCase(),              color: "#00E5FF" },
+                { label: "Goal", value: mockUser.goal.toUpperCase(), color: "#C6F135" },
+                { label: "Level", value: userLevel.toUpperCase(), color: "#00E5FF" },
                 { label: "Weekly Target", value: mockUser.weeklyTarget + " kg / week", color: "#FF2A5E" },
-                { label: "Activity",      value: activityLabel || "Not set",           color: "#FFAA00" },
+                { label: "Activity", value: activityLabel || "Not set", color: "#FFAA00" },
               ].map((item) => (
-                <div key={item.label} style={{ padding: "16px 20px", background: "#0D0D0D" }}>
-                  <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#555555", margin: "0 0 4px" }}>
+                <div key={item.label} className="bg-[#0D0D0D] px-5 py-4">
+                  <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.1em] text-[#555555]">
                     {item.label}
                   </p>
-                  <p style={{ fontWeight: 700, fontSize: "14px", color: item.color, margin: 0 }}>
+                  <p className="m-0 text-sm font-bold" style={{ color: item.color }}>
                     {item.value}
                   </p>
                 </div>
@@ -1325,12 +1247,14 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
 
             {/* Equipment tags — shows what the plan was built around */}
             {mockUser.equipment && mockUser.equipment.length > 0 && (
-              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
-                <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#333333" }}>Equipment:</span>
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#333333]">
+                  Equipment:
+                </span>
                 {mockUser.equipment.map((equipment) => (
                   <span
                     key={equipment}
-                    style={{ fontSize: "10px", fontWeight: 700, padding: "3px 10px", borderRadius: "999px", border: "1px solid #2A2A2A", color: "#A855F7" }}
+                    className="rounded-full border border-[#2A2A2A] px-2.5 py-[3px] text-[10px] font-bold text-[#A855F7]"
                   >
                     {equipment}
                   </span>
@@ -1338,26 +1262,29 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
               </div>
             )}
 
-            <p style={{ fontSize: "11px", color: "#333333", marginBottom: "24px" }}>
+            <p className="mb-6 text-[11px] text-[#333333]">
               Not your info?{" "}
-              <Link to="/profile" style={{ color: "#555555", textDecoration: "none", borderBottom: "1px solid #333333" }}>
+              <Link to="/profile" className="border-b border-[#333333] text-[#555555] no-underline">
                 Update your profile →
               </Link>
             </p>
           </section>
 
           {/* ── 14-day plan grid ── */}
-          <section aria-label="14-day workout plan" style={{ marginBottom: "64px" }}>
-            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "12px", marginBottom: "24px" }}>
-              <h2 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: "clamp(28px,5vw,36px)", color: "#ECECEC", margin: 0 }}>
+          <section aria-label="14-day workout plan" className="mb-16">
+            <div className="mb-6 flex flex-wrap items-baseline gap-3">
+              <h2
+                className="m-0 text-[clamp(28px,5vw,36px)] font-black text-[#ECECEC]"
+                style={{ fontFamily: "'Barlow Condensed',sans-serif" }}
+              >
                 14-DAY PLAN
               </h2>
-              <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#333333" }}>
+              <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#333333]">
                 {mockUser.goal} · {userLevel} · {timelineLabel}
               </span>
             </div>
 
-            <div className="plan-grid">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
               {planDays.map(({ day, isRest, picks }) => (
                 <PlanDayCard
                   key={day}
@@ -1375,7 +1302,7 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
             </div>
           </section>
 
-          <hr style={{ borderColor: "#1E1E1E", marginBottom: "64px" }} />
+          <hr className="mb-16 border-[#1E1E1E]" />
 
           {/* ── Calendar ── */}
           <WorkoutCalendar
@@ -1383,21 +1310,24 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
             exerciseLogByDate={exerciseLogByDate}
           />
 
-          <hr style={{ borderColor: "#1E1E1E", marginBottom: "64px" }} />
+          <hr className="mb-16 border-[#1E1E1E]" />
 
           {/* ── All exercises with search and filter ── */}
-          <section aria-label="All available exercises" style={{ marginBottom: "24px" }}>
-            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "12px", marginBottom: "24px" }}>
-              <h2 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: "clamp(28px,5vw,36px)", color: "#ECECEC", margin: 0 }}>
+          <section aria-label="All available exercises" className="mb-6">
+            <div className="mb-6 flex flex-wrap items-baseline gap-3">
+              <h2
+                className="m-0 text-[clamp(28px,5vw,36px)] font-black text-[#ECECEC]"
+                style={{ fontFamily: "'Barlow Condensed',sans-serif" }}
+              >
                 ALL EXERCISES
               </h2>
-              <span aria-live="polite" style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#333333" }}>
+              <span aria-live="polite" className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#333333]">
                 {filtered.length} available for your equipment
               </span>
             </div>
 
-            <div className="filter-grid" role="search" aria-label="Filter exercises">
-              <label htmlFor="ex-search" style={{ display: "none" }}>Search exercises by name</label>
+            <div className="mb-6 grid grid-cols-1 gap-3 rounded-xl border border-[#1E1E1E] bg-[#0D0D0D] p-4 sm:grid-cols-3">
+              <label htmlFor="ex-search" className="hidden">Search exercises by name</label>
               <input
                 id="ex-search"
                 type="text"
@@ -1405,29 +1335,32 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 aria-label="Search exercises by name"
-                style={{ background: "#080808", border: "1px solid #2A2A2A", borderRadius: "8px", padding: "12px 16px", fontSize: "14px", color: "#ECECEC", outline: "none", fontFamily: "inherit" }}
+                className="rounded-lg border border-[#2A2A2A] bg-[#080808] px-4 py-3 text-sm text-[#ECECEC] outline-none"
+                style={{ fontFamily: "inherit" }}
               />
 
-              <label htmlFor="ex-cat" style={{ display: "none" }}>Filter by category</label>
+              <label htmlFor="ex-cat" className="hidden">Filter by category</label>
               <select
                 id="ex-cat"
                 value={filterCat}
                 onChange={(e) => setFilterCat(e.target.value)}
                 aria-label="Filter by category"
-                style={{ background: "#080808", border: "1px solid #2A2A2A", borderRadius: "8px", padding: "12px 16px", fontSize: "14px", color: "#ECECEC", outline: "none", fontFamily: "inherit" }}
+                className="rounded-lg border border-[#2A2A2A] bg-[#080808] px-4 py-3 text-sm text-[#ECECEC] outline-none"
+                style={{ fontFamily: "inherit" }}
               >
                 <option value="All">All Categories</option>
                 <option value="Cardio">Cardio</option>
                 <option value="Weightlifting">Weightlifting</option>
               </select>
 
-              <label htmlFor="ex-diff" style={{ display: "none" }}>Filter by difficulty</label>
+              <label htmlFor="ex-diff" className="hidden">Filter by difficulty</label>
               <select
                 id="ex-diff"
                 value={filterDiff}
                 onChange={(e) => setFilterDiff(e.target.value)}
                 aria-label="Filter by difficulty"
-                style={{ background: "#080808", border: "1px solid #2A2A2A", borderRadius: "8px", padding: "12px 16px", fontSize: "14px", color: "#ECECEC", outline: "none", fontFamily: "inherit" }}
+                className="rounded-lg border border-[#2A2A2A] bg-[#080808] px-4 py-3 text-sm text-[#ECECEC] outline-none"
+                style={{ fontFamily: "inherit" }}
               >
                 <option value="All">All Difficulty</option>
                 <option value="Beginner">Beginner</option>
@@ -1439,19 +1372,18 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
           </section>
 
           {filtered.length === 0 ? (
-            <div style={{ padding: "80px 0", textAlign: "center" }}>
-              <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#333333" }}>
+            <div className="py-20 text-center">
+              <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#333333]">
                 No exercises match your filters or available equipment
               </p>
             </div>
           ) : (
-            <div className="exercise-grid">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filtered.map((exercise) => (
                 <ExerciseCard key={exercise.id} ex={exercise} mockUser={mockUser} />
               ))}
             </div>
           )}
-
         </main>
 
         {/* ── Plan complete modal ── */}
@@ -1469,11 +1401,10 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
           <div
             role="status"
             aria-live="polite"
+            className="fixed bottom-6 left-6 z-[999] rounded-xl bg-[#0D0D0D] px-5 py-3 text-[13px] text-[#ECECEC]"
             style={{
-              position: "fixed", bottom: "24px", left: "24px", zIndex: 999,
-              background: "#0D0D0D", border: `1px solid ${toastMsg.color}`,
-              borderRadius: "12px", padding: "12px 20px",
-              fontSize: "13px", color: "#ECECEC", fontFamily: "inherit",
+              border: `1px solid ${toastMsg.color}`,
+              fontFamily: "inherit",
             }}
           >
             {toastMsg.text}
