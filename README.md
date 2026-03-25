@@ -103,7 +103,7 @@ Imports `EXERCISES` from the shared `mockData.js` file to populate the exercise 
 
 ---
 
-3. App.jsx â€” Application Root
+3. App.jsx Application Root
 
 Responsible for managing the overall application structure.
 
@@ -138,33 +138,6 @@ The next phase will focus on expanding functionality and improving the overall t
 
 
 *Mohammad Moghnieh:*
-
-
-
-
-
-
-
-
-
-**How Mock Data Simulates Real Interactions:** 
-
-In Phase 1, the application has no backend. All data is simulated through mockData.js, shared React state in App.jsx, and browser storage.
-User profile: After completing the survey, the user's data is saved to localStorage. On app load, getUserProfile() reads and maps this data into a currentUser object that flows to every page as a prop. This simulates an authenticated session with a real user profile fetched from a database.
-
-Nutrition calculations: Rather than storing static targets, calcNutritionTargets(user) computes personalised daily macros on every render using BMR, TDEE, and weekly rate formulas. Two users with different goals or activity levels receive completely different targets - simulating what an API would return.
-
-Calendar as a database: calendarData in App.jsx is a shared in-memory object keyed by date (YYYY-MM-DD). Every meal and workout logged by any page writes to this object. All pages read from it, meaning a meal logged in Meal Log instantly reflects in the Diet Program macro bars, the homepage calendar dots, and the User Progress charts. This simulates real-time database synchronisation without any network requests.
-
-Meal recommendations: recommendMeals() uses a date-seeded pseudo-random number generator so recommendations stay stable all day, a 3-day rotation stored in localStorage to avoid repetition, and goal-aware meal profile sorting to match suggestions to the user's fitness goal. A macro tolerance check validates the combo and attempts swaps if targets aren't met — simulating a constraint-based recommendation engine.
-
-Seed data: INITIAL_CALENDAR pre-populates the last 3 days with realistic entries using dynamic date keys, giving users a non-empty calendar from day one and simulating a returning user's history.
-
-Ingredient database: 51 food items with accurate per-100g macros, including Lebanese foods. Portion-scaled macro calculations simulate the behaviour of an API.
-
-Exercise plan generation: buildPlanDays() constructs a 14-day plan from the user's filtered exercise pool, respecting a 3-day repeat cooldown and alternating rest days. Equipment filtering and cardio ratio logic simulate a personalised training programme generator.
-
-**Mohammad Moghnieh:**
 
 Primarily responsible for designing and implementing the complete authentication, onboarding, and user profile ecosystem. This module handles user registration, login, password recovery, the fitness onboarding survey, and profile management, forming the foundational layer for user personalisation across the entire application.
 
@@ -207,3 +180,30 @@ Registration → Storage → Login → Profile Retrieval
 Survey → Profile Generation → Personalised Data Consumption by other modules
 
 This foundation ensures that every other feature in FitTrack, from meal recommendations to workout plans, can access a consistent and personalised user profile.
+
+
+
+
+
+
+
+
+
+
+**How Mock Data Simulates Real Interactions:** 
+
+In Phase 1, the application has no backend. All data is simulated through mockData.js, shared React state in App.jsx, and browser storage.
+User profile: After completing the survey, the user's data is saved to localStorage. On app load, getUserProfile() reads and maps this data into a currentUser object that flows to every page as a prop. This simulates an authenticated session with a real user profile fetched from a database.
+
+Nutrition calculations: Rather than storing static targets, calcNutritionTargets(user) computes personalised daily macros on every render using BMR, TDEE, and weekly rate formulas. Two users with different goals or activity levels receive completely different targets - simulating what an API would return.
+
+Calendar as a database: calendarData in App.jsx is a shared in-memory object keyed by date (YYYY-MM-DD). Every meal and workout logged by any page writes to this object. All pages read from it, meaning a meal logged in Meal Log instantly reflects in the Diet Program macro bars, the homepage calendar dots, and the User Progress charts. This simulates real-time database synchronisation without any network requests.
+
+Meal recommendations: recommendMeals() uses a date-seeded pseudo-random number generator so recommendations stay stable all day, a 3-day rotation stored in localStorage to avoid repetition, and goal-aware meal profile sorting to match suggestions to the user's fitness goal. A macro tolerance check validates the combo and attempts swaps if targets aren't met — simulating a constraint-based recommendation engine.
+
+Seed data: INITIAL_CALENDAR pre-populates the last 3 days with realistic entries using dynamic date keys, giving users a non-empty calendar from day one and simulating a returning user's history.
+
+Ingredient database: 51 food items with accurate per-100g macros, including Lebanese foods. Portion-scaled macro calculations simulate the behaviour of an API.
+
+Exercise plan generation: buildPlanDays() constructs a 14-day plan from the user's filtered exercise pool, respecting a 3-day repeat cooldown and alternating rest days. Equipment filtering and cardio ratio logic simulate a personalised training programme generator.
+
