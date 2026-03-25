@@ -26,12 +26,7 @@ const GOAL_TO_PLAN = {
 
 const PLAN_TOTAL_DAYS = 7;
 
-const ACHIEVEMENTS = [
-  { emoji: "🏆", name: "First Workout Completed", sub: "Your journey begins - Unlocked", color: "#C6F135", locked: false },
-  { emoji: "⚡", name: "10 Workouts Milestone",   sub: "Consistent performer - Unlocked", color: "#00E5FF", locked: false },
-  { emoji: "🔥", name: "Weekly Streak",            sub: "5 Days in a Row - Active",       color: "#FF2A5E", locked: false },
-  { emoji: "🎯", name: "25 Workouts",              sub: "1 more session to go - Locked",  color: "#555",    locked: true  },
-];
+// Achievements are now computed dynamically in the component
 
 // Calendar color config
 const MEAL_CAT_COLORS = {
@@ -161,9 +156,8 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
   // Derive plan name from user's survey goal — falls back to default if no user
   const planName = GOAL_TO_PLAN[currentUser?.goal] || "Your Fitness Plan";
 
-  // Water intake and steps — user-editable
+  // Water intake — user-editable
   const [waterIntake,   setWaterIntake]   = useState(0);
-  const [steps,         setSteps]         = useState(0);
   const [daysCompleted, setDaysCompleted] = useState(0);
 
   // Calories intake — auto-derived from today's meal entries in calendarData
@@ -179,6 +173,84 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
 
   // Exercises done — auto count of today's logged workouts
   const exercisesDone   = todayEntries.filter(e => e.type === "workout").length;
+
+  // ── Achievement calculations — derived from all calendarData ──
+  // Total workouts ever logged across all days
+  const totalWorkoutsAllTime = Object.values(calendarData)
+    .flat()
+    .filter(e => e.type === "workout").length;
+
+  // Streak — count consecutive days (ending today) that have at least 1 workout
+  const streakDays = (() => {
+    let streak = 0;
+    const d = new Date();
+    for (let i = 0; i < 365; i++) {
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      const hasWorkout = (calendarData[key] || []).some(e => e.type === "workout");
+      if (hasWorkout) { streak++; d.setDate(d.getDate() - 1); }
+      else break;
+    }
+    return streak;
+  })();
+
+  // Total meals ever logged
+  const totalMealsAllTime = Object.values(calendarData)
+    .flat()
+    .filter(e => e.type === "meal").length;
+
+  // Dynamic achievements list
+  const achievements = [
+    {
+      emoji: "🏆",
+      name: "First Workout Logged",
+      sub: totalWorkoutsAllTime >= 1 ? "Your journey begins — Unlocked!" : "Log your first workout to unlock",
+      color: "#C6F135",
+      unlocked: totalWorkoutsAllTime >= 1,
+    },
+    {
+      emoji: "🍽️",
+      name: "First Meal Logged",
+      sub: totalMealsAllTime >= 1 ? "Nutrition tracking started — Unlocked!" : "Log your first meal to unlock",
+      color: "#FFAA00",
+      unlocked: totalMealsAllTime >= 1,
+    },
+    {
+      emoji: "⚡",
+      name: "10 Workouts Milestone",
+      sub: totalWorkoutsAllTime >= 10
+        ? "Consistent performer — Unlocked!"
+        : `${totalWorkoutsAllTime}/10 workouts logged`,
+      color: "#00E5FF",
+      unlocked: totalWorkoutsAllTime >= 10,
+    },
+    {
+      emoji: "🔥",
+      name: "3-Day Workout Streak",
+      sub: streakDays >= 3
+        ? `${streakDays}-day streak — Active!`
+        : `${streakDays}/3 days in a row`,
+      color: "#FF2A5E",
+      unlocked: streakDays >= 3,
+    },
+    {
+      emoji: "💧",
+      name: "Hydration Goal Hit",
+      sub: waterIntake >= GOALS.water
+        ? "Daily water goal reached — Unlocked!"
+        : `${waterIntake.toFixed(1)}/${GOALS.water}L today`,
+      color: "#00E5FF",
+      unlocked: waterIntake >= GOALS.water,
+    },
+    {
+      emoji: "🎯",
+      name: "25 Workouts",
+      sub: totalWorkoutsAllTime >= 25
+        ? "Dedicated athlete — Unlocked!"
+        : `${totalWorkoutsAllTime}/25 workouts logged`,
+      color: "#a78bfa",
+      unlocked: totalWorkoutsAllTime >= 25,
+    },
+  ];
 
   // Calendar state
   const today      = getTodayKey();
@@ -268,21 +340,34 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
           <AutoStatCard label="Exercises Done"  value={exercisesDone}  unit=""     goal={GOALS.exercises} color="#FFAA00" source="from workouts" />
         </div>
 
-        <div
-          className="px-6 md:px-14 py-5 border-b border-[#1E1E1E] flex flex-col sm:flex-row sm:items-center gap-4 cursor-pointer hover:bg-[#111] transition-colors"
-          onClick={() => {
-            const val = prompt("Enter steps taken:");
-            const parsed = parseInt(val);
-            if (!isNaN(parsed) && parsed >= 0) setSteps(parsed);
-          }}
+        {/* Steps Taken — Phase 2 */}
+        <div className="px-6 md:px-14 py-5 border-b border-[#1E1E1E] flex flex-col sm:flex-row sm:items-center gap-4 cursor-not-allowed select-none"
+          style={{ background: "repeating-linear-gradient(135deg, transparent, transparent 6px, rgba(255,255,255,0.015) 6px, rgba(255,255,255,0.015) 12px)" }}
         >
-          <span className="text-[8px] tracking-[0.22em] uppercase text-[#555] shrink-0">Steps Taken</span>
-          <div className="flex-1 bg-[#1E1E1E] h-[6px] overflow-hidden">
-            <div className="h-full bg-[#C6F135] transition-all duration-700" style={{ width: `${Math.min((steps / GOALS.steps) * 100, 100)}%` }} />
+          {/* Label + Phase 2 badge */}
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="text-[8px] tracking-[0.22em] uppercase text-[#444]">Steps Taken</span>
+            <span
+              className="text-[8px] font-bold tracking-[0.18em] uppercase px-2 py-1 border"
+              style={{ borderColor: "#FF2A5E", color: "#FF2A5E", background: "rgba(255,42,94,0.08)" }}
+            >
+              Phase 2
+            </span>
           </div>
-          <span className="font-['Barlow_Condensed'] font-black text-3xl text-[#C6F135] shrink-0">{steps.toLocaleString()}</span>
-          <span className="text-[9px] text-[#555] shrink-0">/ {GOALS.steps.toLocaleString()} steps</span>
-          <span className="text-[8px] text-[#333] uppercase tracking-widest shrink-0">click to edit</span>
+
+          {/* Grayed progress bar */}
+          <div className="flex-1 bg-[#1A1A1A] h-[6px] overflow-hidden border border-[#222]">
+            <div className="h-full" style={{ width: "0%", background: "#2a2a2a" }} />
+          </div>
+
+          {/* Value placeholder */}
+          <span className="font-['Barlow_Condensed'] font-black text-3xl shrink-0" style={{ color: "#333" }}>—</span>
+          <span className="text-[9px] shrink-0" style={{ color: "#333" }}>/ {GOALS.steps.toLocaleString()} steps</span>
+
+          {/* Explanation note */}
+          <span className="text-[8px] tracking-wide shrink-0" style={{ color: "#555" }}>
+            🔒 Needs pedometer API — coming in Phase 2
+          </span>
         </div>
       </div>
 
@@ -342,16 +427,22 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
               Achieve<em className="not-italic text-[#C6F135]">ments</em>
             </div>
             <div className="border border-[#1E1E1E]">
-              {ACHIEVEMENTS.map((a, i) => (
+              {achievements.map((a, i) => (
                 <div key={i}
-                  className={`flex items-center gap-5 px-6 py-5 border-b border-[#1E1E1E] last:border-b-0 transition-all duration-200 cursor-default hover:bg-[#111] hover:pl-8 ${a.locked ? "opacity-40" : ""}`}>
+                  className={`flex items-center gap-5 px-6 py-5 border-b border-[#1E1E1E] last:border-b-0 transition-all duration-200 cursor-default ${ a.unlocked ? "hover:bg-[#111] hover:pl-8" : "opacity-40" }`}>
                   <div className="w-10 h-10 border flex items-center justify-center text-lg flex-shrink-0"
-                    style={{ borderColor: a.locked ? "#333" : a.color }}>{a.emoji}</div>
-                  <div>
+                    style={{ borderColor: a.unlocked ? a.color : "#333" }}>
+                    {a.unlocked ? a.emoji : "🔒"}
+                  </div>
+                  <div className="flex-1 min-w-0">
                     <div className="text-sm font-bold tracking-wide">{a.name}</div>
                     <div className="text-[9px] text-[#555] tracking-widest mt-1">{a.sub}</div>
                   </div>
-                  {!a.locked && <div className="ml-auto text-[8px] tracking-widest uppercase" style={{ color: a.color }}>OK</div>}
+                  {a.unlocked && (
+                    <div className="ml-auto flex-shrink-0 flex items-center gap-1 text-[8px] tracking-widest uppercase" style={{ color: a.color }}>
+                      <span>✓</span> Done
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
