@@ -242,70 +242,61 @@ const Register = () => {
 
   // Handle form submission
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
+  
+  const newErrors = validateForm();
+  if (Object.keys(newErrors).length > 0) {
+    setErrors(newErrors);
+    return;
+  }
+  
+  setIsLoading(true);
+  setMessage({ text: '', type: '' });
+  
+  try {
+    const response = await fetch('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        password: formData.password,
+        // Add these default values to fix the error
+        gender: 'male',
+        age: 25,
+        current_weight: 70,
+        target_weight: 70,
+        height: 170,
+        activity_level: 'moderately_active',
+        goal: 'maintain',
+        fitness_level: 'beginner'
+      })
+    });
     
-    const newErrors = validateForm();
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
+    const data = await response.json();
     
-    setIsLoading(true);
-    setMessage({ text: '', type: '' });
-    
-    try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+    if (data.success) {
+      localStorage.setItem('fittrack_token', data.token);
+      localStorage.setItem('fittrack_user', JSON.stringify(data.user));
       
-      // Save user to localStorage
-      const newUser = saveUser();
-      
-      if (newUser) {
-        // Set success message
-        setMessage({
-          text: `Welcome, ${newUser.name}! Redirecting to survey...`,
-          type: 'success'
-        });
-        
-        // Store current user in session
-        sessionStorage.setItem('currentUser', JSON.stringify({
-          id: newUser.id,  // Include the ID
-          name: newUser.name,
-          email: newUser.email,
-          username: newUser.username
-        }));
-        
-        // Clear temporary form data on successful registration
-        sessionStorage.removeItem('register_form_temp');
-        sessionStorage.removeItem('from_terms_page');
-        
-        // Reset form data
-        setFormData({
-          firstName: '',
-          lastName: '',
-          email: '',
-          username: '',
-          password: '',
-          confirmPassword: '',
-          acceptTerms: false
-        });
-        
-        // Redirect to login after 2 seconds
-        setTimeout(() => {
-          window.scrollTo(0, 0);
-          navigate('/ready-survey');
-        }, 2000);
-      }
-    } catch (error) {
-      console.error('Registration failed:', error);
       setMessage({
-        text: 'Registration failed. Please try again.',
-        type: 'error'
+        text: `Welcome, ${data.user.name}! Redirecting to survey...`,
+        type: 'success'
       });
-    } finally {
-      setIsLoading(false);
+      
+      setTimeout(() => {
+        navigate('/ready-survey');
+      }, 2000);
+    } else {
+      setMessage({ text: data.message, type: 'error' });
     }
-  };
+  } catch (error) {
+    console.error('Registration failed:', error);
+    setMessage({ text: 'Registration failed. Please try again.', type: 'error' });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // Get strength color - using your app's color scheme
   const getStrengthColor = () => {
@@ -344,7 +335,7 @@ const Register = () => {
             {/* Name Fields */}
             <div className="register-grid">
               <div className="field">
-                <label className="field-label" htmlFor="firstName">
+                <label className="block text-[var(--dim)] text-base font-mono mb-1 tracking-wider" htmlFor="firstName">
                   FIRST NAME
                 </label>
                 <input
@@ -364,7 +355,7 @@ const Register = () => {
               </div>
 
               <div className="field">
-                <label className="field-label" htmlFor="lastName">
+                <label className="block text-[var(--dim)] text-base font-mono mb-1 tracking-wider" htmlFor="lastName">
                   LAST NAME
                 </label>
                 <input
@@ -386,14 +377,14 @@ const Register = () => {
 
             {/* Email Field */}
             <div className="field">
-              <label className="field-label" htmlFor="email">
+              <label className="block text-[var(--dim)] text-base font-mono mb-1 tracking-wider" htmlFor="email">
                 EMAIL ADDRESS
               </label>
               <input
                 type="email"
                 id="email"
                 name="email"
-                className={`field-input ${errors.email ? 'error' : ''}`}
+                className={`field-input ${errors.username ? 'error' : ''}`}
                 placeholder="you@example.com"
                 value={formData.email}
                 onChange={handleChange}
@@ -407,7 +398,7 @@ const Register = () => {
 
             {/* Username Field */}
             <div className="field">
-              <label className="field-label" htmlFor="username">
+              <label className="block text-[var(--dim)] text-base font-mono mb-1 tracking-wider" htmlFor="username">
                 USERNAME
               </label>
               <input
@@ -430,7 +421,7 @@ const Register = () => {
 
             {/* Password Field */}
             <div className="field">
-              <label className="field-label" htmlFor="password">
+              <label className="block text-[var(--dim)] text-base font-mono mb-1 tracking-wider" htmlFor="password">
                 PASSWORD
               </label>
               <input
@@ -485,7 +476,7 @@ const Register = () => {
 
             {/* Confirm Password Field */}
             <div className="field">
-              <label className="field-label" htmlFor="confirmPassword">
+              <label className="block text-[var(--dim)] text-base font-mono mb-1 tracking-wider" htmlFor="confirmPassword">
                 CONFIRM PASSWORD
               </label>
               <input
@@ -557,7 +548,7 @@ const Register = () => {
               </div>
             )}
 
-            {/* Submit Button */}
+            {/* Submit Button */} 
             <button
               type="submit"
               className="btn-submit"

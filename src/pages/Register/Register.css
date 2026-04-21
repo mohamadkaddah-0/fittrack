@@ -1,52 +1,10 @@
 .register-header .login-title em {
-  color: var(--lime); /* Different color for register */
+  color: var(--lime);
 }
 
-/* Password strength indicator */
-.password-strength {
-  margin-top: 8px;
-  font-size: 8px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.strength-bar {
-  height: 4px;
-  background: var(--line);
-  margin-top: 4px;
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.strength-bar-fill {
-  height: 100%;
-  transition: width 0.3s ease;
-}
-
-.strength-weak {
-  background: var(--hot);
-  width: 33.33%;
-}
-
-.strength-medium {
-  background: var(--amber);
-  width: 66.66%;
-}
-
-.strength-strong {
-  background: var(--lime);
-  width: 100%;
-}
-
-.strength-text {
-  margin-top: 4px;
-  color: var(--dim);
-}
-
-/* Terms agreement */
 .terms-agreement {
   margin: 20px 0;
-  font-size: 9px;
+  font-size: 14px;
   color: var(--dim);
   display: flex;
   align-items: center;
@@ -66,7 +24,6 @@
   padding-bottom: 2px;
 }
 
-/* Register specific grid for multiple fields */
 .register-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -80,54 +37,125 @@
   }
 }
 
-/* Success message for registration */
-.register-success {
-  text-align: center;
-  padding: 40px;
-}
-
-.register-success h3 {
-  font-size: 24px;
-  color: var(--lime);
-  margin-bottom: 16px;
-}
-
-.register-success p {
-  color: var(--dim);
-  font-size: 12px;
-  margin-bottom: 24px;
-}
-
-/* Verification badge */
-.verification-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: rgba(198, 241, 53, 0.1);
-  border: 1px solid var(--lime);
-  padding: 4px 8px;
-  border-radius: 20px;
-  font-size: 8px;
-  color: var(--lime);
-}
-
-/* Birthday field specific */
-.birthday-fields {
-  display: flex;
-  gap: 8px;
-}
-
-.birthday-fields select {
-  flex: 1;
+/* Normal state - when typing */
+.field-input {
+  width: 100%;
   background: var(--bg);
   color: var(--text);
   border: 1px solid var(--line);
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  padding: 12px 8px;
+  font-size: 14px;
+  padding: 13px 16px;
   outline: none;
+  transition: all 0.3s ease;
 }
 
-.birthday-fields select:focus {
+/* When input is focused (typing) */
+.field-input:focus {
+  border-color: var(--cyan);
+  color: var(--text);
+}
+
+/* When input is not focused (blurred) and has value */
+.field-input:not(:focus):not(:placeholder-shown) {
+  color: var(--dim);
+}
+
+/* When empty and not focused */
+.field-input:not(:focus):placeholder-shown {
+  color: var(--text);
+}
+
+/* Hover effect - changes border to lime AND text to white */
+.field-input:hover {
   border-color: var(--lime);
+  color: var(--text) !important;
+}
+
+/* Overriding browser autofill background color */
+.field-input:-webkit-autofill,
+.field-input:-webkit-autofill:hover,
+.field-input:-webkit-autofill:focus,
+.field-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px var(--bg) inset !important;
+  -webkit-text-fill-color: var(--text) !important;
+  caret-color: var(--text);
+  background-color: var(--bg) !important;
+  transition: background-color 5000s ease-in-out 0s, -webkit-text-fill-color 0.3s ease !important;
+}
+
+/* For Firefox */
+.field-input:-moz-autofill,
+.field-input:-moz-autofill-preview {
+  background-color: var(--bg) !important;
+  color: var(--text) !important;
+  transition: color 0.3s ease !important;
+}
+
+/* Keep the border color consistent during autofill */
+.field-input:-webkit-autofill:focus {
+  border-color: var(--cyan) !important;
+}
+
+/* Make autofilled text turn dim when blurred */
+.field-input:-webkit-autofill:not(:focus) {
+  -webkit-text-fill-color: var(--dim) !important;
+}
+
+/* FIX: Make autofilled text turn white on hover (overrides the dim) */
+.field-input:-webkit-autofill:hover {
+  border-color: var(--lime) !important;
+  -webkit-text-fill-color: var(--text) !important;
+}
+
+.auth-foot a {
+  color: var(--cyan);
+  text-decoration: none;
+  position: relative;
+  padding: 4px 0;
+  transition: color 0.3s ease;
+}
+
+.auth-foot a::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--lime);
+  transition: width 0.3s ease;
+}
+
+.auth-foot a:hover {
+  color: var(--lime);
+}
+
+.auth-foot a:hover::after {
+  width: 100%;
+}
+
+.auth-foot a:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+
+/* Terms and Privacy links */
+.terms-agreement a {
+  color: var(--lime);
+  text-decoration: none;
+  border-bottom: 1px solid var(--lime);
+  padding-bottom: 2px;
+  transition: all 0.2s ease;
+  display: inline-block;
+}
+
+.terms-agreement a:hover {
+  padding-bottom: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  letter-spacing: 0.5px;
+  color: var(--cyan);
+  border-bottom-color: var(--cyan);
+  transform: translateY(-1px);
 }

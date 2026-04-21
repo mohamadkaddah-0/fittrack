@@ -119,7 +119,7 @@
 
 .edit-profile-btn:hover {
   background: transparent;
-  color: black;
+  color: var(--lime);
   border: 1px solid var(--lime);
   padding: 11px 27px;
 }
@@ -128,7 +128,7 @@
   display: flex;
   gap: 10px;
 }
-
+/*
 .save-btn {
   padding: 12px 20px;
   background: var(--lime);
@@ -148,6 +148,7 @@
   border: 1px solid var(--lime);
   padding: 11px 19px;
 }
+*/
 
 .cancel-btn {
   padding: 12px 20px;
@@ -335,18 +336,19 @@
     flex-direction: column;
     width: 100%;
   }
-
+/*
   .save-btn,
   .cancel-btn,
   .edit-profile-btn {
     width: 100%;
   }
-
+*/
   .upload-photo-btn {
     width: 100%;
   }
 }
-/* Add these styles to your UserProfile.css */
+
+/*Here is a checkpoint*/
 
 .profile-actions {
   display: flex;
@@ -354,97 +356,116 @@
   align-items: center;
 }
 
-.edit-profile-btn,
 .logout-btn {
-  padding: 8px 16px;
+  padding: 12px 28px;
+  background: transparent;
+  border: 1px solid var(--hot);
+  color: var(--hot);
   border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-}
-
-.edit-profile-btn {
-  background-color: var(--lime, #C6F135);
-  color: #000;
-}
-
-.edit-profile-btn:hover {
-  background-color: #b3e02c;
-  transform: translateY(-1px);
-}
-
-.logout-btn {
-  background-color: transparent;
-  border: 1px solid var(--hot, #ff4444);
-  color: var(--hot, #ff4444);
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  transition: all 0.2s;
 }
 
 .logout-btn:hover {
-  background-color: var(--hot, #ff4444);
+  background: var(--hot);
   color: white;
-  transform: translateY(-1px);
 }
 
-.edit-actions {
+.edit-actions-bottom {
   display: flex;
-  gap: 12px;
+  gap: 16px;
+  justify-content: flex-end;
+  margin: 0 30px 30px 30px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
 }
 
 .save-btn {
-  padding: 8px 16px;
-  background-color: var(--lime, #C6F135);
+  padding: 12px 24px;
+  background: var(--lime);
   color: #000;
   border: none;
   border-radius: 6px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s;
 }
 
 .save-btn:hover {
-  background-color: #b3e02c;
-  transform: translateY(-1px);
+  background: transparent;
+  color: var(--lime);
+  border: 1px solid var(--lime);
+  padding: 11px 23px;
 }
 
 .cancel-btn {
-  padding: 8px 16px;
-  background-color: transparent;
-  border: 1px solid var(--dim, #666);
-  color: var(--dim, #666);
+  padding: 12px 24px;
+  background: transparent;
+  color: var(--dim);
+  border: 1px solid var(--line);
   border-radius: 6px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s;
 }
 
 .cancel-btn:hover {
-  background-color: var(--dim, #666);
-  color: white;
-  transform: translateY(-1px);
+  border-color: var(--hot);
+  color: var(--hot);
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .profile-actions {
     flex-direction: column;
     width: 100%;
   }
   
-  .edit-profile-btn,
-  .logout-btn,
-  .save-btn,
-  .cancel-btn {
+  .edit-profile-btn, .logout-btn {
     width: 100%;
+    text-align: center;
   }
   
-  .profile-header {
+  .edit-actions-bottom {
     flex-direction: column;
-    text-align: center;
+    justify-content: center;
+    margin: 0 20px 20px 20px;
   }
   
-  .profile-title-section {
+  .save-btn, .cancel-btn {
+    width: 100%;
     text-align: center;
   }
+}
+
+.take-survey-btn {
+  background: linear-gradient(135deg, #00B4D8 0%, #C6F135 100%);
+  border: none;
+  color: #080808;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.5px;
+}
+
+.take-survey-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(198, 241, 53, 0.3);
 }

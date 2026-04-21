@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Survey.css';
-import { getUserProfile } from "../../data/mockData";
 
 const Surveys = ({ setCurrentUser }) => {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(1);
   const [surveyData, setSurveyData] = useState({
     // Step 1: Basic Info
@@ -16,7 +16,7 @@ const Surveys = ({ setCurrentUser }) => {
     weightUnit: 'kg',
     
     // Step 2: Fitness Goals
-    weightGoal: '', // 'lose', 'gain', 'maintain', 'buildMuscle'
+    weightGoal: '',
     performanceGoal: '',
     targetWeight: '',
     timeline: '',
@@ -36,31 +36,134 @@ const Surveys = ({ setCurrentUser }) => {
 
   const [errors, setErrors] = useState({});
   const [goalAnalysis, setGoalAnalysis] = useState(null);
+  const [userId, setUserId] = useState(null);
 
-  // NEW: Check if user is logged in and hasn't completed survey yet
+  const API_URL = 'http://localhost:3000/api';
+
+  // Helper to get auth headers
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('fittrack_token');
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    };
+  };
+
+  // Check if user is logged in and hasn't completed survey yet
   useEffect(() => {
-    // Check if user is logged in
-    const sessionUser = sessionStorage.getItem('currentUser');
+  const checkUserAndSurvey = async () => {
+    const token = localStorage.getItem('fittrack_token');
     
-    if (!sessionUser) {
-      // No user logged in, redirect to login
+    if (!token) {
+      console.log('No token found, redirecting to login');
       navigate('/login');
       return;
     }
     
-    const currentUser = JSON.parse(sessionUser);
-    const userId = currentUser.id;
-    
-    // Check if user has already completed the survey
-    const existingSurvey = localStorage.getItem(`userSurveyData_${userId}`);
-    
-    if (existingSurvey) {
-      // User has already taken the survey, redirect to dashboard
-      navigate('/dashboard');
+    try {
+      // Try to get user from multiple sources
+      let user = null;
+      let userId = null;
+      
+      // First, try to get from API
+      const response = await fetch(`${API_URL}/users/me`, {
+        headers: getAuthHeaders()
+      });
+      
+      const data = await response.json();
+      
+      if (data.success && data.user) {
+        user = data.user;
+        userId = user.id;
+        console.log('User loaded from API:', user);
+      } else {
+        // If API fails, try localStorage
+        const localUser = localStorage.getItem('fittrack_user');
+        if (localUser) {
+          user = JSON.parse(localUser);
+          userId = user.id;
+          console.log('User loaded from localStorage:', user);
+        } else {
+          // Try sessionStorage
+          const sessionUser = sessionStorage.getItem('currentUser');
+          if (sessionUser) {
+            user = JSON.parse(sessionUser);
+            userId = user.id;
+            console.log('User loaded from sessionStorage:', user);
+          }
+        }
+      }
+      
+      if (!userId) {
+        console.error('No user ID found anywhere');
+        alert('User data not found. Please try logging in again.');
+        navigate('/login');
+        return;
+      }
+      
+      setUserId(userId);
+      
+      // Check localStorage flags for survey status
+      const surveyCompleted = localStorage.getItem(`surveyCompleted_${userId}`) === 'true';
+      const surveySkipped = localStorage.getItem(`surveySkipped_${userId}`) === 'true';
+      
+      console.log('Survey flags:', { surveyCompleted, surveySkipped, userId });
+      
+      // If user completed the survey, redirect to dashboard
+      if (surveyCompleted) {
+        console.log('User already completed survey, redirecting to dashboard');
+        navigate('/dashboard');
+        return;
+      }
+      
+      // Check if user already has survey data from API
+      const surveyResponse = await fetch(`${API_URL}/survey`, {
+        headers: getAuthHeaders()
+      });
+      
+      const surveyData = await surveyResponse.json();
+      
+      // Only redirect based on API data if user didn't skip
+      if (!surveySkipped && surveyData.success && surveyData.survey && surveyData.survey.fitnessLevel && surveyData.survey.fitnessLevel !== 'Not specified') {
+        console.log('API shows survey completed and not skipped, redirecting to dashboard');
+        navigate('/dashboard');
+        return;
+      }
+      
+      // If user skipped, clear the flag so they can take it now
+      if (surveySkipped) {
+        console.log('User previously skipped survey, allowing them to take it now');
+        localStorage.removeItem(`surveySkipped_${userId}`);
+      }
+      
+      // If survey has partial data, populate it
+      if (surveyData.success && surveyData.survey) {
+        const existingSurvey = surveyData.survey;
+        setSurveyData(prev => ({
+          ...prev,
+          gender: existingSurvey.gender || '',
+          height: existingSurvey.height || '',
+          weight: existingSurvey.weight || '',
+          fitnessLevel: existingSurvey.fitnessLevel || '',
+          activityLevel: existingSurvey.activityLevel || '',
+          limitations: existingSurvey.limitations || [],
+          equipment: existingSurvey.equipment || []
+        }));
+      }
+      
+      setIsLoading(false);
+      
+    } catch (error) {
+      console.error('Error checking user:', error);
+      alert('Error loading user data. Please try logging in again.');
+      navigate('/login');
     }
-  }, [navigate]);
+  };
+  
+  checkUserAndSurvey();
+}, [navigate]);
 
-  // Constants for validation
+  // Constants for validation (same as before)
   const VALIDATION = {
     MAX_AGE: 100,
     MIN_AGE: 13,
@@ -80,7 +183,7 @@ const Surveys = ({ setCurrentUser }) => {
     MIN_TARGET_WEIGHT_LBS: 88,
   };
 
-  // Options for select fields
+  // Options for select fields (same as before)
   const genderOptions = ['Male', 'Female'];
   
   const weightGoalOptions = [
@@ -97,39 +200,17 @@ const Surveys = ({ setCurrentUser }) => {
     { value: 'generalFitness', label: 'General Fitness' }
   ];
 
-  const workoutTypeOptions = [
-    'Cardio', 'Weightlifting', 'Calisthenics'
-  ];
-
+  const workoutTypeOptions = ['Cardio', 'Weightlifting', 'Calisthenics'];
   const locationOptions = ['Home', 'Gym', 'Outdoors', 'Anywhere'];
-  
   const durationOptions = ['15-30 min', '30-45 min', '45-60 min', '60+ min'];
-  
   const timeOptions = ['Early Morning', 'Morning', 'Afternoon', 'Evening', 'Late Night'];
-  
   const fitnessLevelOptions = ['Beginner', 'Intermediate', 'Advanced', 'Athlete'];
   
   const activityLevelOptions = [
-    { 
-      value: 'sedentary', 
-      label: 'Sedentary',
-      description: 'Little or no exercise, desk job, minimal movement throughout the day'
-    },
-    { 
-      value: 'lightly_active', 
-      label: 'Lightly Active',
-      description: 'Light exercise 1-3 days/week, occasional walking, light household activities'
-    },
-    { 
-      value: 'moderately_active', 
-      label: 'Moderately Active',
-      description: 'Moderate exercise 3-5 days/week, daily movement, active job or regular workouts'
-    },
-    { 
-      value: 'very_active', 
-      label: 'Very Active',
-      description: 'Hard exercise 6-7 days/week, physically demanding job, intensive training'
-    }
+    { value: 'sedentary', label: 'Sedentary', description: 'Little or no exercise, desk job' },
+    { value: 'lightly_active', label: 'Lightly Active', description: 'Light exercise 1-3 days/week' },
+    { value: 'moderately_active', label: 'Moderately Active', description: 'Moderate exercise 3-5 days/week' },
+    { value: 'very_active', label: 'Very Active', description: 'Hard exercise 6-7 days/week' }
   ];
   
   const limitationOptions = [
@@ -145,35 +226,34 @@ const Surveys = ({ setCurrentUser }) => {
 
   const timelineOptions = ['1 month', '3 months', '6 months', '1 year', '2 years', 'Ongoing'];
   const timelineWeeks = { 
-    '1 month': 4, 
-    '3 months': 12, 
-    '6 months': 24, 
-    '1 year': 52, 
-    '2 years': 104,
-    'Ongoing': 0 
+    '1 month': 4, '3 months': 12, '6 months': 24, '1 year': 52, '2 years': 104, 'Ongoing': 0 
   };
 
-  // Calculate age from birthdate
   const calculateAge = (birthdate) => {
     if (!birthdate) return null;
     const today = new Date();
     const birthDate = new Date(birthdate);
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
     return age;
   };
 
-  // Convert weight to kg for calculations
   const convertToKg = (weight, unit) => {
     if (!weight) return null;
     return unit === 'lbs' ? parseFloat(weight) * 0.453592 : parseFloat(weight);
   };
 
-  // YOUR EXISTING analyzeGoal function (kept exactly as is)
+  const getRecommendedTimeline = (weeks) => {
+    if (weeks <= 4) return '1 month';
+    if (weeks <= 12) return '3 months';
+    if (weeks <= 24) return '6 months';
+    if (weeks <= 52) return '1 year';
+    return '2 years';
+  };
+
   const analyzeGoal = () => {
     const weeks = timelineWeeks[surveyData.timeline];
     if (!weeks) return;
@@ -181,7 +261,8 @@ const Surveys = ({ setCurrentUser }) => {
     const currentKg = convertToKg(surveyData.weight, surveyData.weightUnit);
     const targetKg = convertToKg(surveyData.targetWeight, surveyData.weightUnit);
     
-    // Check minimum healthy target weight
+    if (!currentKg || !targetKg) return;
+    
     const minHealthyKg = VALIDATION.MIN_TARGET_WEIGHT_KG;
     if (targetKg < minHealthyKg) {
       setGoalAnalysis({
@@ -215,11 +296,9 @@ const Surveys = ({ setCurrentUser }) => {
       action = 'gain';
     }
 
-    // Calculate recommended timeline
     const recommendedWeeks = Math.ceil(weightDiff / maxWeeklyRate);
     const recommendedTimeline = getRecommendedTimeline(recommendedWeeks);
 
-    // Set analysis based on weekly rate
     if (weeklyRate > maxWeeklyRate) {
       setGoalAnalysis({
         status: 'impossible',
@@ -272,7 +351,6 @@ const Surveys = ({ setCurrentUser }) => {
     }
   };
 
-  // YOUR EXISTING useEffect (kept exactly as is)
   useEffect(() => {
     if (
       surveyData.weight && 
@@ -288,16 +366,6 @@ const Surveys = ({ setCurrentUser }) => {
     }
   }, [surveyData.weight, surveyData.targetWeight, surveyData.timeline, surveyData.weightGoal, surveyData.weightUnit]);
 
-  // Get recommended timeline string
-  const getRecommendedTimeline = (weeks) => {
-    if (weeks <= 4) return '1 month';
-    if (weeks <= 12) return '3 months';
-    if (weeks <= 24) return '6 months';
-    if (weeks <= 52) return '1 year';
-    return '2 years';
-  };
-
-  // Validate current step (your existing function)
   const validateStep = (step) => {
     const errors = {};
     const age = calculateAge(surveyData.birthdate);
@@ -313,92 +381,34 @@ const Surveys = ({ setCurrentUser }) => {
             errors.birthdate = `Age cannot exceed ${VALIDATION.MAX_AGE} years`;
           }
         }
-        
         if (!surveyData.gender) errors.gender = 'Gender is required';
-        
-        if (!surveyData.height) {
-          errors.height = 'Height is required';
-        } else {
-          const height = parseFloat(surveyData.height);
-          if (surveyData.heightUnit === 'cm') {
-            if (height < VALIDATION.MIN_HEIGHT_CM || height > VALIDATION.MAX_HEIGHT_CM) {
-              errors.height = `Height must be between ${VALIDATION.MIN_HEIGHT_CM}cm and ${VALIDATION.MAX_HEIGHT_CM}cm`;
-            }
-          } else {
-            if (height < VALIDATION.MIN_HEIGHT_FT || height > VALIDATION.MAX_HEIGHT_FT) {
-              errors.height = `Height must be between ${VALIDATION.MIN_HEIGHT_FT}ft and ${VALIDATION.MAX_HEIGHT_FT}ft`;
-            }
-          }
-        }
-        
-        if (!surveyData.weight) {
-          errors.weight = 'Weight is required';
-        } else {
-          const weight = parseFloat(surveyData.weight);
-          if (surveyData.weightUnit === 'kg') {
-            if (weight < VALIDATION.MIN_WEIGHT_KG || weight > VALIDATION.MAX_WEIGHT_KG) {
-              errors.weight = `Weight must be between ${VALIDATION.MIN_WEIGHT_KG}kg and ${VALIDATION.MAX_WEIGHT_KG}kg`;
-            }
-          } else {
-            if (weight < VALIDATION.MIN_WEIGHT_LBS || weight > VALIDATION.MAX_WEIGHT_LBS) {
-              errors.weight = `Weight must be between ${VALIDATION.MIN_WEIGHT_LBS}lbs and ${VALIDATION.MAX_WEIGHT_LBS}lbs`;
-            }
-          }
-        }
+        if (!surveyData.height) errors.height = 'Height is required';
+        if (!surveyData.weight) errors.weight = 'Weight is required';
         break;
-        
       case 2:
         if (!surveyData.weightGoal) errors.weightGoal = 'Please select a weight goal';
         if (!surveyData.performanceGoal) errors.performanceGoal = 'Please select a performance goal';
         if (!surveyData.timeline) errors.timeline = 'Timeline is required';
-        
-        // Target weight validation - only required for lose/gain
         if ((surveyData.weightGoal === 'lose' || surveyData.weightGoal === 'gain') && !surveyData.targetWeight) {
           errors.targetWeight = 'Target weight is required';
-        } else if (surveyData.targetWeight && surveyData.weight) {
-          const currentWeight = parseFloat(surveyData.weight);
-          const targetWeight = parseFloat(surveyData.targetWeight);
-          
-          // Validate target weight range
-          if (targetWeight < VALIDATION.MIN_WEIGHT_KG || targetWeight > VALIDATION.MAX_WEIGHT_KG) {
-            errors.targetWeight = `Target weight must be between ${VALIDATION.MIN_WEIGHT_KG}kg and ${VALIDATION.MAX_WEIGHT_KG}kg`;
-          }
-          
-          // Validate logical direction
-          if (surveyData.weightGoal === 'lose' && targetWeight >= currentWeight) {
-            errors.targetWeight = 'Target weight must be less than current weight for weight loss';
-          } else if (surveyData.weightGoal === 'gain' && targetWeight <= currentWeight) {
-            errors.targetWeight = 'Target weight must be greater than current weight for weight gain';
-          }
         }
-        
-        // Add error if goal is impossible
         if (goalAnalysis && goalAnalysis.status === 'impossible') {
-          errors.targetWeight = 'This goal is impossible with the selected timeline. Please adjust your target weight or timeline.';
+          errors.targetWeight = 'This goal is impossible with the selected timeline.';
         }
         break;
-        
       case 3:
-        if (!surveyData.workoutTypes) {
-          errors.workoutTypes = 'Please select a workout type';
-        }
+        if (!surveyData.workoutTypes) errors.workoutTypes = 'Please select a workout type';
         if (!surveyData.workoutLocation) errors.workoutLocation = 'Workout location is required';
         if (!surveyData.workoutDuration) errors.workoutDuration = 'Workout duration is required';
         break;
-        
       case 4:
         if (!surveyData.fitnessLevel) errors.fitnessLevel = 'Fitness level is required';
         if (!surveyData.activityLevel) errors.activityLevel = 'Activity level is required';
         break;
-        
-      default:
-        break;
     }
-    
     return errors;
   };
 
-  // Handle next step (your existing function)
   const handleNext = () => {
     const stepErrors = validateStep(currentStep);
     if (Object.keys(stepErrors).length === 0) {
@@ -409,215 +419,118 @@ const Surveys = ({ setCurrentUser }) => {
     }
   };
 
-  // Handle previous step (your existing function)
   const handlePrevious = () => {
     setCurrentStep(prev => prev - 1);
     setErrors({});
     window.scrollTo(0, 0);
   };
 
-  // UPDATED handleSubmit with user linking
-  const handleSubmit = () => {
+  // UPDATED: Save survey to API instead of localStorage
+  const handleSubmit = async () => {
     const stepErrors = validateStep(4);
     
-    if (Object.keys(stepErrors).length === 0) {
-      // Check if goal is impossible (only for lose/gain goals with target weight)
-      if (goalAnalysis && goalAnalysis.status === 'impossible' && surveyData.targetWeight) {
-        alert('Please fix the impossible goal before continuing.');
-        return;
-      }
-      
-      // Check if goal is ambitious and confirm (only for lose/gain goals with target weight)
-      if (goalAnalysis && goalAnalysis.status === 'ambitious' && surveyData.targetWeight) {
-        if (!window.confirm(
-          'This goal is ambitious and may be difficult to achieve.\n\n' +
-          `Weekly rate: ${goalAnalysis.weeklyRate} kg/week\n` +
-          `Recommended safe rate: ${goalAnalysis.safeRate} kg/week\n\n` +
-          'Do you want to continue with this ambitious goal?'
-        )) {
-          return;
-        }
-      }
-      
-      // Get session user data for name and email
-      const sessionUserRaw = sessionStorage.getItem('currentUser');
-      const sessionUser = sessionUserRaw ? JSON.parse(sessionUserRaw) : {};
-      
-      // Get the current user ID from session
-      const currentUserId = sessionUser.id;
-      
-      if (!currentUserId) {
-        console.error('No user ID found. User may not be logged in.');
-        alert('Please log in again to complete the survey.');
-        navigate('/login');
-        return;
-      }
-      
-      // Get existing users from localStorage
-      const existingUsers = JSON.parse(localStorage.getItem('fittrack_users') || '[]');
-      
-      // Find the current user
-      const currentUser = existingUsers.find(user => user.id === currentUserId);
-      
-      if (!currentUser) {
-        console.error('Current user not found in database');
-        alert('User data not found. Please try logging in again.');
-        navigate('/login');
-        return;
-      }
-      
-      // Create survey data object with ALL fields
-      const surveyToSave = {
-        userId: currentUserId, // Link to user ID
-        completedAt: new Date().toISOString(),
-        // Step 1: Basic Info
-        birthdate: surveyData.birthdate,
-        gender: surveyData.gender,
-        height: surveyData.height,
-        heightUnit: surveyData.heightUnit,
-        weight: surveyData.weight,
-        weightUnit: surveyData.weightUnit,
-        
-        // Step 2: Fitness Goals
-        weightGoal: surveyData.weightGoal,
-        performanceGoal: surveyData.performanceGoal,
-        targetWeight: surveyData.weightGoal === 'maintain' ? surveyData.weight : surveyData.targetWeight,
-        timeline: surveyData.timeline,
-        
-        // Step 3: Workout Preferences
-        workoutTypes: surveyData.workoutTypes,
-        workoutLocation: surveyData.workoutLocation,
-        workoutDuration: surveyData.workoutDuration,
-        workoutTime: surveyData.workoutTime,
-        
-        // Step 4: Experience Level
-        fitnessLevel: surveyData.fitnessLevel,
-        activityLevel: surveyData.activityLevel,
-        limitations: surveyData.limitations,
-        equipment: surveyData.equipment
-      };
-      
-      // Save survey data to localStorage - keyed by user ID
-      localStorage.setItem(`userSurveyData_${currentUserId}`, JSON.stringify(surveyToSave));
-      console.log(`✅ Survey saved for user ${currentUserId}:`, surveyToSave);
-      
-      // Calculate BMI for user profile
-      const heightInM = surveyData.heightUnit === 'cm' 
-        ? parseFloat(surveyData.height) / 100 
-        : parseFloat(surveyData.height) * 0.3048;
-      const weightInKg = convertToKg(surveyData.weight, surveyData.weightUnit);
-      const bmi = (weightInKg / (heightInM * heightInM)).toFixed(1);
-      
-      // Get activity level description
-      const activityLevelInfo = activityLevelOptions.find(level => level.value === surveyData.activityLevel);
-      
-      // Map primary goal
-      let primaryGoal = 'General Fitness';
-      if (surveyData.performanceGoal && surveyData.performanceGoal !== '') {
-        const goalMap = {
-          'buildStrength': 'Build Strength',
-          'improveEndurance': 'Improve Endurance',
-          'improveFlexibility': 'Improve Flexibility',
-          'generalFitness': 'General Fitness'
-        };
-        primaryGoal = goalMap[surveyData.performanceGoal] || surveyData.performanceGoal;
-      } else if (surveyData.weightGoal && surveyData.weightGoal !== '') {
-        const weightGoalMap = {
-          'lose': 'Weight Loss',
-          'gain': 'Weight Gain',
-          'maintain': 'Weight Maintenance',
-          'buildMuscle': 'Build Muscle'
-        };
-        primaryGoal = weightGoalMap[surveyData.weightGoal] || surveyData.weightGoal;
-      }
-      
-      // Format workout types
-      let workoutTypeDisplay = 'Not specified';
-      if (surveyData.workoutTypes && surveyData.workoutTypes !== '') {
-        workoutTypeDisplay = surveyData.workoutTypes;
-      }
-      
-      // Create user profile object with all data linked to user ID
-      const userProfile = {
-        userId: currentUserId,
-        name: sessionUser.name || currentUser.name || 'New User',
-        username: sessionUser.username || currentUser.username || 'newuser',
-        email: sessionUser.email || currentUser.email || 'user@example.com',
-        age: calculateAge(surveyData.birthdate),
-        birthdate: surveyData.birthdate,
-        gender: surveyData.gender,
-        height: surveyData.height,
-        heightUnit: surveyData.heightUnit,
-        weight: surveyData.weight,
-        weightUnit: surveyData.weightUnit,
-        bmi: bmi,
-        fitnessLevel: surveyData.fitnessLevel,
-        activityLevel: surveyData.activityLevel,
-        activityLevelDescription: activityLevelInfo ? activityLevelInfo.description : '',
-        weightGoal: surveyData.weightGoal,
-        performanceGoal: surveyData.performanceGoal,
-        primaryGoal: primaryGoal,
-        targetWeight: surveyData.weightGoal === 'maintain' ? surveyData.weight : surveyData.targetWeight,
-        timeline: surveyData.timeline,
-        weeklyRate: goalAnalysis ? `${goalAnalysis.weeklyRate} kg/week` : null,
-        workoutTypes: surveyData.workoutTypes,
-        workoutType: workoutTypeDisplay,
-        workoutLocation: surveyData.workoutLocation,
-        workoutDuration: surveyData.workoutDuration,
-        workoutFrequency: surveyData.workoutDuration,
-        workoutTime: surveyData.workoutTime,
-        preferredTime: surveyData.workoutTime,
-        limitations: surveyData.limitations,
-        equipment: surveyData.equipment,
-        surveyCompletedAt: new Date().toISOString()
-      };
-      
-      // Save user profile to localStorage - keyed by user ID
-      localStorage.setItem(`userProfile_${currentUserId}`, JSON.stringify(userProfile));
-      
-      // Also update the user in the main users array
-      const updatedUsers = existingUsers.map(user => {
-        if (user.id === currentUserId) {
-          return {
-            ...user,
-            profileCompleted: true,
-            surveyCompleted: true,
-            surveyData: surveyToSave,
-            profile: userProfile
-          };
-        }
-        return user;
-      });
-      localStorage.setItem('fittrack_users', JSON.stringify(updatedUsers));
-      
-      // Store that this user has completed the survey
-      sessionStorage.setItem(`surveyCompleted_${currentUserId}`, 'true');
-      
-      console.log('✅ User profile saved for user:', currentUserId);
-      console.log('✅ Survey completed for user:', currentUser.name);
-      
-      // Update current user if function exists
-      if (setCurrentUser) {
-        setCurrentUser(userProfile);
-      }
-      
-      // Navigate to dashboard
-      navigate('/dashboard');
-    } else {
+    if (Object.keys(stepErrors).length > 0) {
       setErrors(stepErrors);
-      console.log('Validation errors:', stepErrors);
+      return;
+    }
+    
+    if (goalAnalysis && goalAnalysis.status === 'impossible' && surveyData.targetWeight) {
+      alert('Please fix the impossible goal before continuing.');
+      return;
+    }
+    
+    if (goalAnalysis && goalAnalysis.status === 'ambitious' && surveyData.targetWeight) {
+      if (!window.confirm(
+        'This goal is ambitious and may be difficult to achieve.\n\n' +
+        `Weekly rate: ${goalAnalysis.weeklyRate} kg/week\n` +
+        `Recommended safe rate: ${goalAnalysis.safeRate} kg/week\n\n` +
+        'Do you want to continue with this ambitious goal?'
+      )) {
+        return;
+      }
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      const token = localStorage.getItem('fittrack_token');
+      
+      if (!token) {
+        alert('Please log in again.');
+        navigate('/login');
+        return;
+      }
+      
+      // Prepare data for API
+      const surveyPayload = {
+        birthdate: surveyData.birthdate,
+        gender: surveyData.gender.toLowerCase(),
+        height: parseFloat(surveyData.height),
+        weight: parseFloat(surveyData.weight),
+        weightUnit: surveyData.weightUnit,
+        heightUnit: surveyData.heightUnit,
+        weightGoal: surveyData.weightGoal,
+        targetWeight: surveyData.weightGoal === 'maintain' ? surveyData.weight : parseFloat(surveyData.targetWeight),
+        performanceGoal: surveyData.performanceGoal,
+        fitnessLevel: surveyData.fitnessLevel.toLowerCase(),
+        activityLevel: surveyData.activityLevel,
+        timeline: surveyData.timeline,
+        workoutTypes: surveyData.workoutTypes,
+        workoutLocation: surveyData.workoutLocation,
+        workoutDuration: surveyData.workoutDuration,
+        workoutTime: surveyData.workoutTime,
+        limitations: surveyData.limitations.filter(l => l !== 'No limitations'),
+        equipment: surveyData.equipment.filter(e => e !== 'None').map(e => e.toLowerCase())
+      };
+      
+      console.log('Saving survey:', surveyPayload);
+      
+      // Save survey to API
+      const response = await fetch(`${API_URL}/survey`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(surveyPayload)
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // Mark survey as completed
+        const user = JSON.parse(localStorage.getItem('fittrack_user'));
+        if (user && user.id) {
+          localStorage.setItem(`surveyCompleted_${user.id}`, 'true');
+          localStorage.removeItem(`surveySkipped_${user.id}`);
+        }
+        
+        console.log('✅ Survey saved successfully!');
+        
+        // Update current user if function exists
+        if (setCurrentUser) {
+          const userResponse = await fetch(`${API_URL}/users/me`, {
+            headers: getAuthHeaders()
+          });
+          const userData = await userResponse.json();
+          if (userData.success) {
+            setCurrentUser(userData.user);
+          }
+        }
+        
+        navigate('/dashboard');
+      } else {
+        alert('Failed to save survey: ' + data.message);
+      }
+    } catch (error) {
+      console.error('Survey save error:', error);
+      alert('Failed to save survey. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Handle single selection for workout types
   const selectWorkoutType = (type) => {
-    setSurveyData(prev => ({
-      ...prev,
-      workoutTypes: type
-    }));
+    setSurveyData(prev => ({ ...prev, workoutTypes: type }));
   };
 
-  // Handle multi-select options (limitations, equipment)
   const toggleSelection = (field, value) => {
     setSurveyData(prev => {
       const current = prev[field] || [];
@@ -628,10 +541,21 @@ const Surveys = ({ setCurrentUser }) => {
     });
   };
 
-  // Progress percentage
   const progressPercentage = (currentStep / 4) * 100;
 
-  // Rest of your JSX remains the same...
+  if (isLoading) {
+    return (
+      <section className="survey-section">
+        <div className="survey-card">
+          <div className="survey-body" style={{ textAlign: 'center', padding: '60px' }}>
+            <p>Loading your profile...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Rest of your JSX remains the SAME as before...
   return (
     <section className="survey-section">
       <div className="survey-card">
@@ -707,8 +631,6 @@ const Surveys = ({ setCurrentUser }) => {
                       onChange={(e) => setSurveyData({...surveyData, height: e.target.value})}
                       placeholder={surveyData.heightUnit === 'cm' ? "170" : "5.8"}
                       step="0.1"
-                      min={surveyData.heightUnit === 'cm' ? VALIDATION.MIN_HEIGHT_CM : VALIDATION.MIN_HEIGHT_FT}
-                      max={surveyData.heightUnit === 'cm' ? VALIDATION.MAX_HEIGHT_CM : VALIDATION.MAX_HEIGHT_FT}
                     />
                     <select
                       value={surveyData.heightUnit}
@@ -720,9 +642,6 @@ const Surveys = ({ setCurrentUser }) => {
                     </select>
                   </div>
                   {errors.height && <span className="error-message">{errors.height}</span>}
-                  {surveyData.heightUnit === 'ft' && (
-                    <small className="hint">Example: 5.8 = 5'8"</small>
-                  )}
                 </div>
 
                 <div className="form-group">
@@ -734,8 +653,6 @@ const Surveys = ({ setCurrentUser }) => {
                       onChange={(e) => setSurveyData({...surveyData, weight: e.target.value})}
                       placeholder={surveyData.weightUnit === 'kg' ? "70" : "154"}
                       step="0.1"
-                      min={surveyData.weightUnit === 'kg' ? VALIDATION.MIN_WEIGHT_KG : VALIDATION.MIN_WEIGHT_LBS}
-                      max={surveyData.weightUnit === 'kg' ? VALIDATION.MAX_WEIGHT_KG : VALIDATION.MAX_WEIGHT_LBS}
                     />
                     <select
                       value={surveyData.weightUnit}
@@ -791,28 +708,19 @@ const Surveys = ({ setCurrentUser }) => {
                 {errors.weightGoal && <span className="error-message">{errors.weightGoal}</span>}
               </div>
 
-              {/* Target Weight Input - Required for lose/gain, hidden for maintain */}
               {(surveyData.weightGoal === 'lose' || surveyData.weightGoal === 'gain') && (
                 <div className="form-group target-weight-group">
-                  <label>
-                    Target Weight ({surveyData.weightUnit}) *
-                  </label>
+                  <label>Target Weight ({surveyData.weightUnit}) *</label>
                   <input
                     type="number"
                     value={surveyData.targetWeight}
-                    onChange={(e) => {
-                      setSurveyData({...surveyData, targetWeight: e.target.value});
-                    }}
+                    onChange={(e) => setSurveyData({...surveyData, targetWeight: e.target.value})}
                     placeholder={`Enter target weight in ${surveyData.weightUnit}`}
                     step="0.1"
-                    min={surveyData.weightUnit === 'kg' ? VALIDATION.MIN_TARGET_WEIGHT_KG : VALIDATION.MIN_TARGET_WEIGHT_LBS}
-                    max={surveyData.weightUnit === 'kg' ? VALIDATION.MAX_WEIGHT_KG : VALIDATION.MAX_WEIGHT_LBS}
                   />
                   {errors.targetWeight && <span className="error-message">{errors.targetWeight}</span>}
                 </div>
               )}
-
-              
 
               <div className="form-group">
                 <label>Performance Goal *</label>
@@ -839,9 +747,7 @@ const Surveys = ({ setCurrentUser }) => {
                       key={option}
                       type="button"
                       className={`select-button ${surveyData.timeline === option ? 'selected' : ''}`}
-                      onClick={() => {
-                        setSurveyData({...surveyData, timeline: option});
-                      }}
+                      onClick={() => setSurveyData({...surveyData, timeline: option})}
                     >
                       {option}
                     </button>
@@ -850,11 +756,9 @@ const Surveys = ({ setCurrentUser }) => {
                 {errors.timeline && <span className="error-message">{errors.timeline}</span>}
               </div>
 
-              {/* Goal Analysis Display - Only show for lose/gain with target weight */}
               {goalAnalysis && (surveyData.weightGoal === 'lose' || surveyData.weightGoal === 'gain') && (
                 <div className={`analysis-box ${goalAnalysis.status}`}>
                   <h4>{goalAnalysis.title}</h4>
-                  
                   <div className="goal-stats">
                     <p><strong>Current:</strong> {goalAnalysis.currentWeight} {goalAnalysis.weightUnit}</p>
                     <p><strong>Target:</strong> {goalAnalysis.targetWeight} {goalAnalysis.weightUnit}</p>
@@ -862,23 +766,10 @@ const Surveys = ({ setCurrentUser }) => {
                     <p><strong>Timeline:</strong> {goalAnalysis.timeline} ({goalAnalysis.weeks} weeks)</p>
                     <p><strong>Weekly Rate:</strong> {goalAnalysis.weeklyRate} kg/week</p>
                   </div>
-                  
                   <div className="analysis-message">
                     <p>{goalAnalysis.message}</p>
-                    {goalAnalysis.details && <p className="details">{goalAnalysis.details}</p>}
                     <p className="recommendation">{goalAnalysis.recommendation}</p>
                   </div>
-
-                  {goalAnalysis.status === 'impossible' && (
-                    <div className="suggestion-box">
-                      <p><strong>Suggested actions:</strong></p>
-                      <ul>
-                        <li>Increase timeline to {goalAnalysis.recommendedTimeline} ({goalAnalysis.recommendedWeeks} weeks)</li>
-                        <li>Adjust target weight to be closer to current weight</li>
-                        <li>Break your goal into smaller milestones</li>
-                      </ul>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
@@ -998,9 +889,6 @@ const Surveys = ({ setCurrentUser }) => {
                   ))}
                 </div>
                 {errors.activityLevel && <span className="error-message">{errors.activityLevel}</span>}
-                <small className="hint">
-                  This helps us estimate your daily energy expenditure and tailor recommendations
-                </small>
               </div>
 
               <div className="form-group">
@@ -1017,11 +905,6 @@ const Surveys = ({ setCurrentUser }) => {
                     </button>
                   ))}
                 </div>
-                {surveyData.limitations.includes('No limitations') && surveyData.limitations.length > 1 && (
-                  <span className="warning-message">
-                    If you have no limitations, please deselect other options
-                  </span>
-                )}
               </div>
 
               <div className="form-group">
@@ -1038,11 +921,6 @@ const Surveys = ({ setCurrentUser }) => {
                     </button>
                   ))}
                 </div>
-                {surveyData.equipment.includes('None') && surveyData.equipment.length > 1 && (
-                  <span className="warning-message">
-                    If you have no equipment, please deselect other options
-                  </span>
-                )}
               </div>
             </div>
           )}
@@ -1063,9 +941,9 @@ const Surveys = ({ setCurrentUser }) => {
               <button 
                 className="nav-btn submit-btn" 
                 onClick={handleSubmit}
-                disabled={goalAnalysis?.status === 'impossible' && surveyData.targetWeight}
+                disabled={isLoading || (goalAnalysis?.status === 'impossible' && surveyData.targetWeight)}
               >
-                Complete Survey
+                {isLoading ? 'SAVING...' : 'Complete Survey'}
               </button>
             )}
           </div>

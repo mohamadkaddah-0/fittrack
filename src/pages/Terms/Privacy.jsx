@@ -14,7 +14,7 @@ const Privacy = () => {
             privacy
             <em>policy</em>
           </div>
-          <div className="legal-date">Last Updated: March 15, 2024</div>
+          <div className="legal-date">Last Updated: April 17, 2026</div>
         </div>
 
         <div className="legal-body">
@@ -115,9 +115,8 @@ const Privacy = () => {
               <h3>10. Contact Us</h3>
               <p>If you have questions about this Privacy Policy, please contact:</p>
               <div className="contact-info">
-                <p>Email: privacy@fittrack.io</p>
-                <p>Data Protection Officer: dpo@fittrack.io</p>
-                <p>Address: 123 Fitness Ave, San Francisco, CA 94105</p>
+                <p>Email: mohammad.moghnieh@au.edu</p>
+                <p>Data Protection Officer: Mohammad Moghnieh</p>
               </div>
             </div>
 

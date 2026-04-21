@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { api } from '../services/api';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -8,40 +9,25 @@ const ForgotPassword = () => {
   const [codeSent, setCodeSent] = useState(false);
   const [resetCode, setResetCode] = useState('');
 
-  const generateResetCode = () => {
-    // Generate a 6-digit random code
-    return Math.floor(100000 + Math.random() * 900000).toString();
-  };
-
   const handleSendCode = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setMessage({ text: '', type: '' });
 
     try {
-      // Generate reset code
-      const code = generateResetCode();
-      setResetCode(code);
+      const response = await api.post('/auth/forgot-password', { email });
       
-      // MOCK: In real app, you would send this to your backend
-      // which would email the code to the user
-      
-      console.log(`Reset code for ${email}: ${code}`); // For testing - remove in production
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      setMessage({ 
-        text: `Reset code sent to ${email}. Check your inbox! (For testing: ${code})`, 
-        type: 'success' 
-      });
-      setCodeSent(true);
-      
+      if (response.data.success) {
+        setResetCode(response.data.devCode);
+        setMessage({ text: `Your reset code is: ${response.data.devCode}`, type: 'success' });
+        setCodeSent(true);
+      }
     } catch (error) {
-      setMessage({ 
-        text: 'Failed to send reset code. Please try again.', 
-        type: 'error' 
-      });
+      if (error.response?.status === 404) {
+        setMessage({ text: 'Email not found. Please register first.', type: 'error' });
+      } else {
+        setMessage({ text: 'Failed to send code. Try again.', type: 'error' });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -50,65 +36,30 @@ const ForgotPassword = () => {
   return (
     <section className="login-section">
       <div className="login-card">
-        
-        
         <div className="login-header">
-          
-          <div className="login-title">
-            reset
-            <em>passphrase</em>
-          </div>
+          <div className="login-title">reset<em>passphrase</em></div>
         </div>
-
         <div className="login-body">
           {!codeSent ? (
             <form onSubmit={handleSendCode}>
               <div className="field">
-                <label className="field-label" htmlFor="email">
-                  EMAIL ADDRESS
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  className="field-input"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
+                <label className="field-label">EMAIL ADDRESS</label>
+                <input type="email" className="field-input" value={email} onChange={(e) => setEmail(e.target.value)} required />
               </div>
-
-              <button
-                type="submit"
-                className="btn-submit"
-                disabled={isLoading || !email.includes('@')}
-              >
-                <span>{isLoading ? 'SENDING...' : 'SEND RESET CODE →'}</span>
+              <button type="submit" className="btn-submit" disabled={isLoading || !email.includes('@')}>
+                {isLoading ? 'SENDING...' : 'SEND RESET CODE →'}
               </button>
             </form>
           ) : (
-            <div className="reset-code-message">
-              <p style={{ marginBottom: '20px', color: 'var(--text)' }}>
-                Reset code has been sent to <strong>{email}</strong>
-              </p>
+            <div>
+              <p>Reset code sent to {email}</p>
               <Link to={`/reset-password?email=${encodeURIComponent(email)}&code=${resetCode}`}>
-                <button className="btn-submit" style={{ background: 'var(--cyan)' }}>
-                  <span>ENTER RESET CODE →</span>
-                </button>
+                <button className="btn-submit">ENTER RESET CODE →</button>
               </Link>
             </div>
           )}
-
-          {message.text && (
-            <div className={`mock-alert ${message.type}`}>
-              <span>⏣ {message.type === 'success' ? 'SUCCESS' : 'ERROR'}</span>
-              {' '}{message.text}
-            </div>
-          )}
-
-          <div className="auth-foot">
-            remember your password? <Link to="/login">back to login</Link>
-          </div>
+          {message.text && <div className={`mock-alert ${message.type}`}>{message.text}</div>}
+          <div className="auth-foot"><Link to="/login">back to login</Link></div>
         </div>
       </div>
     </section>

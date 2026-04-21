@@ -1,7 +1,39 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import "./ReadySurvey.css";
+
 const ReadySurvey = () => {
+  const navigate = useNavigate();
+
+  const handleSkipSurvey = () => {
+  // Try to get user from multiple sources
+  let user = null;
+  let userId = null;
+  
+  const localUser = localStorage.getItem('fittrack_user');
+  const sessionUser = sessionStorage.getItem('currentUser');
+  const token = localStorage.getItem('fittrack_token');
+  
+  if (localUser) {
+    user = JSON.parse(localUser);
+    userId = user.id;
+  } else if (sessionUser) {
+    user = JSON.parse(sessionUser);
+    userId = user.id;
+  }
+  
+  if (userId) {
+    // Mark that user skipped the survey
+    localStorage.setItem(`surveySkipped_${userId}`, 'true');
+    localStorage.setItem(`surveyCompleted_${userId}`, 'false');
+    console.log('Survey skipped for user:', userId);
+  } else {
+    console.error('No user found when skipping survey');
+  }
+  
+  navigate('/dashboard');
+};
+
   return (
     <section className="ready-section">
       <div className="ready-card">
@@ -58,14 +90,9 @@ const ReadySurvey = () => {
               </button>
             </Link>
             
-            <Link 
-              to="/dashboard"
-              onClick={() => window.scrollTo(0, 0)}
-            >
-              <button className="ready-btn later-btn">
-                NOT NOW, TAKE ME HOME
-              </button>
-            </Link>
+            <button className="ready-btn later-btn" onClick={handleSkipSurvey}>
+              NOT NOW, TAKE ME HOME
+            </button>
           </div>
 
           <p className="ready-note">
