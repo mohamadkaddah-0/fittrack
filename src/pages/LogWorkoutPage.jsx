@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { EXERCISES, getUserProfile } from "../data/mockData";
+import api from "../services/api";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -476,6 +477,7 @@ function RestTimer({ defaultSeconds = 60 }) {
 export default function LogWorkoutPage({ addWorkoutToCalendar }) {
   const user    = getUserProfile();
   const navigate = useNavigate();
+  const useBackend = api.hasActivityIdentity();
 
   // Exercise currently selected for logging
   const [selectedEx,     setSelectedEx]     = useState(null);
@@ -497,8 +499,42 @@ export default function LogWorkoutPage({ addWorkoutToCalendar }) {
 
   // Persist today's log to localStorage whenever entries change
   useEffect(() => {
+    if (useBackend) {
+      return;
+    }
     localStorage.setItem("workoutLog_" + getTodayKey(), JSON.stringify(loggedEntries));
-  }, [loggedEntries]);
+  }, [loggedEntries, useBackend]);
+
+  useEffect(() => {
+    if (!useBackend) {
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    async function loadWorkoutLog() {
+      try {
+        const response = await api.getWorkoutLog(getTodayKey());
+        if (cancelled) {
+          return;
+        }
+
+        setLoggedEntries(response.entries || []);
+        setSavedToCalendar(Boolean(response.savedToCalendar));
+      } catch (error) {
+        if (!cancelled) {
+          setLoggedEntries([]);
+          setSavedToCalendar(false);
+        }
+      }
+    }
+
+    loadWorkoutLog();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [useBackend]);
 
   function showToast(text, color = "#C6F135") {
     setToast({ text, color });
@@ -526,7 +562,7 @@ export default function LogWorkoutPage({ addWorkoutToCalendar }) {
   }
 
   // Add current exercise to the session log with locked calories
-  function handleAddExercise() {
+  async function handleAddExercise() {
     if (!selectedEx) return;
     const type     = getLogType(selectedEx);
     // Calories are calculated now and locked — they won't change after logging
@@ -542,6 +578,23 @@ export default function LogWorkoutPage({ addWorkoutToCalendar }) {
       ...logData,
     };
 
+    if (useBackend) {
+      try {
+        const response = await api.addWorkoutLogEntry({
+          date: getTodayKey(),
+          ...entry,
+        });
+        setLoggedEntries(prev => [response.entry, ...prev]);
+        showToast(`${selectedEx.name} logged — ${calories} kcal burned`);
+        setLogData({});
+        setSavedToCalendar(false);
+        return;
+      } catch (error) {
+        showToast(error.message || "Unable to save workout right now", "#FF2A5E");
+        return;
+      }
+    }
+
     setLoggedEntries(prev => [entry, ...prev]);
     showToast(`${selectedEx.name} logged — ${calories} kcal burned`);
     setLogData({});
@@ -549,8 +602,23 @@ export default function LogWorkoutPage({ addWorkoutToCalendar }) {
   }
 
   // Save the full session to the shared homepage calendar
-  function handleSaveToCalendar() {
-    if (!addWorkoutToCalendar || loggedEntries.length === 0) return;
+  async function handleSaveToCalendar() {
+    if (loggedEntries.length === 0) return;
+
+    if (useBackend) {
+      try {
+        await api.saveWorkoutLogToCalendar(getTodayKey());
+        setSavedToCalendar(true);
+        showToast("Workout saved to your calendar!", "#00E5FF");
+        return;
+      } catch (error) {
+        showToast(error.message || "Unable to save to calendar", "#FF2A5E");
+        return;
+      }
+    }
+
+    if (!addWorkoutToCalendar) return;
+
     const today = getTodayKey();
     loggedEntries.forEach(entry => {
       addWorkoutToCalendar(today, {
@@ -564,7 +632,19 @@ export default function LogWorkoutPage({ addWorkoutToCalendar }) {
     showToast("Workout saved to your calendar!", "#00E5FF");
   }
 
-  function handleDeleteEntry(id) {
+  async function handleDeleteEntry(id) {
+    if (useBackend) {
+      try {
+        await api.deleteWorkoutLogEntry(id, getTodayKey());
+        setLoggedEntries(prev => prev.filter(e => e.id !== id));
+        setSavedToCalendar(false);
+        return;
+      } catch (error) {
+        showToast(error.message || "Unable to delete workout", "#FF2A5E");
+        return;
+      }
+    }
+
     setLoggedEntries(prev => prev.filter(e => e.id !== id));
     setSavedToCalendar(false);
   }

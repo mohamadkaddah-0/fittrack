@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getTodayKey } from "../data/mockData";
+import api from "../services/api";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIGURATION
@@ -152,16 +153,68 @@ function EditableStatCard({ label, value, unit, goal, color, onSave }) {
 
 export default function HomePage({ calendarData = {}, currentUser, deleteMealFromDay, deleteWorkoutFromDay, togglePlanMeal, loggedMeals = {} }) {
   const navigate = useNavigate();
+  const useBackend = api.hasActivityIdentity();
+  const [backendCalendarData, setBackendCalendarData] = useState({});
+  const [waterIntake, setWaterIntake] = useState(0);
+  const [stepsTaken, setStepsTaken] = useState(0);
+  const [daysCompleted, setDaysCompleted] = useState(0);
 
   // Derive plan name from user's survey goal — falls back to default if no user
   const planName = GOAL_TO_PLAN[currentUser?.goal] || "Your Fitness Plan";
 
-  // Water intake — user-editable
-  const [waterIntake,   setWaterIntake]   = useState(0);
-  const [daysCompleted, setDaysCompleted] = useState(0);
+  useEffect(() => {
+    if (!useBackend) {
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    async function loadHomepageData() {
+      try {
+        const response = await api.getHomepageData(getTodayKey());
+        if (cancelled) {
+          return;
+        }
+
+        setBackendCalendarData(response.homepage?.calendarData || {});
+        setWaterIntake(Number(response.homepage?.waterIntake || 0));
+        setStepsTaken(Number(response.homepage?.stepsTaken || 0));
+        setDaysCompleted(Number(response.homepage?.daysCompleted || 0));
+      } catch (error) {
+        if (!cancelled) {
+          setBackendCalendarData({});
+        }
+      }
+    }
+
+    loadHomepageData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [useBackend]);
+
+  const mergedCalendarData = useMemo(() => {
+    if (!useBackend) {
+      return calendarData;
+    }
+
+    const merged = { ...calendarData };
+
+    Object.entries(backendCalendarData).forEach(([dateKey, backendEntries]) => {
+      const localEntries = Array.isArray(merged[dateKey]) ? merged[dateKey] : [];
+      const localIds = new Set(localEntries.map((entry) => String(entry.id || "")));
+      const backendOnlyEntries = (backendEntries || []).filter(
+        (entry) => entry?.id && !localIds.has(String(entry.id))
+      );
+      merged[dateKey] = [...localEntries, ...backendOnlyEntries];
+    });
+
+    return merged;
+  }, [backendCalendarData, calendarData, useBackend]);
 
   // Calories intake — auto-derived from today's meal entries in calendarData
-  const todayEntries    = calendarData[getTodayKey()] || [];
+  const todayEntries    = mergedCalendarData[getTodayKey()] || [];
   const caloriesIntake  = todayEntries
     .filter(e => e.type === "meal")
     .reduce((sum, e) => sum + (e.kcal || 0), 0);
@@ -176,7 +229,7 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
 
   // ── Achievement calculations — derived from all calendarData ──
   // Total workouts ever logged across all days
-  const totalWorkoutsAllTime = Object.values(calendarData)
+  const totalWorkoutsAllTime = Object.values(mergedCalendarData)
     .flat()
     .filter(e => e.type === "workout").length;
 
@@ -186,7 +239,7 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
     const d = new Date();
     for (let i = 0; i < 365; i++) {
       const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-      const hasWorkout = (calendarData[key] || []).some(e => e.type === "workout");
+      const hasWorkout = (mergedCalendarData[key] || []).some(e => e.type === "workout");
       if (hasWorkout) { streak++; d.setDate(d.getDate() - 1); }
       else break;
     }
@@ -194,7 +247,7 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
   })();
 
   // Total meals ever logged
-  const totalMealsAllTime = Object.values(calendarData)
+  const totalMealsAllTime = Object.values(mergedCalendarData)
     .flat()
     .filter(e => e.type === "meal").length;
 
@@ -299,15 +352,83 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
         day, dateKey, isOtherMonth,
         isToday:    dateKey === today,
         isSelected: dateKey === selectedDay,
-        logs:       calendarData[dateKey] || [],
+        logs:       mergedCalendarData[dateKey] || [],
       });
     }
     return cells;
   }
 
-  const selectedDayEntries = calendarData[selectedDay] || [];
+  async function handleWaterSave(nextValue) {
+    setWaterIntake(nextValue);
+
+    if (!useBackend) {
+      return;
+    }
+
+    try {
+      await api.updateHomepageData({ date: getTodayKey(), waterIntake: nextValue });
+    } catch (error) {
+      // Keep the optimistic value in place so the UI still feels responsive.
+    }
+  }
+
+  async function handleDaysCompletedChange(nextValue) {
+    setDaysCompleted(nextValue);
+
+    if (!useBackend) {
+      return;
+    }
+
+    try {
+      await api.updateHomepageData({ daysCompleted: nextValue });
+    } catch (error) {
+      // Keep the optimistic value in place so the progress UI remains usable.
+    }
+  }
+
+  async function handleStepsSave(nextValue) {
+    setStepsTaken(nextValue);
+
+    if (!useBackend) {
+      return;
+    }
+
+    try {
+      await api.updateHomepageData({ date: getTodayKey(), stepsTaken: nextValue });
+    } catch (error) {
+      // Keep the optimistic value in place so the UI remains usable.
+    }
+  }
+
+  async function handleWorkoutDelete(entryId, index) {
+    if (useBackend && entryId) {
+      try {
+        await api.deleteCalendarEntry(entryId, selectedDay);
+        setBackendCalendarData((prev) => {
+          const next = { ...prev };
+          const dayEntries = (next[selectedDay] || []).filter((entry) => String(entry.id) !== String(entryId));
+          if (dayEntries.length === 0) {
+            delete next[selectedDay];
+          } else {
+            next[selectedDay] = dayEntries;
+          }
+          return next;
+        });
+        return;
+      } catch (error) {
+        // Fall through to the existing prop callback if the API is unavailable.
+      }
+    }
+
+    if (deleteWorkoutFromDay) {
+      deleteWorkoutFromDay(selectedDay, index);
+    }
+  }
+
+  const selectedDayEntries = mergedCalendarData[selectedDay] || [];
   const selectedMeals      = selectedDayEntries.filter((e) => e.type === "meal");
   const selectedWorkouts   = selectedDayEntries.filter((e) => e.type === "workout");
+  const stepsProgressPct   = Math.min((stepsTaken / GOALS.steps) * 100, 100);
 
   // ─────────────────────────────────────────────────────────────
   // RENDER
@@ -336,12 +457,12 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border-b border-[#1E1E1E]">
           <AutoStatCard label="Calories Intake" value={caloriesIntake} unit="kcal" goal={GOALS.calories}  color="#C6F135" source="from meals" />
           <AutoStatCard label="Calories Burnt"  value={caloriesBurnt}  unit="kcal" goal={0}               color="#FF2A5E" source="from workouts" />
-          <EditableStatCard label="Water Intake"    value={waterIntake}    unit="L"    goal={GOALS.water}     color="#00E5FF" onSave={setWaterIntake}     />
+          <EditableStatCard label="Water Intake"    value={waterIntake}    unit="L"    goal={GOALS.water}     color="#00E5FF" onSave={handleWaterSave}     />
           <AutoStatCard label="Exercises Done"  value={exercisesDone}  unit=""     goal={GOALS.exercises} color="#FFAA00" source="from workouts" />
         </div>
 
         {/* Steps Taken — Phase 2 */}
-        <div className="px-6 md:px-14 py-5 border-b border-[#1E1E1E] flex flex-col sm:flex-row sm:items-center gap-4 cursor-not-allowed select-none"
+        <div className="px-6 md:px-14 py-5 border-b border-[#1E1E1E] flex flex-col sm:flex-row sm:items-center gap-4"
           style={{ background: "repeating-linear-gradient(135deg, transparent, transparent 6px, rgba(255,255,255,0.015) 6px, rgba(255,255,255,0.015) 12px)" }}
         >
           {/* Label + Phase 2 badge */}
@@ -349,17 +470,33 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
             <span className="text-[8px] tracking-[0.22em] uppercase text-[#444]">Steps Taken</span>
             <span
               className="text-[8px] font-bold tracking-[0.18em] uppercase px-2 py-1 border"
-              style={{ borderColor: "#FF2A5E", color: "#FF2A5E", background: "rgba(255,42,94,0.08)" }}
+              style={{ borderColor: "#00E5FF", color: "#00E5FF", background: "rgba(0,229,255,0.08)" }}
             >
-              Phase 2
+              Manual Sync
             </span>
           </div>
 
-          {/* Grayed progress bar */}
           <div className="flex-1 bg-[#1A1A1A] h-[6px] overflow-hidden border border-[#222]">
-            <div className="h-full" style={{ width: "0%", background: "#2a2a2a" }} />
+            <div className="h-full transition-all duration-700" style={{ width: `${stepsProgressPct}%`, background: "#00E5FF" }} />
           </div>
 
+          <div className="flex items-center gap-3 shrink-0">
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={stepsTaken}
+              onChange={(e) => handleStepsSave(parseInt(e.target.value || "0", 10))}
+              className="w-28 bg-transparent border-b border-[#00E5FF] text-[#00E5FF] font-['Barlow_Condensed'] font-black text-3xl outline-none text-right"
+            />
+            <span className="text-[9px] shrink-0 text-[#555]">/ {GOALS.steps.toLocaleString()} steps</span>
+          </div>
+
+          <span className="text-[8px] tracking-wide shrink-0" style={{ color: "#555" }}>
+            Manual step entry is live. Pedometer sync can be added later.
+          </span>
+
+          <div className="hidden">
           {/* Value placeholder */}
           <span className="font-['Barlow_Condensed'] font-black text-3xl shrink-0" style={{ color: "#333" }}>—</span>
           <span className="text-[9px] shrink-0" style={{ color: "#333" }}>/ {GOALS.steps.toLocaleString()} steps</span>
@@ -368,6 +505,7 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
           <span className="text-[8px] tracking-wide shrink-0" style={{ color: "#555" }}>
             🔒 Needs pedometer API — coming in Phase 2
           </span>
+          </div>
         </div>
       </div>
 
@@ -397,7 +535,7 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
                 <div className="flex gap-2 flex-wrap mt-1">
                   {Array.from({ length: PLAN_TOTAL_DAYS }).map((_, i) => (
                     <button key={i}
-                      onClick={() => setDaysCompleted(i < daysCompleted ? i : i + 1)}
+                      onClick={() => handleDaysCompletedChange(i < daysCompleted ? i : i + 1)}
                       className="w-9 h-9 border flex items-center justify-center text-[10px] transition-colors cursor-pointer"
                       style={i < daysCompleted
                         ? { borderColor: "#C6F135", background: "rgba(198,241,53,0.1)", color: "#C6F135" }
@@ -585,7 +723,7 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
                     <p className="text-[8px] tracking-widest uppercase text-[#555] mb-2">Workouts</p>
                     <ul>
                       {selectedWorkouts.map((entry, i) => (
-  <li key={i} className="flex items-center justify-between py-2 border-b last:border-b-0 border-[#1E1E1E]">
+  <li key={entry.id || i} className="flex items-center justify-between py-2 border-b last:border-b-0 border-[#1E1E1E]">
     <div className="flex items-center gap-2">
       <div className="w-[6px] h-[6px] rounded-sm flex-shrink-0" style={{ background: WORKOUT_COLOR }} />
       <div>
@@ -595,9 +733,9 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
     </div>
     <div className="flex items-center gap-3">
       <p className="text-xs font-bold" style={{ color: WORKOUT_COLOR }}>{entry.caloriesBurned || 0} kcal burned</p>
-      {selectedDay === today && deleteWorkoutFromDay && (
+      {selectedDay === today && (deleteWorkoutFromDay || entry.id) && (
         <button
-          onClick={() => deleteWorkoutFromDay(selectedDay, i)}
+          onClick={() => handleWorkoutDelete(entry.id, i)}
           className="w-6 h-6 border border-[#222] text-[#555] hover:border-[#FF2A5E] hover:text-[#FF2A5E] flex items-center justify-center text-xs transition-colors">
           ✕
         </button>

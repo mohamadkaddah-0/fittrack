@@ -1,63 +1,138 @@
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = "http://localhost:3000/api";
 
-const getToken = () => localStorage.getItem('fittrack_token');
+const getToken = () => localStorage.getItem("fittrack_token");
 
-const headers = () => ({
-  'Content-Type': 'application/json',
-  'Authorization': `Bearer ${getToken()}`
-});
+const getSessionUserId = () => {
+  try {
+    const sessionUser = sessionStorage.getItem("currentUser");
+    if (!sessionUser) {
+      return null;
+    }
+
+    const parsed = JSON.parse(sessionUser);
+    return parsed?.id ? String(parsed.id) : null;
+  } catch (error) {
+    return null;
+  }
+};
+
+const buildHeaders = (extraHeaders = {}) => {
+  const token = getToken();
+  const sessionUserId = getSessionUserId();
+  const resolvedHeaders = {
+    ...extraHeaders,
+  };
+
+  if (token) {
+    resolvedHeaders.Authorization = `Bearer ${token}`;
+  }
+
+  if (sessionUserId) {
+    resolvedHeaders["x-fittrack-user-id"] = sessionUserId;
+  }
+
+  return resolvedHeaders;
+};
+
+const parseJson = async (response) => {
+  let data = null;
+
+  try {
+    data = await response.json();
+  } catch (error) {
+    data = null;
+  }
+
+  if (!response.ok) {
+    const message = data?.message || `Request failed with status ${response.status}`;
+    throw new Error(message);
+  }
+
+  return data;
+};
+
+const request = (path, options = {}) =>
+  fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: buildHeaders(options.headers),
+  }).then(parseJson);
+
+const jsonRequest = (path, method, body) =>
+  request(path, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
 
 const api = {
+  hasActivityIdentity: () => Boolean(getToken() || getSessionUserId()),
+
   // Auth
   login: (email, password) =>
-    fetch(`${API_BASE}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    }).then(res => res.json()),
-    
+    jsonRequest("/auth/login", "POST", { email, password }),
+
   register: (userData) =>
-    fetch(`${API_BASE}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(userData)
-    }).then(res => res.json()),
-    
+    jsonRequest("/auth/register", "POST", userData),
+
   forgotPassword: (email) =>
-    fetch(`${API_BASE}/auth/forgot-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
-    }).then(res => res.json()),
-    
+    jsonRequest("/auth/forgot-password", "POST", { email }),
+
   resetPassword: (email, code, newPassword) =>
-    fetch(`${API_BASE}/auth/reset-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, code, newPassword })
-    }).then(res => res.json()),
-    
+    jsonRequest("/auth/reset-password", "POST", { email, code, newPassword }),
+
   // User
-  getCurrentUser: () =>
-    fetch(`${API_BASE}/users/me`, { headers: headers() }).then(res => res.json()),
-    
+  getCurrentUser: () => request("/users/me"),
+
   updateUser: (data) =>
-    fetch(`${API_BASE}/users/me`, {
-      method: 'PUT',
-      headers: headers(),
-      body: JSON.stringify(data)
-    }).then(res => res.json()),
-    
+    jsonRequest("/users/me", "PUT", data),
+
   // Survey
-  getSurvey: () =>
-    fetch(`${API_BASE}/survey`, { headers: headers() }).then(res => res.json()),
-    
+  getSurvey: () => request("/survey"),
+
   saveSurvey: (data) =>
-    fetch(`${API_BASE}/survey`, {
-      method: 'POST',
-      headers: headers(),
-      body: JSON.stringify(data)
-    }).then(res => res.json())
+    jsonRequest("/survey", "POST", data),
+
+  // Activity / homepage
+  getHomepageData: (date) => {
+    const query = date ? `?date=${encodeURIComponent(date)}` : "";
+    return request(`/activity/homepage${query}`);
+  },
+
+  updateHomepageData: (data) =>
+    jsonRequest("/activity/homepage", "PATCH", data),
+
+  deleteCalendarEntry: (entryId, date) => {
+    const query = date ? `?date=${encodeURIComponent(date)}` : "";
+    return request(`/activity/calendar/${encodeURIComponent(entryId)}${query}`, {
+      method: "DELETE",
+    });
+  },
+
+  getCalendarData: () => request("/activity/calendar"),
+
+  addCalendarEntry: (date, entry) =>
+    jsonRequest("/activity/calendar", "POST", { date, entry }),
+
+  // Activity / workout log
+  getWorkoutLog: (date) => {
+    const query = date ? `?date=${encodeURIComponent(date)}` : "";
+    return request(`/activity/workout-log${query}`);
+  },
+
+  addWorkoutLogEntry: (data) =>
+    jsonRequest("/activity/workout-log", "POST", data),
+
+  saveWorkoutLogToCalendar: (date) =>
+    jsonRequest("/activity/workout-log/save", "POST", { date }),
+
+  deleteWorkoutLogEntry: (entryId, date) => {
+    const query = date ? `?date=${encodeURIComponent(date)}` : "";
+    return request(`/activity/workout-log/${encodeURIComponent(entryId)}${query}`, {
+      method: "DELETE",
+    });
+  },
 };
 
 export default api;
