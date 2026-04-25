@@ -111,32 +111,39 @@ router.post('/', requireAuth, async (req, res) => {
       durationMonths = months[timeline] || null;
     }
     
-    // Update users table - Convert undefined/null to proper SQL NULL
     await connection.execute(
-      `UPDATE users SET
-        gender = COALESCE(?, gender),
-        age = COALESCE(?, age),
-        current_weight = COALESCE(?, current_weight),
-        target_weight = COALESCE(?, target_weight),
-        height = COALESCE(?, height),
-        activity_level = COALESCE(?, activity_level),
-        goal = COALESCE(?, goal),
-        fitness_level = COALESCE(?, fitness_level),
-        duration_months = ?
-      WHERE id = ?`,
-      [
-        gender || null,           // If undefined, use null
-        age || null,              // If undefined, use null
-        weight || null,           // If undefined, use null
-        targetWeight || null,     // If undefined, use null
-        height || null,           // If undefined, use null
-        activityLevel || null,    // If undefined, use null
-        goalEnum || null,         // If undefined, use null
-        fitnessLevel || null,     // If undefined, use null
-        durationMonths,           // Already null if not provided
-        userId
-      ]
-    );
+  `UPDATE users SET
+    gender = COALESCE(?, gender),
+    age = COALESCE(?, age),
+    current_weight = COALESCE(?, current_weight),
+    target_weight = COALESCE(?, target_weight),
+    height = COALESCE(?, height),
+    activity_level = COALESCE(?, activity_level),
+    goal = COALESCE(?, goal),
+    fitness_level = COALESCE(?, fitness_level),
+    duration_months = ?,
+    workout_duration = COALESCE(?, workout_duration),
+    workout_types = COALESCE(?, workout_types),
+    workout_location = COALESCE(?, workout_location),
+    workout_time = COALESCE(?, workout_time)
+  WHERE id = ?`,
+  [
+    gender || null,
+    age || null,
+    weight || null,
+    targetWeight || null,
+    height || null,
+    activityLevel || null,
+    goalEnum || null,
+    fitnessLevel || null,
+    durationMonths,
+    workoutDuration || null,
+    workoutTypes || null,
+    workoutLocation || null,
+    workoutTime || null,
+    userId
+  ]
+);
     
     // Update limitations (delete and reinsert)
     await connection.execute('DELETE FROM user_limitations WHERE user_id = ?', [userId]);

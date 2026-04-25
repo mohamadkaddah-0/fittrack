@@ -21,124 +21,88 @@ const SimplifiedProfile = ({ user: propUser }) => {
     };
   };
 
-  const calculateAge = (birthdate) => {
-    if (!birthdate) return null;
-    const today = new Date();
-    const birthDate = new Date(birthdate);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
-  // Fetch user data from API
   const fetchUserData = async () => {
-  const token = localStorage.getItem('fittrack_token');
-  
-  if (!token) {
-    console.log('No token found');
-    navigate('/login');
-    return;
-  }
-  
-  setIsLoading(true);
-  
-  try {
-    // Fetch user profile
-    const userResponse = await fetch(`${API_URL}/users/me`, {
-      headers: getAuthHeaders()
-    });
-    const userResult = await userResponse.json();
+    const token = localStorage.getItem('fittrack_token');
     
-    if (!userResult.success) {
-      console.log('Failed to fetch user:', userResult.message);
-      if (userResult.message === 'Invalid token' || userResult.message === 'No token provided') {
-        navigate('/login');
-      }
+    if (!token) {
+      navigate('/login');
       return;
     }
     
-    // Fetch survey data
-    const surveyResponse = await fetch(`${API_URL}/survey`, {
-      headers: getAuthHeaders()
-    });
-    const surveyResult = await surveyResponse.json();
+    setIsLoading(true);
     
-    console.log('Survey result:', surveyResult);
-    
-    // Determine if survey is completed
-    // A survey is completed ONLY if it has meaningful fitnessLevel data
-    let surveyCompleted = false;
-    let survey = null;
-    
-    if (surveyResult.success && surveyResult.survey) {
-      survey = surveyResult.survey;
-      // Check if survey has actual data (not just empty/default values)
-      surveyCompleted = !!(survey.fitnessLevel && 
-                       survey.fitnessLevel !== 'Not specified' &&
-                       survey.fitnessLevel !== '' &&
-                       survey.fitnessLevel !== null);
+    try {
+      const userResponse = await fetch(`${API_URL}/users/me`, {
+        headers: getAuthHeaders()
+      });
+      const userResult = await userResponse.json();
+      
+      if (!userResult.success) {
+        if (userResult.message === 'Invalid token' || userResult.message === 'No token provided') {
+          navigate('/login');
+        }
+        return;
+      }
+      
+      const user = userResult.user;
+      
+      // Fetch survey data to get workout preferences
+      let surveyData = {};
+      try {
+        const surveyResponse = await fetch(`${API_URL}/survey`, {
+          headers: getAuthHeaders()
+        });
+        const surveyResult = await surveyResponse.json();
+        if (surveyResult.success && surveyResult.survey) {
+          surveyData = surveyResult.survey;
+        }
+      } catch (err) {
+        console.log('No survey data found, using defaults');
+      }
+      
+      const combinedData = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        username: user.email.split('@')[0],
+        age: user.age || '',
+        gender: user.gender || '',
+        phone: '',
+        height: user.height || 170,
+        currentWeight: user.currentWeight || 70,
+        targetWeight: user.targetWeight || '',
+        weightUnit: 'kg',
+        heightUnit: 'cm',
+        fitnessLevel: user.fitnessLevel ? 
+          user.fitnessLevel.charAt(0).toUpperCase() + user.fitnessLevel.slice(1) : 'Beginner',
+        primaryGoal: user.goal || 'maintain',
+        activityLevel: user.activityLevel || 'moderately_active',
+        workoutFrequency: surveyData.workoutDuration || '3-4 days',
+        workoutType: surveyData.workoutTypes || 'Strength Training',
+        workoutLocation: surveyData.workoutLocation || 'Gym',
+        preferredTime: surveyData.workoutTime || 'Morning',
+        limitations: surveyData.limitations || [],
+        equipment: surveyData.equipment || []
+      };
+      
+      console.log('Loaded survey data:', {
+        workoutDuration: surveyData.workoutDuration,
+        workoutTypes: surveyData.workoutTypes,
+        workoutLocation: surveyData.workoutLocation,
+        workoutTime: surveyData.workoutTime
+      });
+      
+      setUserData(combinedData);
+      
+      const hasSurvey = localStorage.getItem(`surveySkipped_${user.id}`) === 'true';
+      setHasCompletedSurvey(!hasSurvey && !!user.fitnessLevel);
+      
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    } finally {
+      setIsLoading(false);
     }
-    
-    // Also check localStorage flags for skipped survey
-    const userId = userResult.user.id;
-    const surveySkipped = localStorage.getItem(`surveySkipped_${userId}`) === 'true';
-    
-    // If survey was skipped, it's NOT completed
-    if (surveySkipped) {
-      surveyCompleted = false;
-    }
-    
-    console.log('Survey completed:', surveyCompleted);
-    console.log('Survey skipped:', surveySkipped);
-    
-    // Combine user and survey data
-    const combinedData = {
-      id: userResult.user.id,
-      name: userResult.user.name,
-      email: userResult.user.email,
-      username: userResult.user.email.split('@')[0],
-      age: userResult.user.age || null,
-      gender: userResult.user.gender || '',
-      phone: '',
-      birthdate: '',
-      height: survey?.height || userResult.user.height || 0,
-      weight: survey?.weight || userResult.user.currentWeight || 0,
-      weightUnit: 'kg',
-      heightUnit: 'cm',
-      fitnessLevel: survey?.fitnessLevel ? 
-        survey.fitnessLevel.charAt(0).toUpperCase() + survey.fitnessLevel.slice(1) : 
-        'Not specified',
-      primaryGoal: survey?.weightGoal || userResult.user.goal || 'Not specified',
-      workoutFrequency: survey?.workoutDuration || 'Not specified',
-      workoutType: survey?.workoutTypes || 'Not specified',
-      workoutLocation: survey?.workoutLocation || 'Not specified',
-      preferredTime: survey?.workoutTime || 'Not specified',
-      limitations: survey?.limitations || [],
-      equipment: survey?.equipment || [],
-      location: 'Not specified',
-      surveyCompleted: surveyCompleted,
-      currentWeight: survey?.weight || userResult.user.currentWeight || 0,
-      targetWeight: survey?.targetWeight || userResult.user.targetWeight || null,
-      activityLevel: survey?.activityLevel || userResult.user.activityLevel || 'moderately_active',
-      weightGoal: survey?.weightGoal || userResult.user.goal || 'maintain',
-      performanceGoal: survey?.performanceGoal || null,
-      timeline: survey?.timeline || 'Not specified'
-    };
-    
-    console.log('Combined data:', combinedData);
-    
-    setUserData(combinedData);
-    setHasCompletedSurvey(surveyCompleted);
-    
-  } catch (error) {
-    console.error('Error fetching user data:', error);
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   useEffect(() => {
     fetchUserData();
@@ -169,109 +133,95 @@ const SimplifiedProfile = ({ user: propUser }) => {
   };
 
   const handleSave = async () => {
-  if (!userData) return;
-  
-  console.log('=== SAVING PROFILE ===');
-  
-console.log('=== PROFILE RENDER STATE ===');
-console.log('hasCompletedSurvey:', hasCompletedSurvey);
-console.log('userData?.surveyCompleted:', userData?.surveyCompleted);
-console.log('userData?.fitnessLevel:', userData?.fitnessLevel);
-  
-  setSaveMessage({ text: 'Saving...', type: 'info' });
-  
-  try {
-    const token = localStorage.getItem('fittrack_token');
+    if (!userData) return;
     
-    if (!token) {
-      setSaveMessage({ text: 'Not logged in. Please log in again.', type: 'error' });
-      setTimeout(() => navigate('/login'), 1500);
-      return;
-    }
+    setSaveMessage({ text: 'Saving...', type: 'info' });
     
-    // 1. Update User table data (name, weight, height, etc.)
-    const userUpdateData = {
-      name: userData.name,
-      current_weight: parseFloat(userData.currentWeight),
-      target_weight: userData.targetWeight ? parseFloat(userData.targetWeight) : null,
-      activity_level: userData.activityLevel,
-      goal: userData.weightGoal,
-      fitness_level: userData.fitnessLevel.toLowerCase(),
-      height: parseFloat(userData.height)
-    };
-    
-    console.log('Updating user data:', userUpdateData);
-    
-    const userResponse = await fetch(`${API_URL}/users/me`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(userUpdateData)
-    });
-    
-    const userResult = await userResponse.json();
-    console.log('User update result:', userResult);
-    
-    if (!userResult.success) {
-      throw new Error(userResult.message || 'Failed to update user data');
-    }
-    
-    // 2. Update Survey data (workout preferences, limitations, equipment)
-    const surveyUpdateData = {
-      fitnessLevel: userData.fitnessLevel.toLowerCase(),
-      activityLevel: userData.activityLevel,
-      workoutDuration: userData.workoutFrequency,
-      workoutTypes: userData.workoutType,
-      workoutLocation: userData.workoutLocation,
-      workoutTime: userData.preferredTime,
-      weightGoal: userData.weightGoal,
-      performanceGoal: userData.performanceGoal,
-      limitations: userData.limitations.filter(l => l !== 'No limitations'),
-      equipment: userData.equipment.filter(e => e !== 'None').map(e => e.toLowerCase()),
-      height: parseFloat(userData.height),
-      weight: parseFloat(userData.currentWeight),
-      targetWeight: userData.targetWeight ? parseFloat(userData.targetWeight) : null
-    };
-    
-    console.log('Updating survey data:', surveyUpdateData);
-    
-    const surveyResponse = await fetch(`${API_URL}/survey`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(surveyUpdateData)
-    });
-    
-    const surveyResult = await surveyResponse.json();
-    console.log('Survey update result:', surveyResult);
-    
-    if (surveyResult.success) {
+    try {
+      const token = localStorage.getItem('fittrack_token');
+      
+      if (!token) {
+        setSaveMessage({ text: 'Not logged in. Please log in again.', type: 'error' });
+        setTimeout(() => navigate('/login'), 1500);
+        return;
+      }
+      
+      const userUpdateData = {
+        name: userData.name,
+        current_weight: parseFloat(userData.currentWeight),
+        target_weight: userData.targetWeight ? parseFloat(userData.targetWeight) : null,
+        activity_level: userData.activityLevel,
+        goal: userData.primaryGoal,
+        fitness_level: userData.fitnessLevel.toLowerCase(),
+        height: parseFloat(userData.height),
+        age: userData.age ? parseInt(userData.age) : null,
+        gender: userData.gender
+      };
+      
+      console.log('Saving:', userUpdateData);
+      
+      const userResponse = await fetch(`${API_URL}/users/me`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(userUpdateData)
+      });
+      
+      const userResult = await userResponse.json();
+      
+      if (!userResult.success) {
+        throw new Error(userResult.message || 'Failed to update user data');
+      }
+
+      const surveyUpdateData = {
+        workoutTypes: userData.workoutType,
+        workoutLocation: userData.workoutLocation,
+        workoutTime: userData.preferredTime,
+        workoutDuration: userData.workoutFrequency,
+        fitnessLevel: userData.fitnessLevel.toLowerCase(),
+        activityLevel: userData.activityLevel,
+        weightGoal: userData.primaryGoal,
+        height: parseFloat(userData.height),
+        weight: parseFloat(userData.currentWeight),
+        targetWeight: userData.targetWeight ? parseFloat(userData.targetWeight) : null
+      };
+      
+      console.log('Saving survey data:', surveyUpdateData);
+      
+      const surveyResponse = await fetch(`${API_URL}/survey`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(surveyUpdateData)
+      });
+      
+      const surveyResult = await surveyResponse.json();
+      console.log('Survey save result:', surveyResult);
+      
       setSaveMessage({ text: 'Profile updated successfully!', type: 'success' });
       setIsEditing(false);
       
-      // Refresh all data
-      setTimeout(async () => {
-        await fetchUserData();
-        setSaveMessage({ text: '', type: '' });
-      }, 1000);
-    } else {
-      throw new Error(surveyResult.message || 'Failed to update survey data');
+      setTimeout(() => {
+        fetchUserData();
+        setTimeout(() => {
+          setSaveMessage({ text: '', type: '' });
+        }, 2000);
+      }, 500);
+      
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      setSaveMessage({ text: 'Error: ' + error.message, type: 'error' });
+      setTimeout(() => setSaveMessage({ text: '', type: '' }), 3000);
     }
-    
-  } catch (error) {
-    console.error('Error updating profile:', error);
-    setSaveMessage({ text: 'Error: ' + error.message, type: 'error' });
-    setTimeout(() => setSaveMessage({ text: '', type: '' }), 3000);
-  }
-};
+  };
 
   const handleCancel = () => {
     setIsEditing(false);
-    fetchUserData(); // Reload original data
+    fetchUserData();
   };
 
   const handleLogout = () => {
@@ -291,9 +241,9 @@ console.log('userData?.fitnessLevel:', userData?.fitnessLevel);
       .slice(0, 2);
   };
 
-  const age = calculateAge(userData?.birthdate);
-
   const fitnessLevelOptions = ['Beginner', 'Intermediate', 'Advanced', 'Athlete'];
+  const goalOptions = ['lose', 'maintain', 'gain_muscle', 'gain'];
+  const activityLevelOptions = ['sedentary', 'lightly_active', 'moderately_active', 'very_active'];
   const workoutFrequencyOptions = ['1-2 days', '3-4 days', '5-6 days', 'Every day'];
   const workoutTypeOptions = ['Strength Training', 'Cardio', 'HIIT', 'Yoga', 'Crossfit', 'Calisthenics'];
   const workoutLocationOptions = ['Gym', 'Home', 'Outdoor', 'Any'];
@@ -353,12 +303,11 @@ console.log('userData?.fitnessLevel:', userData?.fitnessLevel);
         <div className="profile-title-section">
           <h1 className="profile-name">{userData.name}</h1>
           <p className="profile-username">@{userData.username}</p>
-          {age && <p className="profile-age">{age} years old</p>}
+  
         </div>
 
         {!isEditing && (
           <div className="profile-actions">
-            {/* Show Take Survey button only if survey NOT completed */}
             {!hasCompletedSurvey && (
               <button className="take-survey-btn" onClick={handleTakeSurvey}>
                 Complete Fitness Survey →
@@ -374,7 +323,6 @@ console.log('userData?.fitnessLevel:', userData?.fitnessLevel);
         )}
       </div>
 
-      {/* Save message */}
       {saveMessage.text && (
         <div className={`save-message ${saveMessage.type}`} style={{
           padding: '10px 20px',
@@ -412,7 +360,11 @@ console.log('userData?.fitnessLevel:', userData?.fitnessLevel);
                 </div>
                 <div className="info-item">
                   <span className="info-label">Age</span>
-                  <span className="info-value">{age || 'Not specified'} years</span>
+                  <span className="info-value">{userData.age || 'Not specified'} years</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Gender</span>
+                  <span className="info-value">{userData.gender || 'Not specified'}</span>
                 </div>
               </div>
             </div>
@@ -426,7 +378,7 @@ console.log('userData?.fitnessLevel:', userData?.fitnessLevel);
                 </div>
                 <div className="info-item">
                   <span className="info-label">Weight</span>
-                  <span className="info-value">{userData.weight} {userData.weightUnit}</span>
+                  <span className="info-value">{userData.currentWeight} {userData.weightUnit}</span>
                 </div>
                 <div className="info-item">
                   <span className="info-label">Target Weight</span>
@@ -447,6 +399,10 @@ console.log('userData?.fitnessLevel:', userData?.fitnessLevel);
                   <span className="info-value">{userData.primaryGoal || 'Not specified'}</span>
                 </div>
                 <div className="info-item">
+                  <span className="info-label">Activity Level</span>
+                  <span className="info-value">{userData.activityLevel?.replace('_', ' ') || 'Not specified'}</span>
+                </div>
+                <div className="info-item">
                   <span className="info-label">Workout Duration</span>
                   <span className="info-value">{userData.workoutFrequency || 'Not specified'}</span>
                 </div>
@@ -464,30 +420,6 @@ console.log('userData?.fitnessLevel:', userData?.fitnessLevel);
                 </div>
               </div>
             </div>
-
-            {userData.limitations && userData.limitations.length > 0 && !userData.limitations.includes('No limitations') && (
-              <div className="info-section">
-                <h2>Physical Limitations</h2>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="info-label">Limitations</span>
-                    <span className="info-value">{userData.limitations.join(', ')}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {userData.equipment && userData.equipment.length > 0 && !userData.equipment.includes('None') && (
-              <div className="info-section">
-                <h2>Available Equipment</h2>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="info-label">Equipment</span>
-                    <span className="info-value">{userData.equipment.join(', ')}</span>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         ) : (
           <div className="edit-mode">
@@ -529,6 +461,29 @@ console.log('userData?.fitnessLevel:', userData?.fitnessLevel);
                     value={userData.phone || ''}
                     onChange={handleInputChange}
                   />
+                </div>
+                <div className="edit-field">
+                  <label>Age</label>
+                  <input
+                    type="number"
+                    name="age"
+                    value={userData.age || ''}
+                    onChange={handleInputChange}
+                    placeholder="Age in years"
+                  />
+                </div>
+                <div className="edit-field">
+                  <label>Gender</label>
+                  <select
+                    name="gender"
+                    value={userData.gender}
+                    onChange={handleInputChange}
+                  >
+                    <option value="">Select gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -584,13 +539,27 @@ console.log('userData?.fitnessLevel:', userData?.fitnessLevel);
                 </div>
                 <div className="edit-field">
                   <label>Primary Goal</label>
-                  <input
-                    type="text"
+                  <select
                     name="primaryGoal"
                     value={userData.primaryGoal}
                     onChange={handleInputChange}
-                    placeholder="e.g., Weight Loss, Build Muscle"
-                  />
+                  >
+                    {goalOptions.map(option => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="edit-field">
+                  <label>Activity Level</label>
+                  <select
+                    name="activityLevel"
+                    value={userData.activityLevel}
+                    onChange={handleInputChange}
+                  >
+                    {activityLevelOptions.map(option => (
+                      <option key={option} value={option}>{option.replace('_', ' ')}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="edit-field">
                   <label>Workout Duration</label>
@@ -655,7 +624,7 @@ console.log('userData?.fitnessLevel:', userData?.fitnessLevel);
 
       <div className="profile-footer">
         <p>
-          {hasCompletedSurvey ? '✓ Profile data from fitness survey' : '⚠️ Complete the fitness survey to get personalized recommendations'}
+          {hasCompletedSurvey ? '✓ Profile data from fitness survey' : 'Complete the fitness survey to get personalized recommendations'}
         </p>
       </div>
     </div>

@@ -3,7 +3,6 @@ const pool = require('../db/pool');
 const requireAuth = require('../middleware/auth');
 const router = express.Router();
 
-// GET /api/users/me
 router.get('/me', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -39,7 +38,6 @@ router.get('/me', requireAuth, async (req, res) => {
   }
 });
 
-// PUT /api/users/me - UPDATE PROFILE
 router.put('/me', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -54,8 +52,6 @@ router.put('/me', requireAuth, async (req, res) => {
       age,
       gender
     } = req.body;
-    
-    console.log('Updating user:', userId, req.body);
     
     const updates = [];
     const values = [];
@@ -107,13 +103,30 @@ router.put('/me', requireAuth, async (req, res) => {
     values.push(userId);
     
     const query = `UPDATE users SET ${updates.join(', ')} WHERE id = ?`;
-    console.log('Update query:', query);
     
     await pool.execute(query, values);
     
+    const [[updatedUser]] = await pool.execute(
+      'SELECT id, name, email, gender, age, current_weight, target_weight, height, activity_level, goal, fitness_level FROM users WHERE id = ?',
+      [userId]
+    );
+    
     res.json({ 
       success: true, 
-      message: 'Profile updated successfully' 
+      message: 'Profile updated successfully',
+      user: {
+        id: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        gender: updatedUser.gender,
+        age: updatedUser.age,
+        currentWeight: updatedUser.current_weight,
+        targetWeight: updatedUser.target_weight,
+        height: updatedUser.height,
+        activityLevel: updatedUser.activity_level,
+        goal: updatedUser.goal,
+        fitnessLevel: updatedUser.fitness_level
+      }
     });
     
   } catch (error) {
