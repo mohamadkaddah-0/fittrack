@@ -32,14 +32,14 @@ router.post('/register', async (req, res) => {
                 name,
                 email,
                 hashedPassword,
-                gender || 'male',
+                gender || null,
                 age ? parseInt(age) : null,
                 current_weight ? parseFloat(current_weight) : null,
                 target_weight ? parseFloat(target_weight) : null,
                 height ? parseFloat(height) : null,
-                activity_level || 'moderately_active',
-                goal || 'maintain',
-                fitness_level || 'beginner',
+                activity_level || null,
+                goal || null,
+                fitness_level || null,
                 duration_months ? parseInt(duration_months) : null,
                 is_ongoing !== undefined ? (is_ongoing ? 1 : 0) : 1
             ]
