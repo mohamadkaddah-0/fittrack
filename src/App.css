@@ -541,7 +541,7 @@ nav#fittrack-nav {
 
 .field-label {
   display: block;
-  font-size: 8px;
+  font-size: 14px !important;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--dim);
@@ -554,7 +554,7 @@ nav#fittrack-nav {
   color: var(--text);
   border: 1px solid var(--line);
   font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
+  font-size: 14px;
   padding: 13px 16px;
   outline: none;
   transition: border-color 0.2s;
@@ -587,6 +587,7 @@ nav#fittrack-nav {
 
 .checkbox-item {
   display: flex;
+  font-size: 12px;
   align-items: center;
   gap: 8px;
   cursor: pointer;
@@ -597,13 +598,14 @@ nav#fittrack-nav {
   height: 12px;
   background: transparent;
   border: 1px solid var(--line);
-  accent-color: var(--cyan);
+  accent-color: var(--lime);
 }
 
 .forgot-link {
   color: var(--dim);
+  font-size: 12px;
   text-decoration: none;
-  border-bottom: 1px solid var(--line2);
+  border-bottom: 3px solid var(--line2);
   padding-bottom: 2px;
   transition: color 0.2s, border-color 0.2s;
 }
@@ -718,7 +720,7 @@ nav#fittrack-nav {
 
 /* Auth Foot */
 .auth-foot {
-  font-size: 9px;
+  font-size: 12px;
   color: var(--dim);
   letter-spacing: 0.1em;
   margin-top: 24px;
@@ -854,7 +856,7 @@ footer {
 
 /* Larger field labels */
 .field-label {
-  font-size: 10px !important; /* Increased from 8px */
+  font-size: 10px; /* Increased from 8px */
   letter-spacing: 0.22em;
 }
 

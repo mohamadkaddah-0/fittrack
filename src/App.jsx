@@ -36,6 +36,8 @@ import ResetPassword  from "./pages/ResetPassword";
 // ── Pages that should NOT show the navbar ─────────────────────
 const NO_NAVBAR_ROUTES = [
   "/",
+  "/terms",
+  "/privacy",
   "/welcome",
   "/login",
   "/register",
@@ -241,61 +243,32 @@ export default function App() {
   e.preventDefault();
   setMessage({ text: "", type: "info" });
   setIsLoading(true);
-  
-  await new Promise((r) => setTimeout(r, 1000));
 
   try {
-    // Check mock users first
-    let foundUser = mockUsers.find((u) => u.email === email && u.password === password);
-    let userId = null;
+    const response = await fetch('http://localhost:3000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
 
-    // If not found, check registered users from localStorage
-    if (!foundUser) {
-      const registeredUsers = JSON.parse(localStorage.getItem("fittrack_users") || "[]");
-      foundUser = registeredUsers.find((u) => u.email === email && u.password === password);
-      if (foundUser) {
-        userId = foundUser.id;
-      }
-    } else {
-      // For mock users, create an ID
-      userId = Date.now();
-    }
+    const data = await response.json();
 
-    if (foundUser) {
-      // Create user object with ID
-      const userObject = {
-        id: userId || foundUser.id || Date.now(),
-        name: foundUser.name,
-        email: foundUser.email,
-        username: foundUser.username || foundUser.name.toLowerCase().replace(/\s/g, '')
-      };
+    if (data.success) {
+      // Store token and user
+      localStorage.setItem('fittrack_token', data.token);
+      localStorage.setItem('fittrack_user', JSON.stringify(data.user));
       
-      // Save to state
-      setCurrentUser(userObject);
+      setMessage({ text: `Welcome back, ${data.user.name}!`, type: "success" });
       
-      // IMPORTANT: Save to session storage with ID
-      sessionStorage.setItem('currentUser', JSON.stringify(userObject));
-      
-      setMessage({ 
-        text: `Welcome back, ${foundUser.name}! Redirecting to dashboard...`, 
-        type: "success" 
-      });
-      
-      // Clear form
-      setEmail("");
-      setPassword("");
-      setRememberMe(false);
-      
-      // Redirect after delay
-      setTimeout(() => { 
-        window.location.href = "/dashboard"; 
+      setTimeout(() => {
+        window.location.href = "/dashboard";
       }, 1000);
     } else {
-      setMessage({ text: "Invalid email or password", type: "error" });
+      setMessage({ text: data.message, type: "error" });
     }
   } catch (error) {
     console.error('Login error:', error);
-    setMessage({ text: "An error occurred during login. Please try again.", type: "error" });
+    setMessage({ text: "Connection error. Please try again.", type: "error" });
   } finally {
     setIsLoading(false);
   }
