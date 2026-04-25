@@ -38,7 +38,7 @@ const Surveys = ({ setCurrentUser }) => {
   const [goalAnalysis, setGoalAnalysis] = useState(null);
   const [userId, setUserId] = useState(null);
 
-  const API_URL = 'http://localhost:3000/api';
+  const API_URL = 'https://fittrack-t4iu.onrender.com/api/auth/register';
 
   // Helper to get auth headers
   const getAuthHeaders = () => {
