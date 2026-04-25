@@ -2,6 +2,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
+const THEME_STORAGE_KEY = "fittrack-theme";
+
 const NAV_LINKS = [
   { label: "Home",             to: "/dashboard" },
   { label: "User Progress",    to: "/progress"  },
@@ -23,6 +25,10 @@ export default function Navbar() {
   const [menuOpen,    setMenuOpen]    = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [user,        setUser]        = useState(null);
+  const [theme,       setTheme]       = useState(() => {
+    if (typeof window === "undefined") return "dark";
+    return sessionStorage.getItem(THEME_STORAGE_KEY) || "dark";
+  });
 
   const accountRef = useRef(null);
 
@@ -39,6 +45,10 @@ export default function Navbar() {
   };
 
   useEffect(() => { checkAuth(); }, [location.pathname]);
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    sessionStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
   useEffect(() => {
     window.addEventListener("storage", checkAuth);
     window.addEventListener("auth-change", checkAuth);
@@ -71,6 +81,9 @@ export default function Navbar() {
     ? (user.name || user.username || user.email || "User")
     : "Guest";
 
+  const isLightTheme = theme === "light";
+  const toggleTheme = () => setTheme((current) => current === "dark" ? "light" : "dark");
+
   return (
     <>
       {/* ── Ticker ── */}
@@ -89,8 +102,8 @@ export default function Navbar() {
         position: "sticky",
         top: 0,
         zIndex: 50,
-        borderBottom: "1px solid #1E1E1E",
-        background: "rgba(8,8,8,0.92)",
+        borderBottom: "1px solid var(--line)",
+        background: "color-mix(in srgb, var(--bg) 92%, transparent)",
         backdropFilter: "blur(20px)",
         width: "100%",
         display: "block",
@@ -123,9 +136,9 @@ export default function Navbar() {
                 <li key={to}>
                   <button
                     onClick={() => navigate(to)}
-                    style={{ fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", background: "none", border: "none", cursor: "pointer", color: active ? "#ECECEC" : "#555", position: "relative", padding: 0 }}
-                    onMouseEnter={e => { if (!active) e.currentTarget.style.color = "#ECECEC"; }}
-                    onMouseLeave={e => { if (!active) e.currentTarget.style.color = "#555"; }}
+                    style={{ fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", background: "none", border: "none", cursor: "pointer", color: active ? "var(--text)" : "var(--dim)", position: "relative", padding: 0 }}
+                    onMouseEnter={e => { if (!active) e.currentTarget.style.color = "var(--text)"; }}
+                    onMouseLeave={e => { if (!active) e.currentTarget.style.color = "var(--dim)"; }}
                   >
                     {label}
                   </button>
@@ -138,10 +151,31 @@ export default function Navbar() {
           <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 12 }}>
 
             {/* Live dot — desktop only */}
-            <div className="hidden md:flex" style={{ alignItems: "center", gap: 8, fontSize: 9, letterSpacing: "0.15em", textTransform: "uppercase", color: "#555" }}>
+            <div className="hidden md:flex" style={{ alignItems: "center", gap: 8, fontSize: 9, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--dim)" }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#C6F135", display: "inline-block", animation: "pulse 2s infinite" }} />
               Live
             </div>
+
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={`Switch to ${isLightTheme ? "dark" : "light"} mode`}
+              title={`Switch to ${isLightTheme ? "dark" : "light"} mode`}
+              style={{
+                width: 34,
+                height: 34,
+                display: "grid",
+                placeItems: "center",
+                border: "1px solid var(--line2)",
+                background: "var(--bg2)",
+                color: "var(--text)",
+                cursor: "pointer",
+                fontSize: 15,
+                lineHeight: 1,
+              }}
+            >
+              {isLightTheme ? "☾" : "☀"}
+            </button>
 
             {/* Account dropdown */}
             <div style={{ position: "relative" }} ref={accountRef}>
@@ -155,28 +189,28 @@ export default function Navbar() {
               </button>
 
               {accountOpen && (
-                <div style={{ position: "absolute", right: 0, top: "calc(100% + 4px)", width: 192, border: "1px solid #2A2A2A", background: "#0D0D0D", zIndex: 999 }}>
-                  <div style={{ padding: "12px 16px", borderBottom: "1px solid #1E1E1E" }}>
-                    <div style={{ fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: "#555" }}>Signed in as</div>
-                    <div style={{ fontSize: 10, color: "#ECECEC", marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName()}</div>
+                <div style={{ position: "absolute", right: 0, top: "calc(100% + 4px)", width: 192, border: "1px solid var(--line2)", background: "var(--bg2)", zIndex: 999 }}>
+                  <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--line)" }}>
+                    <div style={{ fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--dim)" }}>Signed in as</div>
+                    <div style={{ fontSize: 10, color: "var(--text)", marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName()}</div>
                   </div>
                   {ACCOUNT_MENU.map(({ label, to }) => (
                     <button key={to} onClick={() => { setAccountOpen(false); navigate(to); }}
-                      style={{ width: "100%", textAlign: "left", padding: "12px 16px", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: "#555", background: "none", border: "none", borderBottom: "1px solid #1E1E1E", cursor: "pointer" }}
-                      onMouseEnter={e => { e.currentTarget.style.color = "#ECECEC"; e.currentTarget.style.background = "#111"; }}
-                      onMouseLeave={e => { e.currentTarget.style.color = "#555"; e.currentTarget.style.background = "none"; }}
+                      style={{ width: "100%", textAlign: "left", padding: "12px 16px", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--dim)", background: "none", border: "none", borderBottom: "1px solid var(--line)", cursor: "pointer" }}
+                      onMouseEnter={e => { e.currentTarget.style.color = "var(--text)"; e.currentTarget.style.background = "var(--bg3)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = "var(--dim)"; e.currentTarget.style.background = "none"; }}
                     >{label}</button>
                   ))}
                   {user ? (
                     <button onClick={handleLogout}
                       style={{ width: "100%", textAlign: "left", padding: "12px 16px", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: "#FF2A5E", background: "none", border: "none", cursor: "pointer" }}
-                      onMouseEnter={e => e.currentTarget.style.background = "#111"}
+                      onMouseEnter={e => e.currentTarget.style.background = "var(--bg3)"}
                       onMouseLeave={e => e.currentTarget.style.background = "none"}
                     >Logout</button>
                   ) : (
                     <button onClick={() => { setAccountOpen(false); navigate("/login"); }}
                       style={{ width: "100%", textAlign: "left", padding: "12px 16px", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: "#C6F135", background: "none", border: "none", cursor: "pointer" }}
-                      onMouseEnter={e => e.currentTarget.style.background = "#111"}
+                      onMouseEnter={e => e.currentTarget.style.background = "var(--bg3)"}
                       onMouseLeave={e => e.currentTarget.style.background = "none"}
                     >Login</button>
                   )}
@@ -191,9 +225,9 @@ export default function Navbar() {
               style={{ flexShrink: 0, display: "flex", flexDirection: "column", gap: 6, padding: 4, background: "none", border: "none", cursor: "pointer" }}
               className="md:hidden"
             >
-              <span style={{ display: "block", width: 24, height: 2, background: "#ECECEC", transition: "all 0.3s", transform: menuOpen ? "rotate(45deg) translateY(8px)" : "none" }} />
-              <span style={{ display: "block", width: 24, height: 2, background: "#ECECEC", transition: "all 0.3s", opacity: menuOpen ? 0 : 1 }} />
-              <span style={{ display: "block", width: 24, height: 2, background: "#ECECEC", transition: "all 0.3s", transform: menuOpen ? "rotate(-45deg) translateY(-8px)" : "none" }} />
+              <span style={{ display: "block", width: 24, height: 2, background: "var(--text)", transition: "all 0.3s", transform: menuOpen ? "rotate(45deg) translateY(8px)" : "none" }} />
+              <span style={{ display: "block", width: 24, height: 2, background: "var(--text)", transition: "all 0.3s", opacity: menuOpen ? 0 : 1 }} />
+              <span style={{ display: "block", width: 24, height: 2, background: "var(--text)", transition: "all 0.3s", transform: menuOpen ? "rotate(-45deg) translateY(-8px)" : "none" }} />
             </button>
           </div>
         </div>
@@ -202,7 +236,7 @@ export default function Navbar() {
         {menuOpen && (
           <div
             className="md:hidden"
-            style={{ borderTop: "1px solid #1E1E1E", background: "#0D0D0D", width: "100%" }}
+            style={{ borderTop: "1px solid var(--line)", background: "var(--bg2)", width: "100%" }}
           >
             {NAV_LINKS.map(({ label, to }) => {
               const active = location.pathname === to;
@@ -210,15 +244,15 @@ export default function Navbar() {
                 <button
                   key={to}
                   onClick={() => { navigate(to); setMenuOpen(false); }}
-                  style={{ width: "100%", textAlign: "left", padding: "16px 24px", fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", borderBottom: "1px solid #1E1E1E", background: "none", border: "none", borderBottom: "1px solid #1E1E1E", cursor: "pointer", color: active ? "#C6F135" : "#555", display: "block", boxSizing: "border-box" }}
+                  style={{ width: "100%", textAlign: "left", padding: "16px 24px", fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", background: "none", border: "none", borderBottom: "1px solid var(--line)", cursor: "pointer", color: active ? "#C6F135" : "var(--dim)", display: "block", boxSizing: "border-box" }}
                 >
                   {label}
                 </button>
               );
             })}
-            <div style={{ borderTop: "1px solid #2A2A2A" }}>
+            <div style={{ borderTop: "1px solid var(--line2)" }}>
               <button onClick={() => { navigate("/profile"); setMenuOpen(false); }}
-                style={{ width: "100%", textAlign: "left", padding: "16px 24px", fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "#555", background: "none", border: "none", borderBottom: "1px solid #1E1E1E", cursor: "pointer", display: "block", boxSizing: "border-box" }}
+                style={{ width: "100%", textAlign: "left", padding: "16px 24px", fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--dim)", background: "none", border: "none", borderBottom: "1px solid var(--line)", cursor: "pointer", display: "block", boxSizing: "border-box" }}
               >My Profile</button>
               {user ? (
                 <button onClick={() => { handleLogout(); setMenuOpen(false); }}
