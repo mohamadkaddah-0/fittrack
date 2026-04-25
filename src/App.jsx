@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from "react-router-dom";
 
 // ── Shared components ─────────────────────────────────────────
@@ -20,6 +20,7 @@ import MealLog          from "./pages/MealLog";
 import IngredientDetail from "./pages/IngredientDetail";
 import UserProgress     from "./pages/UserProgress";
 import { getUserProfile, INITIAL_CALENDAR, getTodayKey } from "./data/mockData";
+import api from "./services/api";
 
 // ── Mohammad Moghnieh's pages ─────────────────────────────────
 import Register       from "./pages/Register/Register";
@@ -170,6 +171,7 @@ const Login = ({
 // MAIN APP
 // ─────────────────────────────────────────────────────────────
 export default function App() {
+  const useBackendCalendar = api.hasActivityIdentity();
 
   // ── Diet teammate's shared state ─────────────────────────────
   const [currentUser,  setCurrentUser]  = useState(getUserProfile());
@@ -179,37 +181,117 @@ export default function App() {
 
   const [isLoading, setIsLoading] = useState(false);
 
-  const addMealToCalendar = (dateKey, entry) => {
+  useEffect(() => {
+    if (!useBackendCalendar) {
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    async function loadCalendar() {
+      try {
+        const response = await api.getCalendarData();
+        if (!cancelled) {
+          setCalendarData(response.calendarData || {});
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setCalendarData(INITIAL_CALENDAR);
+        }
+      }
+    }
+
+    loadCalendar();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [useBackendCalendar, currentUser?.id]);
+
+  const addMealToCalendar = async (dateKey, entry) => {
+    if (useBackendCalendar) {
+      try {
+        const response = await api.addCalendarEntry(dateKey, { ...entry, type: "meal" });
+        setCalendarData((prev) => {
+          const existing = prev[dateKey] || [];
+          return { ...prev, [dateKey]: [...existing, response.entry] };
+        });
+        return response.entry;
+      } catch (error) {
+        return null;
+      }
+    }
+
     const existing = calendarData[dateKey] || [];
     setCalendarData({ ...calendarData, [dateKey]: [...existing, entry] });
+    return entry;
   };
 
-  const addWorkoutToCalendar = (dateKey, entry) => {
+  const addWorkoutToCalendar = async (dateKey, entry) => {
+    if (useBackendCalendar) {
+      try {
+        const response = await api.addCalendarEntry(dateKey, { ...entry, type: "workout" });
+        setCalendarData((prev) => {
+          const existing = prev[dateKey] || [];
+          return { ...prev, [dateKey]: [...existing, response.entry] };
+        });
+        return response.entry;
+      } catch (error) {
+        return null;
+      }
+    }
+
     const existing = calendarData[dateKey] || [];
     setCalendarData({ ...calendarData, [dateKey]: [...existing, { ...entry, type: "workout" }] });
+    return entry;
   };
 
-  const deleteMealFromDay = (dateKey, index) => {
-    const existing    = calendarData[dateKey] || [];
+  const deleteMealFromDay = async (dateKey, index) => {
+    const existing = calendarData[dateKey] || [];
+    const targetEntry = existing[index];
+
+    if (useBackendCalendar && targetEntry?.id) {
+      try {
+        await api.deleteCalendarEntry(targetEntry.id, dateKey);
+      } catch (error) {
+        return;
+      }
+    }
+
     const updated     = existing.filter((_, i) => i !== index);
     const newCalendar = { ...calendarData };
     if (updated.length === 0) { delete newCalendar[dateKey]; } else { newCalendar[dateKey] = updated; }
     setCalendarData(newCalendar);
   };
 
-  const deleteWorkoutFromDay = (dateKey, index) => {
-  const existing    = calendarData[dateKey] || [];
-  const updated     = existing.filter((_, i) => i !== index);
-  const newCalendar = { ...calendarData };
-  if (updated.length === 0) { delete newCalendar[dateKey]; } else { newCalendar[dateKey] = updated; }
-  setCalendarData(newCalendar);
+  const deleteWorkoutFromDay = async (dateKey, index) => {
+    const existing = calendarData[dateKey] || [];
+    const targetEntry = existing[index];
+
+    if (useBackendCalendar && targetEntry?.id) {
+      try {
+        await api.deleteCalendarEntry(targetEntry.id, dateKey);
+      } catch (error) {
+        return;
+      }
+    }
+
+    const updated     = existing.filter((_, i) => i !== index);
+    const newCalendar = { ...calendarData };
+    if (updated.length === 0) { delete newCalendar[dateKey]; } else { newCalendar[dateKey] = updated; }
+    setCalendarData(newCalendar);
   };
 
-  const togglePlanMeal = (meal) => {
+  const togglePlanMeal = async (meal) => {
     const today        = getTodayKey();
     const todayChecked = new Set(loggedMeals[today] || []);
     if (todayChecked.has(meal.id)) {
       todayChecked.delete(meal.id);
+      const todayEntries = calendarData[today] || [];
+      const targetIndex = todayEntries.findIndex((e) => e.type === "meal" && e.name === meal.name);
+      if (targetIndex >= 0) {
+        await deleteMealFromDay(today, targetIndex);
+      }
       const todayCalendar = (calendarData[today] || []).filter((e) => e.name !== meal.name);
       const newCalendar   = { ...calendarData };
       if (todayCalendar.length === 0) { delete newCalendar[today]; } else { newCalendar[today] = todayCalendar; }
@@ -218,7 +300,7 @@ export default function App() {
       todayChecked.add(meal.id);
       const todayCalendar = calendarData[today] || [];
       if (!todayCalendar.find((e) => e.name === meal.name)) {
-        setCalendarData({ ...calendarData, [today]: [...todayCalendar, { name: meal.name, kcal: meal.kcal, cat: meal.cat, protein: meal.protein, carbs: meal.carbs, fat: meal.fat, type: "meal" }] });
+        await addMealToCalendar(today, { name: meal.name, kcal: meal.kcal, cat: meal.cat, protein: meal.protein, carbs: meal.carbs, fat: meal.fat, type: "meal" });
       }
     }
     setLoggedMeals({ ...loggedMeals, [today]: todayChecked });
