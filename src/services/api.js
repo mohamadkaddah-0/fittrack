@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:3000/api";
+const API_BASE = "https://fittrack-t4iu.onrender.com";
 
 const getToken = () => localStorage.getItem("fittrack_token");
 
@@ -133,6 +133,9 @@ const api = {
       method: "DELETE",
     });
   },
+  // Saved meals
+  getSavedMeals: () => request("/activity/saved-meals"),
+  addSavedMeal: (meal) => jsonRequest("/activity/saved-meals", "POST", meal),
+  deleteSavedMeal: (mealId) => request(`/activity/saved-meals/${encodeURIComponent(mealId)}`, { method: "DELETE" }),
 };
-
 export default api;

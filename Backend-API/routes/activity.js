@@ -288,4 +288,49 @@ router.delete('/workout-log/:entryId', (req, res) => {
   });
 });
 
+// ── Saved meals ───────────────────────────────────────────────
+
+router.get('/saved-meals', (req, res) => {
+  const { userState } = getUserState(req.fittrackUserKey);
+  const meals = userState.savedMeals || [];
+  res.json({ success: true, meals });
+});
+
+router.post('/saved-meals', (req, res) => {
+  const { userState } = getUserState(req.fittrackUserKey);
+  const meal = req.body;
+
+  if (!meal || !meal.name) {
+    return res.status(400).json({ success: false, message: 'Meal name is required' });
+  }
+
+  const newMeal = {
+    id: `meal-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+    name:     meal.name,
+    kcal:     clampNumber(meal.kcal, 0),
+    protein:  clampNumber(meal.protein, 0),
+    carbs:    clampNumber(meal.carbs, 0),
+    fat:      clampNumber(meal.fat, 0),
+    cat:      meal.cat || 'lunch',
+    createdAt: new Date().toISOString(),
+  };
+
+  userState.savedMeals = [...(userState.savedMeals || []), newMeal];
+  saveUserState(req.fittrackUserKey, userState);
+
+  res.status(201).json({ success: true, meal: newMeal });
+});
+
+router.delete('/saved-meals/:mealId', (req, res) => {
+  const mealId = String(req.params.mealId);
+  const { userState } = getUserState(req.fittrackUserKey);
+
+  userState.savedMeals = (userState.savedMeals || []).filter(
+    (m) => String(m.id) !== mealId
+  );
+  saveUserState(req.fittrackUserKey, userState);
+
+  res.json({ success: true, deletedMealId: mealId });
+});
+
 module.exports = router;

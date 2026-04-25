@@ -182,11 +182,15 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (!useBackendCalendar) {
-      return undefined;
-    }
-
+    if (!useBackendCalendar) return undefined;
     let cancelled = false;
+
+    async function loadSavedMeals() {
+      try {
+        const response = await api.getSavedMeals();
+        if (!cancelled && response?.meals) setSavedMeals(response.meals);
+      } catch (_) {}
+    }
 
     async function loadCalendar() {
       try {
@@ -202,6 +206,7 @@ export default function App() {
     }
 
     loadCalendar();
+    loadSavedMeals();
 
     return () => {
       cancelled = true;
@@ -306,9 +311,25 @@ export default function App() {
     setLoggedMeals({ ...loggedMeals, [today]: todayChecked });
   };
 
-  const saveCustomMeal  = (meal)   => setSavedMeals([...savedMeals, { ...meal, id: `custom-${Date.now()}` }]);
-  const deleteSavedMeal = (mealId) => setSavedMeals(savedMeals.filter((m) => m.id !== mealId));
+  const saveCustomMeal = async (meal) => {
+    if (useBackendCalendar) {
+      try {
+        const response = await api.addSavedMeal(meal);
+        setSavedMeals(prev => [...prev, response.meal || { ...meal, id: `custom-${Date.now()}` }]);
+        return;
+      } catch (_) {}
+    }
+    setSavedMeals(prev => [...prev, { ...meal, id: `custom-${Date.now()}` }]);
+  };
 
+  const deleteSavedMeal = async (mealId) => {
+    if (useBackendCalendar) {
+      try {
+        await api.deleteSavedMeal(mealId);
+      } catch (_) {}
+    }
+    setSavedMeals(prev => prev.filter((m) => m.id !== mealId));
+  };
   // ── Mohammad Moghnieh's shared state ─────────────────────────
   const [email,         setEmail]        = useState("");
   const [password,      setPassword]     = useState("");
@@ -336,15 +357,28 @@ export default function App() {
     const data = await response.json();
 
     if (data.success) {
-      // Store token and user
       localStorage.setItem('fittrack_token', data.token);
       localStorage.setItem('fittrack_user', JSON.stringify(data.user));
-      
+
+      // Load full profile from DB and set as currentUser
+      try {
+        const profileRes = await api.getCurrentUser();
+        if (profileRes?.user) {
+          setCurrentUser({
+            ...profileRes.user,
+            weight:       profileRes.user.currentWeight,
+            targetWeight: profileRes.user.targetWeight,
+            goal:         profileRes.user.goal,
+            level:        profileRes.user.fitnessLevel,
+            activityLevel: profileRes.user.activityLevel,
+          });
+        }
+      } catch (_) {
+        setCurrentUser({ name: data.user.name, email: data.user.email });
+      }
+
       setMessage({ text: `Welcome back, ${data.user.name}!`, type: "success" });
-      
-      setTimeout(() => {
-        window.location.href = "/dashboard";
-      }, 1000);
+      setTimeout(() => { window.location.href = "/dashboard"; }, 1000);
     } else {
       setMessage({ text: data.message, type: "error" });
     }
