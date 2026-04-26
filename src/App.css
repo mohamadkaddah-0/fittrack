@@ -820,7 +820,9 @@ footer {
 }
 
 /* Responsive Design */
-@media (max-width: 700px) {
+  /* Responsive Design */
+@media (max-width: 768px) {
+  /* Navigation */
   nav.legacy-nav {
     grid-template-columns: 1fr auto;
   }
@@ -858,6 +860,222 @@ footer {
     flex-direction: column;
     gap: 12px;
     align-items: flex-start;
+  }
+
+  /* ===== SURVEY MOBILE FIXES ===== */
+  .survey-section {
+    padding: 16px !important;
+  }
+  
+  .survey-card {
+    margin: 0;
+    border-radius: 12px;
+  }
+  
+  .survey-ghost {
+    display: none;
+  }
+  
+  .survey-header {
+    padding: 20px 16px !important;
+  }
+  
+  .survey-title {
+    font-size: 28px !important;
+    line-height: 1.1;
+  }
+  
+  .survey-title em {
+    font-size: 28px !important;
+  }
+  
+  .survey-body {
+    padding: 20px 16px !important;
+  }
+  
+  .step-title {
+    font-size: 20px !important;
+    margin-bottom: 20px !important;
+  }
+  
+  /* Form rows - stack vertically on mobile */
+  .form-row {
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+  
+  .form-group {
+    width: 100%;
+    margin-bottom: 18px;
+  }
+  
+  /* Input fields full width */
+  .form-group input,
+  .form-group select {
+    width: 100% !important;
+    padding: 12px 14px !important;
+    font-size: 14px !important;
+    box-sizing: border-box;
+  }
+  
+  /* Input with unit (height/weight with dropdown) */
+  .input-with-unit {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+  
+  .input-with-unit input {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .input-with-unit .unit-select {
+    width: auto;
+    min-width: 70px;
+    flex-shrink: 0;
+  }
+  
+  /* Button grids - single column */
+  .button-grid {
+    display: grid;
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+  
+  .select-button {
+    padding: 12px 8px !important;
+    font-size: 12px !important;
+    width: 100%;
+    text-align: center;
+  }
+  
+  /* Activity level grid */
+  .activity-level-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+  
+  .activity-button {
+    padding: 12px 16px !important;
+    width: 100%;
+    text-align: left;
+  }
+  
+  /* Navigation buttons - stack vertically */
+  .survey-navigation {
+    flex-direction: column !important;
+    gap: 12px !important;
+    margin-top: 28px !important;
+  }
+  
+  .nav-btn {
+    width: 100% !important;
+    padding: 14px 20px !important;
+    text-align: center;
+  }
+  
+  /* Goal analysis box */
+  .analysis-box {
+    padding: 14px !important;
+  }
+  
+  .goal-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  
+  .goal-stats p {
+    font-size: 11px;
+  }
+  
+  /* Age display */
+  .age-display {
+    font-size: 10px;
+    margin-top: 4px;
+    display: inline-block;
+  }
+  
+  /* Error messages */
+  .error-message {
+    font-size: 10px;
+    margin-top: 4px;
+    display: block;
+  }
+  
+  /* Touch targets */
+  button, 
+  a,
+  [role="button"],
+  input[type="submit"],
+  input[type="button"],
+  .select-button,
+  .activity-button,
+  .nav-btn {
+    min-height: 44px;
+  }
+  
+  input, 
+  select, 
+  textarea {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+}
+
+/* Fix for select dropdown on mobile - prevents cutoff */
+@media (max-width: 768px) {
+  select {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 36px !important;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  
+  .survey-card,
+  .survey-body,
+  .form-group {
+    overflow: visible;
+  }
+}
+
+/* Extra small devices (under 480px) */
+@media (max-width: 480px) {
+  .survey-section {
+    padding: 10px !important;
+  }
+  
+  .survey-header {
+    padding: 16px 12px !important;
+  }
+  
+  .survey-title {
+    font-size: 24px !important;
+  }
+  
+  .survey-title em {
+    font-size: 24px !important;
+  }
+  
+  .survey-body {
+    padding: 16px 12px !important;
+  }
+  
+  .step-title {
+    font-size: 18px !important;
+  }
+  
+  .goal-stats {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* iOS specific fix for select dropdown */
+@supports (-webkit-touch-callout: none) {
+  select {
+    font-size: 16px !important;
   }
 }
 
@@ -1417,46 +1635,4 @@ footer {
     opacity: 0.7;
     box-shadow: 0 0 0 6px rgba(198, 241, 53, 0);
   }
-}
-/* Global mobile viewport fix */
-html {
-  width: 100%;
-  overflow-x: hidden;
-}
-
-body {
-  width: 100%;
-  overflow-x: hidden;
-  position: relative;
-}
-
-/* Improve touch targets on mobile */
-@media (max-width: 768px) {
-  button, 
-  a,
-  [role="button"],
-  input[type="submit"],
-  input[type="button"] {
-    min-height: 44px;
-    min-width: 44px;
-  }
-  
-  input, 
-  select, 
-  textarea {
-    font-size: 16px !important; /* Prevents zoom on iOS */
-  }
-}
-
-/* Fix for dropdown menus getting cut off by overflow hidden */
-select {
-  overflow: visible !important;
-}
-
-/* Ensure modal/dropdown content is visible */
-.modal, 
-.dropdown, 
-.popup {
-  position: fixed;
-  z-index: 9999;
 }
