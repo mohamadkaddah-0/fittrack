@@ -40,7 +40,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { INGREDIENTS, calcNutritionTargets, getTodayKey } from "../data/mockData";
+import { calcNutritionTargets, getTodayKey } from "../data/mockData";
 
 //  Constants 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"];
@@ -65,7 +65,8 @@ const inputClass = `w-full bg-[#111] text-[#e8e8e8] border border-[#222] font-mo
 //  Component 
 export default function MealLog({
   currentUser, calendarData, savedMeals,
-  addMealToCalendar, saveCustomMeal, deleteSavedMeal
+  addMealToCalendar, saveCustomMeal, deleteSavedMeal,
+  ingredients = []
 }) {
 
   const today     = getTodayKey();
@@ -84,7 +85,7 @@ export default function MealLog({
   const [notes,    setNotes]    = useState("");
 
   //  Ingredient state 
-  const [ingredients,  setIngredients]  = useState([]);
+ 
   const [searchQuery,  setSearchQuery]  = useState("");
   const [catFilter,    setCatFilter]    = useState("all");
   const [showResults,  setShowResults]  = useState(false);
@@ -100,7 +101,7 @@ export default function MealLog({
   const navigate   = useNavigate();
 
   //  Search results 
-  let searchResults = catFilter === "all" ? INGREDIENTS : INGREDIENTS.filter((i) => i.cat === catFilter);
+  let searchResults = catFilter === "all" ? ingredients : ingredients.filter((i) => i.cat === catFilter);
   if (searchQuery.trim()) {
     searchResults = searchResults.filter((i) =>
       i.name.toLowerCase().includes(searchQuery.toLowerCase())

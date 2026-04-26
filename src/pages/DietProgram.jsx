@@ -22,12 +22,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  INGREDIENTS,
-  MEAL_INGREDIENTS,
   calcNutritionTargets,
   recommendMeals,
   getTodayKey,
 } from "../data/mockData";
+import api from "../services/api";
 
 //  Constants 
 const CAT_COLORS = {
@@ -54,7 +53,8 @@ const muted = "text-[#555]";
 
 //  Component 
 export default function DietProgram({
-  currentUser, calendarData, loggedMeals, togglePlanMeal, deleteMealFromDay
+  currentUser, calendarData, loggedMeals, togglePlanMeal, deleteMealFromDay,
+  mealPool = [], ingredients = []
 }) {
 
   const today     = getTodayKey();
@@ -66,7 +66,7 @@ export default function DietProgram({
 
   //  Targets + recommendations 
   const targets          = calcNutritionTargets(currentUser);
-  const recommendedMeals = recommendMeals(targets, today, currentUser);
+  const recommendedMeals = recommendMeals(targets, today, currentUser, mealPool.length > 0 ? mealPool : null);
 
   //  Today's entries 
   const todayEntries = calendarData[today] || [];
@@ -103,23 +103,30 @@ export default function DietProgram({
     return Math.min(100, Math.round((consumed / target) * 100));
   }
 
-  //  Open meal ingredient modal 
-  function openMealModal(meal) {
-    const ingList  = MEAL_INGREDIENTS[meal.id] || [];
-    const resolved = [];
-    for (const { ingredientId, portionG } of ingList) {
-      const item = INGREDIENTS.find((i) => i.id === ingredientId);
-      if (!item) continue;
-      const ratio = portionG / 100;
-      resolved.push({
-        item, portionG,
-        kcal:    Math.round(item.kcal    * ratio),
-        protein: Math.round(item.protein * ratio * 10) / 10,
-        carbs:   Math.round(item.carbs   * ratio * 10) / 10,
-        fat:     Math.round(item.fat     * ratio * 10) / 10,
-      });
+  //  Open meal ingredient modal — fetches from DB API
+  async function openMealModal(meal) {
+    try {
+      const res     = await api.getMealIngredients(meal.id);
+      const ingList = res?.ingredients || [];
+      const resolved = ingList.map(row => ({
+        item: {
+          id:      row.ingredient_id,
+          name:    row.name,
+          kcal:    row.kcal,
+          protein: row.protein,
+          carbs:   row.carbs,
+          fat:     row.fat,
+        },
+        portionG: row.portion_g,
+        kcal:     Math.round(row.kcal    * row.portion_g / 100),
+        protein:  Math.round(row.protein * row.portion_g / 100 * 10) / 10,
+        carbs:    Math.round(row.carbs   * row.portion_g / 100 * 10) / 10,
+        fat:      Math.round(row.fat     * row.portion_g / 100 * 10) / 10,
+      }));
+      setMealModal({ meal, ingredients: resolved });
+    } catch (_) {
+      setMealModal({ meal, ingredients: [] });
     }
-    setMealModal({ meal, ingredients: resolved });
   }
 
   const firstName = currentUser?.name?.split(" ")[0] || "You";
@@ -256,7 +263,7 @@ export default function DietProgram({
 
               {meals.map((meal, i) => {
                 const isChecked      = checkedToday.has(meal.id);
-                const hasIngredients = !!MEAL_INGREDIENTS[meal.id];
+                const hasIngredients = true; // all meals have ingredients in DB
                 return (
                   <div key={meal.id}
                     className={`grid grid-cols-[20px_1fr_auto_auto] items-center gap-4 px-6 py-3 border-b ${bdr} relative ${isChecked ? "opacity-60" : ""}`}>

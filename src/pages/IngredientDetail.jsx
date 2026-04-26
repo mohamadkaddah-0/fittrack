@@ -15,7 +15,6 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { INGREDIENTS } from "../data/mockData";
 
 //  Food images from Unsplash 
 const INGREDIENT_IMAGES = {
@@ -96,7 +95,7 @@ const bdr   = "border-[#222]";
 const txt   = "text-[#e8e8e8]";
 const muted = "text-[#555]";
 
-export default function IngredientDetail() {
+export default function IngredientDetail({ ingredients = [] }) {
 
   const { id }   = useParams();
   const navigate = useNavigate();
@@ -107,10 +106,18 @@ export default function IngredientDetail() {
   const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
-    const found = INGREDIENTS.find((i) => i.id === parseInt(id));
+    const found = ingredients.find((i) => i.id === parseInt(id));
     if (found) { setItem(found); setPortion(100); }
     else setNotFound(true);
   }, [id]);
+
+  if (ingredients.length === 0 && !notFound) {
+    return (
+      <main className={`${bg} ${muted} min-h-screen flex items-center justify-center`}>
+        <p className="text-xs tracking-widest uppercase">Loading...</p>
+      </main>
+    );
+  }
 
   if (notFound) {
     return (

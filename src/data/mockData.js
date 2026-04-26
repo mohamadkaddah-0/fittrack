@@ -205,10 +205,13 @@ export const MEAL_POOL = [
 //   - Goal: which meal profiles to favour
 //   - 3-day rotation via localStorage
 //   - Within 15% tolerance of all 4 macro targets
-export function recommendMeals(targets, todayKey, user) {
+export function recommendMeals(targets, todayKey, user, poolOverride = null) {
   // ── Determine which meal profile to prioritise based on goal + duration ────
   // Short duration = more aggressive = prioritise specific profile
   // Long duration / ongoing = balanced variety is fine
+
+  // Use DB-fetched pool if provided, otherwise fall back to local MEAL_POOL
+  const ACTIVE_POOL = poolOverride && poolOverride.length > 0 ? poolOverride : MEAL_POOL;
 
   const durationWeeks = targets.durationWeeks;
   const isShortPlan   = durationWeeks !== null && durationWeeks <= 8; // 2 months or less
@@ -225,8 +228,8 @@ export function recommendMeals(targets, todayKey, user) {
   }
 
   //  Filter out recently used meals (3-day rotation)
-  let available = MEAL_POOL.filter((meal) => !usedRecently(meal.id, todayKey));
-  if (available.length < 6) available = [...MEAL_POOL]; // safety fallback
+  let available = ACTIVE_POOL.filter((meal) => !usedRecently(meal.id, todayKey));
+  if (available.length < 6) available = [...ACTIVE_POOL]; // safety fallback
 
   //  Shuffle using date-seeded random (stable all day) 
   const seed = todayKey.split("").reduce((total, char) => total + char.charCodeAt(0), 0);

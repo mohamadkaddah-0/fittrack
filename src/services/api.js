@@ -128,6 +128,12 @@ const api = {
       method: "DELETE",
     });
   },
+  // Ingredients
+getIngredients: () => request("/ingredients"),
+
+// Meal pool
+getMealPool: () => request("/meals/pool"),
+getMealIngredients: (mealId) => request(`/meals/pool/${mealId}`),
 
   getSavedMeals: () => request("/activity/saved-meals"),
   addSavedMeal: (meal) => jsonRequest("/activity/saved-meals", "POST", meal),

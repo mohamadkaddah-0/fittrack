@@ -3,6 +3,12 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 
+const mealsRouter      = require('./routes/meals');
+const ingredientsRouter = require('./routes/ingredients');
+
+app.use('/api/meals',       mealsRouter);
+app.use('/api/ingredients', ingredientsRouter);
+
 app.use(cors());
 app.use(express.json());
 

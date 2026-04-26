@@ -49,6 +49,8 @@ const NO_NAVBAR_ROUTES = [
   "/get-started",
 ];
 
+
+
 const THEME_STORAGE_KEY = "fittrack-theme";
 
 // ── Wrapper that conditionally shows navbar ───────────────────
@@ -184,6 +186,8 @@ export default function App() {
   const [calendarData, setCalendarData] = useState(INITIAL_CALENDAR);
   const [loggedMeals,  setLoggedMeals]  = useState({});
   const [savedMeals,   setSavedMeals]   = useState([]);
+  const [ingredients, setIngredients] = useState([]);
+const [mealPool,    setMealPool]    = useState([]);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -198,6 +202,18 @@ export default function App() {
       } catch (_) {}
     }
 
+    async function loadReferenceData() {
+      try {
+        const [ingRes, mealRes] = await Promise.all([
+          api.getIngredients(),
+          api.getMealPool(),
+        ]);
+        if (!cancelled) {
+          if (ingRes?.ingredients) setIngredients(ingRes.ingredients);
+          if (mealRes?.meals)      setMealPool(mealRes.meals);
+        }
+      } catch (_) {}
+    }
     async function loadCalendar() {
       try {
         const response = await api.getCalendarData();
@@ -213,6 +229,7 @@ export default function App() {
 
     loadCalendar();
     loadSavedMeals();
+    loadReferenceData();
 
     return () => {
       cancelled = true;
@@ -446,11 +463,10 @@ export default function App() {
 
             {/* Sara Ibrahim */}
             <Route path="/progress" element={<UserProgress currentUser={currentUser} calendarData={calendarData}/>} />
-            <Route path="/diet"           element={<DietProgram currentUser={currentUser} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} />} />
-            <Route path="/diet-program"   element={<DietProgram currentUser={currentUser} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} />} />
-            <Route path="/meal-log"       element={<MealLog currentUser={currentUser} calendarData={calendarData} savedMeals={savedMeals} addMealToCalendar={addMealToCalendar} saveCustomMeal={saveCustomMeal} deleteSavedMeal={deleteSavedMeal} />} />
-            <Route path="/ingredient/:id" element={<IngredientDetail />} />
-
+           <Route path="/diet"           element={<DietProgram currentUser={currentUser} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} mealPool={mealPool} ingredients={ingredients} />} />
+<Route path="/diet-program"   element={<DietProgram currentUser={currentUser} calendarData={calendarData} loggedMeals={loggedMeals} togglePlanMeal={togglePlanMeal} deleteMealFromDay={deleteMealFromDay} mealPool={mealPool} ingredients={ingredients} />} />
+<Route path="/meal-log"       element={<MealLog currentUser={currentUser} calendarData={calendarData} savedMeals={savedMeals} addMealToCalendar={addMealToCalendar} saveCustomMeal={saveCustomMeal} deleteSavedMeal={deleteSavedMeal} ingredients={ingredients} />} />
+<Route path="/ingredient/:id" element={<IngredientDetail ingredients={ingredients} />} />
             {/* Jawad */}
             <Route path="/exercises"    element={<ExerciseLibrary calendarData={calendarData} addWorkoutToCalendar={addWorkoutToCalendar} currentUser={currentUser} />} />
             <Route path="/exercise/:id" element={<ExerciseDetailPage />} />
