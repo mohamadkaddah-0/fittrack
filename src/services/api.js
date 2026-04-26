@@ -1,4 +1,4 @@
-const API_BASE = "https://fittrack-t4iu.onrender.com";
+const API_BASE = "https://fittrack-t4iu.onrender.com/api";
 
 const getToken = () => localStorage.getItem("fittrack_token");
 
@@ -69,7 +69,6 @@ const jsonRequest = (path, method, body) =>
 const api = {
   hasActivityIdentity: () => Boolean(getToken() || getSessionUserId()),
 
-  // Auth
   login: (email, password) =>
     jsonRequest("/auth/login", "POST", { email, password }),
 
@@ -82,19 +81,16 @@ const api = {
   resetPassword: (email, code, newPassword) =>
     jsonRequest("/auth/reset-password", "POST", { email, code, newPassword }),
 
-  // User
   getCurrentUser: () => request("/users/me"),
 
   updateUser: (data) =>
     jsonRequest("/users/me", "PUT", data),
 
-  // Survey
   getSurvey: () => request("/survey"),
 
   saveSurvey: (data) =>
     jsonRequest("/survey", "POST", data),
 
-  // Activity / homepage
   getHomepageData: (date) => {
     const query = date ? `?date=${encodeURIComponent(date)}` : "";
     return request(`/activity/homepage${query}`);
@@ -115,7 +111,6 @@ const api = {
   addCalendarEntry: (date, entry) =>
     jsonRequest("/activity/calendar", "POST", { date, entry }),
 
-  // Activity / workout log
   getWorkoutLog: (date) => {
     const query = date ? `?date=${encodeURIComponent(date)}` : "";
     return request(`/activity/workout-log${query}`);
@@ -133,9 +128,10 @@ const api = {
       method: "DELETE",
     });
   },
-  // Saved meals
+
   getSavedMeals: () => request("/activity/saved-meals"),
   addSavedMeal: (meal) => jsonRequest("/activity/saved-meals", "POST", meal),
   deleteSavedMeal: (mealId) => request(`/activity/saved-meals/${encodeURIComponent(mealId)}`, { method: "DELETE" }),
 };
+
 export default api;

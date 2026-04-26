@@ -11,7 +11,7 @@ const SimplifiedProfile = ({ user: propUser }) => {
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
-  const API_URL = 'https://fittrack-t4iu.onrender.com/api/auth/register';
+  const API_URL = 'https://fittrack-t4iu.onrender.com/api';
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem('fittrack_token');
