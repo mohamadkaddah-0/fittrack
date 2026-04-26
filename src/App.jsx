@@ -192,6 +192,16 @@ const [mealPool,    setMealPool]    = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    const handleUserUpdate = (event) => {
+      if (event.detail) {
+        setCurrentUser(event.detail);
+      }
+    };
+    window.addEventListener('user-updated', handleUserUpdate);
+    return () => window.removeEventListener('user-updated', handleUserUpdate);
+  }, []);
+
+  useEffect(() => {
     if (!useBackendCalendar) return undefined;
     let cancelled = false;
 

@@ -1,4 +1,3 @@
-// Navbar.jsx
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -33,30 +32,46 @@ export default function Navbar() {
   const accountRef = useRef(null);
 
   const checkAuth = () => {
-    const currentUser = sessionStorage.getItem("currentUser");
-    if (currentUser) {
-      try { setUser(JSON.parse(currentUser)); return; } catch (e) {}
+    const token = localStorage.getItem("fittrack_token");
+    
+    if (!token) {
+      setUser(null);
+      return;
     }
-    const storedUser = localStorage.getItem("user");
+    
+    const storedUser = localStorage.getItem("fittrack_user");
     if (storedUser) {
-      try { setUser(JSON.parse(storedUser)); return; } catch (e) {}
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        return;
+      } catch (e) {}
     }
+    
     setUser(null);
   };
 
-  useEffect(() => { checkAuth(); }, [location.pathname]);
+  useEffect(() => {
+    checkAuth();
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      checkAuth();
+    };
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("auth-change", handleStorageChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("auth-change", handleStorageChange);
+    };
+  }, []);
+
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     sessionStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
-  useEffect(() => {
-    window.addEventListener("storage", checkAuth);
-    window.addEventListener("auth-change", checkAuth);
-    return () => {
-      window.removeEventListener("storage", checkAuth);
-      window.removeEventListener("auth-change", checkAuth);
-    };
-  }, []);
+
   useEffect(() => {
     const close = (e) => {
       if (accountRef.current && !accountRef.current.contains(e.target)) setAccountOpen(false);
@@ -64,29 +79,35 @@ export default function Navbar() {
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
   }, []);
-  useEffect(() => { setMenuOpen(false); setAccountOpen(false); }, [location.pathname]);
+
+  useEffect(() => {
+    setMenuOpen(false);
+    setAccountOpen(false);
+  }, [location.pathname]);
 
   function handleLogout() {
-    ["currentUser", "user", "token"].forEach((k) => {
-      sessionStorage.removeItem(k);
-      localStorage.removeItem(k);
-    });
+    localStorage.removeItem("fittrack_token");
+    localStorage.removeItem("fittrack_user");
+    sessionStorage.removeItem("currentUser");
+    sessionStorage.removeItem("user");
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
     setUser(null);
     setAccountOpen(false);
     window.dispatchEvent(new Event("auth-change"));
     navigate("/login");
   }
 
-  const displayName = () => user
-    ? (user.name || user.username || user.email || "User")
-    : "Guest";
+  const displayName = () => {
+    if (!user) return "Guest";
+    return user.name || user.username || user.email || user.firstName || "User";
+  };
 
   const isLightTheme = theme === "light";
   const toggleTheme = () => setTheme((current) => current === "dark" ? "light" : "dark");
 
   return (
     <>
-      {/* ── Ticker ── */}
       <div style={{ background: "#C6F135", color: "#000", fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", padding: "8px 0", overflow: "hidden", whiteSpace: "nowrap" }}>
         <div style={{ display: "inline-flex", animation: "ticker 22s linear infinite" }}>
           {[...Array(2)].flatMap((_, ai) =>
@@ -97,7 +118,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* ── Navbar wrapper — sticky, full width, no overflow clipping ── */}
       <nav id="fittrack-nav" style={{
         position: "sticky",
         top: 0,
@@ -109,7 +129,6 @@ export default function Navbar() {
         display: "block",
       }}>
 
-        {/* ── Top bar — always exactly 60px tall, logo left, controls right ── */}
         <div style={{
           height: 60,
           display: "flex",
@@ -120,7 +139,6 @@ export default function Navbar() {
           width: "100%",
         }}>
 
-          {/* Logo */}
           <button
             onClick={() => navigate("/dashboard")}
             style={{ flexShrink: 0, fontFamily: "'Barlow Condensed', sans-serif", fontSize: 24, fontWeight: 900, letterSpacing: "0.08em", textTransform: "uppercase", color: "#C6F135", background: "none", border: "none", cursor: "pointer", lineHeight: 1 }}
@@ -128,7 +146,6 @@ export default function Navbar() {
             FitTrack<sup style={{ fontSize: 10 }}>™</sup>
           </button>
 
-          {/* Desktop nav links — hidden on mobile */}
           <ul className="hidden md:flex" style={{ listStyle: "none", display: "flex", alignItems: "center", gap: 32, margin: 0, padding: 0 }}>
             {NAV_LINKS.map(({ label, to }) => {
               const active = location.pathname === to;
@@ -147,10 +164,8 @@ export default function Navbar() {
             })}
           </ul>
 
-          {/* Right side controls */}
           <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 12 }}>
 
-            {/* Live dot — desktop only */}
             <div className="hidden md:flex" style={{ alignItems: "center", gap: 8, fontSize: 9, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--dim)" }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#C6F135", display: "inline-block", animation: "pulse 2s infinite" }} />
               Live
@@ -177,7 +192,6 @@ export default function Navbar() {
               {isLightTheme ? "☾" : "☀"}
             </button>
 
-            {/* Account dropdown */}
             <div style={{ position: "relative" }} ref={accountRef}>
               <button
                 onClick={() => setAccountOpen(!accountOpen)}
@@ -194,19 +208,21 @@ export default function Navbar() {
                     <div style={{ fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--dim)" }}>Signed in as</div>
                     <div style={{ fontSize: 10, color: "var(--text)", marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName()}</div>
                   </div>
-                  {ACCOUNT_MENU.map(({ label, to }) => (
-                    <button key={to} onClick={() => { setAccountOpen(false); navigate(to); }}
-                      style={{ width: "100%", textAlign: "left", padding: "12px 16px", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--dim)", background: "none", border: "none", borderBottom: "1px solid var(--line)", cursor: "pointer" }}
-                      onMouseEnter={e => { e.currentTarget.style.color = "var(--text)"; e.currentTarget.style.background = "var(--bg3)"; }}
-                      onMouseLeave={e => { e.currentTarget.style.color = "var(--dim)"; e.currentTarget.style.background = "none"; }}
-                    >{label}</button>
-                  ))}
                   {user ? (
-                    <button onClick={handleLogout}
-                      style={{ width: "100%", textAlign: "left", padding: "12px 16px", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: "#FF2A5E", background: "none", border: "none", cursor: "pointer" }}
-                      onMouseEnter={e => e.currentTarget.style.background = "var(--bg3)"}
-                      onMouseLeave={e => e.currentTarget.style.background = "none"}
-                    >Logout</button>
+                    <>
+                      {ACCOUNT_MENU.map(({ label, to }) => (
+                        <button key={to} onClick={() => { setAccountOpen(false); navigate(to); }}
+                          style={{ width: "100%", textAlign: "left", padding: "12px 16px", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--dim)", background: "none", border: "none", borderBottom: "1px solid var(--line)", cursor: "pointer" }}
+                          onMouseEnter={e => { e.currentTarget.style.color = "var(--text)"; e.currentTarget.style.background = "var(--bg3)"; }}
+                          onMouseLeave={e => { e.currentTarget.style.color = "var(--dim)"; e.currentTarget.style.background = "none"; }}
+                        >{label}</button>
+                      ))}
+                      <button onClick={handleLogout}
+                        style={{ width: "100%", textAlign: "left", padding: "12px 16px", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: "#FF2A5E", background: "none", border: "none", cursor: "pointer" }}
+                        onMouseEnter={e => e.currentTarget.style.background = "var(--bg3)"}
+                        onMouseLeave={e => e.currentTarget.style.background = "none"}
+                      >Logout</button>
+                    </>
                   ) : (
                     <button onClick={() => { setAccountOpen(false); navigate("/login"); }}
                       style={{ width: "100%", textAlign: "left", padding: "12px 16px", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: "#C6F135", background: "none", border: "none", cursor: "pointer" }}
@@ -218,7 +234,6 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Hamburger — mobile only */}
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label="Toggle menu"
@@ -232,7 +247,6 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* ── Mobile menu — full-width block, sits directly below the 60px bar ── */}
         {menuOpen && (
           <div
             className="md:hidden"
@@ -277,11 +291,9 @@ export default function Navbar() {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.3; }
         }
-        /* Hide hamburger on desktop, show on mobile */
         @media (min-width: 768px) {
           button[aria-label="Toggle menu"] { display: none !important; }
         }
-        /* Hide desktop nav on mobile */
         @media (max-width: 767px) {
           nav ul { display: none !important; }
           nav .live-dot { display: none !important; }

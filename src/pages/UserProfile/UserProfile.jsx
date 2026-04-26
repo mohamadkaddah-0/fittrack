@@ -21,6 +21,16 @@ const SimplifiedProfile = ({ user: propUser }) => {
     };
   };
 
+  useEffect(() => {
+    const handleUserUpdate = (event) => {
+      if (event.detail) {
+        setUserData(prev => ({ ...prev, ...event.detail }));
+      }
+    };
+    window.addEventListener('user-updated', handleUserUpdate);
+    return () => window.removeEventListener('user-updated', handleUserUpdate);
+  }, []);
+
   const fetchUserData = async () => {
     const token = localStorage.getItem('fittrack_token');
     
@@ -46,7 +56,6 @@ const SimplifiedProfile = ({ user: propUser }) => {
       
       const user = userResult.user;
       
-      // Fetch survey data to get workout preferences
       let surveyData = {};
       try {
         const surveyResponse = await fetch(`${API_URL}/survey`, {
@@ -84,13 +93,6 @@ const SimplifiedProfile = ({ user: propUser }) => {
         limitations: surveyData.limitations || [],
         equipment: surveyData.equipment || []
       };
-      
-      console.log('Loaded survey data:', {
-        workoutDuration: surveyData.workoutDuration,
-        workoutTypes: surveyData.workoutTypes,
-        workoutLocation: surveyData.workoutLocation,
-        workoutTime: surveyData.workoutTime
-      });
       
       setUserData(combinedData);
       
@@ -202,6 +204,25 @@ const SimplifiedProfile = ({ user: propUser }) => {
       const surveyResult = await surveyResponse.json();
       console.log('Survey save result:', surveyResult);
       
+      const updatedUser = {
+        id: userData.id,
+        name: userData.name,
+        email: userData.email,
+        currentWeight: parseFloat(userData.currentWeight),
+        targetWeight: userData.targetWeight ? parseFloat(userData.targetWeight) : null,
+        height: parseFloat(userData.height),
+        age: userData.age ? parseInt(userData.age) : null,
+        gender: userData.gender,
+        goal: userData.primaryGoal,
+        fitnessLevel: userData.fitnessLevel.toLowerCase(),
+        activityLevel: userData.activityLevel
+      };
+      
+      localStorage.setItem('fittrack_user', JSON.stringify(updatedUser));
+      
+      const event = new CustomEvent('user-updated', { detail: updatedUser });
+      window.dispatchEvent(event);
+      
       setSaveMessage({ text: 'Profile updated successfully!', type: 'success' });
       setIsEditing(false);
       
@@ -303,7 +324,6 @@ const SimplifiedProfile = ({ user: propUser }) => {
         <div className="profile-title-section">
           <h1 className="profile-name">{userData.name}</h1>
           <p className="profile-username">@{userData.username}</p>
-  
         </div>
 
         {!isEditing && (
@@ -545,7 +565,7 @@ const SimplifiedProfile = ({ user: propUser }) => {
                     onChange={handleInputChange}
                   >
                     {goalOptions.map(option => (
-                      <option key={option} value={option}>{option}</option>
+                      <option key={option} value={option}>{option.replace('_', ' ')}</option>
                     ))}
                   </select>
                 </div>
