@@ -138,6 +138,9 @@ getMealIngredients: (mealId) => request(`/meals/pool/${mealId}`),
   getSavedMeals: () => request("/activity/saved-meals"),
   addSavedMeal: (meal) => jsonRequest("/activity/saved-meals", "POST", meal),
   deleteSavedMeal: (mealId) => request(`/activity/saved-meals/${encodeURIComponent(mealId)}`, { method: "DELETE" }),
+  // ── Exercise endpoints (NEW) ──
+  getExercises:    ()   => request("/exercises"),
+  getExerciseById: (id) => request(`/exercises/${id}`),
 };
 
 export default api;
