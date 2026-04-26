@@ -85,7 +85,7 @@ export default function MealLog({
   const [notes,    setNotes]    = useState("");
 
   //  Ingredient state 
- 
+  const [selectedIngredients, setSelectedIngredients] = useState([]);
   const [searchQuery,  setSearchQuery]  = useState("");
   const [catFilter,    setCatFilter]    = useState("all");
   const [showResults,  setShowResults]  = useState(false);
@@ -134,7 +134,7 @@ export default function MealLog({
 
   //  This meal's totals 
   let mealKcal = 0, mealProtein = 0, mealCarbs = 0, mealFat = 0;
-  for (const { item, portionG } of ingredients) {
+  for (const { item, portionG } of selectedIngredients) {
     const ratio = portionG / 100;
     mealKcal    += item.kcal    * ratio * servings;
     mealProtein += item.protein * ratio * servings;
@@ -164,21 +164,21 @@ export default function MealLog({
 
   //  Ingredient handlers 
   function addIngredient(item) {
-    setIngredients([...ingredients, { item, portionG: 100 }]);
+    setSelectedIngredients([...selectedIngredients, { item, portionG: 100 }]);
     setSearchQuery("");
     setShowResults(false);
     setErrors({ ...errors, ingredients: "" });
   }
 
   function removeIngredient(index) {
-    setIngredients(ingredients.filter((_, i) => i !== index));
+    setSelectedIngredients(selectedIngredients.filter((_, i) => i !== index));
   }
 
   function updatePortion(index, value) {
     const grams = parseFloat(value);
     if (!isNaN(grams) && grams > 0) {
-      setIngredients(
-        ingredients.map((entry, i) => i === index ? { ...entry, portionG: grams } : entry)
+      setSelectedIngredients(
+        selectedIngredients.map((entry, i) => i === index ? { ...entry, portionG: grams } : entry)
       );
     }
   }
@@ -187,7 +187,7 @@ export default function MealLog({
   function validate() {
     const newErrors = {};
     if (!mealName.trim())         newErrors.mealName    = "Meal name is required";
-    if (ingredients.length === 0) newErrors.ingredients = "Add at least one ingredient";
+    if (selectedIngredients.length === 0) newErrors.ingredients = "Add at least one ingredient";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
@@ -234,7 +234,7 @@ export default function MealLog({
       carbs:       mealCarbs,
       fat:         mealFat,
       cat:         mealType,
-      ingredients: ingredients,
+      ingredients: selectedIngredients,
     });
     showToastMessage(`"${mealName.trim()}" saved to My Meals`);
     resetForm();
@@ -259,7 +259,7 @@ export default function MealLog({
   function resetForm() {
     setMealName(""); setNotes(""); setServings(1);
     setMealType("breakfast"); setMealDate(today); setMealTime("13:00");
-    setIngredients([]); setErrors({});
+    setSelectedIngredients([]); setErrors({});
     setSearchQuery(""); setCatFilter("all");
   }
 
@@ -435,9 +435,9 @@ export default function MealLog({
                   <div className={`grid grid-cols-[1fr_90px_60px_26px] gap-3 px-4 py-2 ${bg3} border-b ${bdr} text-xs tracking-widest uppercase ${muted}`}>
                     <div>Ingredient</div><div>Portion (g)</div><div className="text-right">Kcal</div><div />
                   </div>
-                  {ingredients.length === 0 ? (
+                  {selectedIngredients.length === 0 ? (
                     <p className={`px-4 py-5 text-xs ${muted}`}>No ingredients yet — search above to add.</p>
-                  ) : ingredients.map(({ item, portionG }, idx) => {
+                  ) : selectedIngredients.map(({ item, portionG }, idx) => {
                     const ratio    = portionG / 100;
                     const rowKcal  = Math.round(item.kcal    * ratio * servings);
                     const rowPro   = Math.round(item.protein * ratio * servings);
@@ -519,7 +519,7 @@ export default function MealLog({
                 Nutrition <span className="text-[#C6F135]">Summary</span>
               </h2>
               <p className={`text-xs ${muted} mt-0.5`}>
-                {ingredients.length} ingredient{ingredients.length !== 1 ? "s" : ""} added
+                {selectedIngredients.length} ingredient{selectedIngredients.length !== 1 ? "s" : ""} added
               </p>
             </div>
 
