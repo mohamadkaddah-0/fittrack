@@ -7,27 +7,20 @@ const Surveys = ({ setCurrentUser }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(1);
   const [surveyData, setSurveyData] = useState({
-    // Step 1: Basic Info
     birthdate: '',
     gender: '',
     height: '',
     heightUnit: 'cm',
     weight: '',
     weightUnit: 'kg',
-    
-    // Step 2: Fitness Goals
     weightGoal: '',
     performanceGoal: '',
     targetWeight: '',
     timeline: '',
-    
-    // Step 3: Workout Preferences
     workoutTypes: '',
     workoutLocation: '',
     workoutDuration: '',
     workoutTime: '',
-    
-    // Step 4: Experience Level
     fitnessLevel: '',
     activityLevel: '',
     limitations: [],
@@ -38,9 +31,8 @@ const Surveys = ({ setCurrentUser }) => {
   const [goalAnalysis, setGoalAnalysis] = useState(null);
   const [userId, setUserId] = useState(null);
 
-  const API_URL = 'https://fittrack-t4iu.onrender.com/api/auth/register';
+  const API_URL = 'https://fittrack-t4iu.onrender.com/api';
 
-  // Helper to get auth headers
   const getAuthHeaders = () => {
     const token = localStorage.getItem('fittrack_token');
     return {
@@ -49,121 +41,112 @@ const Surveys = ({ setCurrentUser }) => {
     };
   };
 
-  // Check if user is logged in and hasn't completed survey yet
   useEffect(() => {
-  const checkUserAndSurvey = async () => {
-    const token = localStorage.getItem('fittrack_token');
-    
-    if (!token) {
-      console.log('No token found, redirecting to login');
-      navigate('/login');
-      return;
-    }
-    
-    try {
-      // Try to get user from multiple sources
-      let user = null;
-      let userId = null;
+    const checkUserAndSurvey = async () => {
+      const token = localStorage.getItem('fittrack_token');
       
-      // First, try to get from API
-      const response = await fetch(`${API_URL}/users/me`, {
-        headers: getAuthHeaders()
-      });
-      
-      const data = await response.json();
-      
-      if (data.success && data.user) {
-        user = data.user;
-        userId = user.id;
-        console.log('User loaded from API:', user);
-      } else {
-        // If API fails, try localStorage
-        const localUser = localStorage.getItem('fittrack_user');
-        if (localUser) {
-          user = JSON.parse(localUser);
-          userId = user.id;
-          console.log('User loaded from localStorage:', user);
-        } else {
-          // Try sessionStorage
-          const sessionUser = sessionStorage.getItem('currentUser');
-          if (sessionUser) {
-            user = JSON.parse(sessionUser);
-            userId = user.id;
-            console.log('User loaded from sessionStorage:', user);
-          }
-        }
-      }
-      
-      if (!userId) {
-        console.error('No user ID found anywhere');
-        alert('User data not found. Please try logging in again.');
+      if (!token) {
+        console.log('No token found, redirecting to login');
         navigate('/login');
         return;
       }
       
-      setUserId(userId);
-      
-      // Check localStorage flags for survey status
-      const surveyCompleted = localStorage.getItem(`surveyCompleted_${userId}`) === 'true';
-      const surveySkipped = localStorage.getItem(`surveySkipped_${userId}`) === 'true';
-      
-      console.log('Survey flags:', { surveyCompleted, surveySkipped, userId });
-      
-      // If user completed the survey, redirect to dashboard
-      if (surveyCompleted) {
-        console.log('User already completed survey, redirecting to dashboard');
-        navigate('/dashboard');
-        return;
-      }
-      
-      // Check if user already has survey data from API
-      const surveyResponse = await fetch(`${API_URL}/survey`, {
-        headers: getAuthHeaders()
-      });
-      
-      const surveyData = await surveyResponse.json();
-      
-      // Only redirect based on API data if user didn't skip
-      if (!surveySkipped && surveyData.success && surveyData.survey && surveyData.survey.fitnessLevel && surveyData.survey.fitnessLevel !== 'Not specified') {
-        console.log('API shows survey completed and not skipped, redirecting to dashboard');
-        navigate('/dashboard');
-        return;
-      }
-      
-      // If user skipped, clear the flag so they can take it now
-      if (surveySkipped) {
-        console.log('User previously skipped survey, allowing them to take it now');
-        localStorage.removeItem(`surveySkipped_${userId}`);
-      }
-      
-      // If survey has partial data, populate it
-      if (surveyData.success && surveyData.survey) {
-        const existingSurvey = surveyData.survey;
-        setSurveyData(prev => ({
-          ...prev,
-          gender: existingSurvey.gender || '',
-          height: existingSurvey.height || '',
-          weight: existingSurvey.weight || '',
-          fitnessLevel: existingSurvey.fitnessLevel || '',
-          activityLevel: existingSurvey.activityLevel || '',
-          limitations: existingSurvey.limitations || [],
-          equipment: existingSurvey.equipment || []
-        }));
-      }
-      
-      setIsLoading(false);
-      
-    } catch (error) {
-      console.error('Error checking user:', error);
-      alert('Error loading user data. Please try logging in again.');
-      navigate('/login');
-    }
-  };
-  
-  checkUserAndSurvey();
-}, [navigate]);
+      try {
+        let user = null;
+        let userId = null;
+        
+        const response = await fetch(`${API_URL}/users/me`, {
+          headers: getAuthHeaders()
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.user) {
+          user = data.user;
+          userId = user.id;
+          console.log('User loaded from API:', user);
+        } else {
+          const localUser = localStorage.getItem('fittrack_user');
+          if (localUser) {
+            user = JSON.parse(localUser);
+            userId = user.id;
+            console.log('User loaded from localStorage:', user);
+          } else {
+            const sessionUser = sessionStorage.getItem('currentUser');
+            if (sessionUser) {
+              user = JSON.parse(sessionUser);
+              userId = user.id;
+              console.log('User loaded from sessionStorage:', user);
+            }
+          }
+        }
+        
+        if (!userId) {
+          console.error('No user ID found anywhere');
+          alert('User data not found. Please try logging in again.');
+          navigate('/login');
+          return;
+        }
+        
+        setUserId(userId);
+        
+        const surveyCompleted = localStorage.getItem(`surveyCompleted_${userId}`) === 'true';
+        const surveySkipped = localStorage.getItem(`surveySkipped_${userId}`) === 'true';
+        
+        console.log('Survey flags:', { surveyCompleted, surveySkipped, userId });
+        
+        if (surveyCompleted) {
+          console.log('User already completed survey, redirecting to dashboard');
+          navigate('/dashboard');
+          return;
+        }
+        
+        const surveyResponse = await fetch(`${API_URL}/survey`, {
+          headers: getAuthHeaders()
+        });
 
-  // Constants for validation (same as before)
+        const surveyDataResult = await surveyResponse.json();
+
+        console.log('Full survey API response:', surveyDataResult);
+
+        // Simple check - just look at survey_completed flag
+        if (!surveySkipped && surveyDataResult.survey?.survey_completed === true) {
+          console.log('Survey already completed, redirecting to dashboard');
+          navigate('/dashboard');
+          return;
+        }
+        
+        if (surveySkipped) {
+          console.log('User previously skipped survey, allowing them to take it now');
+          localStorage.removeItem(`surveySkipped_${userId}`);
+        }
+        
+        if (surveyDataResult.success && surveyDataResult.survey) {
+          const existingSurvey = surveyDataResult.survey;
+          setSurveyData(prev => ({
+            ...prev,
+            gender: existingSurvey.gender || '',
+            height: existingSurvey.height || '',
+            weight: existingSurvey.weight || '',
+            fitnessLevel: existingSurvey.fitnessLevel || '',
+            activityLevel: existingSurvey.activityLevel || '',
+            limitations: existingSurvey.limitations || [],
+            equipment: existingSurvey.equipment || []
+          }));
+        }
+        
+        setIsLoading(false);
+        
+      } catch (error) {
+        console.error('Error checking user:', error);
+        alert('Error loading user data. Please try logging in again.');
+        navigate('/login');
+      }
+    };
+    
+    checkUserAndSurvey();
+  }, [navigate]);
+
   const VALIDATION = {
     MAX_AGE: 100,
     MIN_AGE: 13,
@@ -183,7 +166,6 @@ const Surveys = ({ setCurrentUser }) => {
     MIN_TARGET_WEIGHT_LBS: 88,
   };
 
-  // Options for select fields (same as before)
   const genderOptions = ['Male', 'Female'];
   
   const weightGoalOptions = [
@@ -425,7 +407,6 @@ const Surveys = ({ setCurrentUser }) => {
     window.scrollTo(0, 0);
   };
 
-  // UPDATED: Save survey to API instead of localStorage
   const handleSubmit = async () => {
     const stepErrors = validateStep(4);
     
@@ -461,7 +442,6 @@ const Surveys = ({ setCurrentUser }) => {
         return;
       }
       
-      // Prepare data for API
       const surveyPayload = {
         birthdate: surveyData.birthdate,
         gender: surveyData.gender.toLowerCase(),
@@ -485,7 +465,6 @@ const Surveys = ({ setCurrentUser }) => {
       
       console.log('Saving survey:', surveyPayload);
       
-      // Save survey to API
       const response = await fetch(`${API_URL}/survey`, {
         method: 'POST',
         headers: getAuthHeaders(),
@@ -495,16 +474,15 @@ const Surveys = ({ setCurrentUser }) => {
       const data = await response.json();
       
       if (data.success) {
-        // Mark survey as completed
-        const user = JSON.parse(localStorage.getItem('fittrack_user'));
-        if (user && user.id) {
-          localStorage.setItem(`surveyCompleted_${user.id}`, 'true');
-          localStorage.removeItem(`surveySkipped_${user.id}`);
-        }
+  // Remove localStorage flags since we're using database column now
+  const user = JSON.parse(localStorage.getItem('fittrack_user'));
+  if (user && user.id) {
+    localStorage.removeItem(`surveyCompleted_${user.id}`);  // Optional - cleanup old flags
+    localStorage.removeItem(`surveySkipped_${user.id}`);
+  }
+  
+  console.log('✅ Survey saved successfully! Database survey_completed = TRUE');
         
-        console.log('✅ Survey saved successfully!');
-        
-        // Update current user if function exists
         if (setCurrentUser) {
           const userResponse = await fetch(`${API_URL}/users/me`, {
             headers: getAuthHeaders()
@@ -555,7 +533,6 @@ const Surveys = ({ setCurrentUser }) => {
     );
   }
 
-  // Rest of your JSX remains the SAME as before...
   return (
     <section className="survey-section">
       <div className="survey-card">
@@ -585,7 +562,6 @@ const Surveys = ({ setCurrentUser }) => {
         </div>
 
         <div className="survey-body">
-          {/* Step 1: Basic Info */}
           {currentStep === 1 && (
             <div className="survey-step">
               <h3 className="step-title">Basic Information</h3>
@@ -683,7 +659,6 @@ const Surveys = ({ setCurrentUser }) => {
             </div>
           )}
 
-          {/* Step 2: Fitness Goals */}
           {currentStep === 2 && (
             <div className="survey-step">
               <h3 className="step-title">Your Fitness Goals</h3>
@@ -775,7 +750,6 @@ const Surveys = ({ setCurrentUser }) => {
             </div>
           )}
 
-          {/* Step 3: Workout Preferences */}
           {currentStep === 3 && (
             <div className="survey-step">
               <h3 className="step-title">Workout Preferences</h3>
@@ -851,7 +825,6 @@ const Surveys = ({ setCurrentUser }) => {
             </div>
           )}
 
-          {/* Step 4: Experience Level */}
           {currentStep === 4 && (
             <div className="survey-step">
               <h3 className="step-title">Experience & Lifestyle</h3>
@@ -925,7 +898,6 @@ const Surveys = ({ setCurrentUser }) => {
             </div>
           )}
 
-          {/* Navigation Buttons */}
           <div className="survey-navigation">
             {currentStep > 1 && (
               <button className="nav-btn prev-btn" onClick={handlePrevious}>

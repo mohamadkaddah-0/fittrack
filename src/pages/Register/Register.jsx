@@ -254,24 +254,15 @@ const Register = () => {
   setMessage({ text: '', type: '' });
   
   try {
-    const response = await fetch('https://fittrack-t4iu.onrender.com/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: `${formData.firstName} ${formData.lastName}`,
-        email: formData.email,
-        password: formData.password,
-        // Add these default values to fix the error
-        gender: 'male',
-        age: 25,
-        current_weight: 70,
-        target_weight: 70,
-        height: 170,
-        activity_level: 'moderately_active',
-        goal: 'maintain',
-        fitness_level: 'beginner'
-      })
-    });
+  const response = await fetch('https://fittrack-t4iu.onrender.com/api/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: `${formData.firstName} ${formData.lastName}`,
+      email: formData.email,
+      password: formData.password,
+    })
+  });
     
     const data = await response.json();
     
