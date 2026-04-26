@@ -209,6 +209,41 @@
   --text: #111111;
   --dim: #666666;
   --dim2: #999999;
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+[data-theme="light"] .bg-\[\#080808\],
+[data-theme="light"] .bg-\[\#0a0a0a\],
+[data-theme="light"] .bg-\[\#0D0D0D\],
+[data-theme="light"] .bg-\[\#111\],
+[data-theme="light"] .bg-\[\#111111\],
+[data-theme="light"] .bg-\[\#161616\] {
+  background-color: var(--bg2) !important;
+}
+
+[data-theme="light"] .bg-\[\#1E1E1E\],
+[data-theme="light"] .bg-\[\#1A1A1A\] {
+  background-color: var(--line) !important;
+}
+
+[data-theme="light"] .text-\[\#ECECEC\],
+[data-theme="light"] .text-\[\#e8e8e8\] {
+  color: var(--text) !important;
+}
+
+[data-theme="light"] .text-\[\#555\],
+[data-theme="light"] .text-\[\#555555\] {
+  color: var(--dim) !important;
+}
+
+[data-theme="light"] .border-\[\#1E1E1E\],
+[data-theme="light"] .border-\[\#222\],
+[data-theme="light"] .border-\[\#2A2A2A\] {
+  border-color: var(--line) !important;
 }
 
 * {

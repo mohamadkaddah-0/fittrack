@@ -49,6 +49,8 @@ const NO_NAVBAR_ROUTES = [
   "/get-started",
 ];
 
+const THEME_STORAGE_KEY = "fittrack-theme";
+
 // ── Wrapper that conditionally shows navbar ───────────────────
 function AppLayout({ children }) {
   const location = useLocation();
@@ -172,6 +174,10 @@ const Login = ({
 // ─────────────────────────────────────────────────────────────
 export default function App() {
   const useBackendCalendar = api.hasActivityIdentity();
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = sessionStorage.getItem(THEME_STORAGE_KEY) || "dark";
+  }, []);
 
   // ── Diet teammate's shared state ─────────────────────────────
   const [currentUser,  setCurrentUser]  = useState(getUserProfile());
@@ -396,7 +402,7 @@ export default function App() {
   // RENDER
   // ─────────────────────────────────────────────────────────────
   return (
-    <div className="bg-[#080808] text-[#ECECEC] min-h-screen font-['JetBrains_Mono']">
+    <div className="bg-[var(--bg)] text-[var(--text)] min-h-screen font-['JetBrains_Mono']">
       <BrowserRouter>
         <AppLayout>
           <Routes>
@@ -472,14 +478,14 @@ function AppFooter() {
   const NO_FOOTER_ROUTES = ["/", "/welcome", "/login", "/register", "/surveys", "/ready-survey", "/forgot-password", "/reset-password", "/get-started"];
   if (NO_FOOTER_ROUTES.includes(location.pathname)) return null;
   return (
-    <footer className="px-14 py-8 flex items-center justify-between border-t border-[#1E1E1E]">
+    <footer className="px-14 py-8 flex items-center justify-between border-t border-[var(--line)]">
       <div className="font-['Barlow_Condensed'] font-black text-xl text-[#C6F135] uppercase">FitTrack</div>
       <ul className="flex gap-6 list-none">
-        <li><Link to="/privacy" className="text-[8px] tracking-[0.2em] uppercase text-[#555] hover:text-[#C6F135] transition-colors">Privacy</Link></li>
-        <li><Link to="/terms"   className="text-[8px] tracking-[0.2em] uppercase text-[#555] hover:text-[#C6F135] transition-colors">Terms</Link></li>
-        <li><Link to="/support" className="text-[8px] tracking-[0.2em] uppercase text-[#555] hover:text-[#C6F135] transition-colors">Support</Link></li>
+        <li><Link to="/privacy" className="text-[8px] tracking-[0.2em] uppercase text-[var(--dim)] hover:text-[#C6F135] transition-colors">Privacy</Link></li>
+        <li><Link to="/terms"   className="text-[8px] tracking-[0.2em] uppercase text-[var(--dim)] hover:text-[#C6F135] transition-colors">Terms</Link></li>
+        <li><Link to="/support" className="text-[8px] tracking-[0.2em] uppercase text-[var(--dim)] hover:text-[#C6F135] transition-colors">Support</Link></li>
       </ul>
-      <div className="text-[8px] tracking-[0.2em] uppercase text-[#555]">2026 FitTrack v3.0.0</div>
+      <div className="text-[8px] tracking-[0.2em] uppercase text-[var(--dim)]">2026 FitTrack v3.0.0</div>
     </footer>
   );
 }
