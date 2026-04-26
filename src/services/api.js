@@ -142,5 +142,5 @@ getMealIngredients: (mealId) => request(`/meals/pool/${mealId}`),
   getExercises:    ()   => request("/exercises"),
   getExerciseById: (id) => request(`/exercises/${id}`),
 };
-
 export default api;
+export { api };
