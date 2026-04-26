@@ -10,6 +10,7 @@ function resolveUser(req, res, next) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       req.user = decoded;
       req.fittrackUserKey = String(decoded.id);
+      req.fittrackUserId  = decoded.id;
       return next();
     } catch (error) {
       // Fall back to the header-based identity so the mixed mock/auth flows
