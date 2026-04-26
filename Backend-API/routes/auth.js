@@ -22,27 +22,28 @@ router.post('/register', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         
         const [result] = await db.execute(
-            `INSERT INTO users (
-                name, email, password_hash, gender, age, 
-                current_weight, target_weight, height, 
-                activity_level, goal, fitness_level, 
-                duration_months, is_ongoing
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-                name,
-                email,
-                hashedPassword,
-                gender || null,
-                age ? parseInt(age) : null,
-                current_weight ? parseFloat(current_weight) : null,
-                target_weight ? parseFloat(target_weight) : null,
-                height ? parseFloat(height) : null,
-                activity_level || null,
-                goal || null,
-                fitness_level || null,
-                duration_months ? parseInt(duration_months) : null,
-                is_ongoing !== undefined ? (is_ongoing ? 1 : 0) : 1
-            ]
+          `INSERT INTO users (
+            name, email, password_hash, gender, age, 
+            current_weight, target_weight, height, 
+            activity_level, goal, fitness_level, 
+            duration_months, is_ongoing, survey_completed
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            name,
+            email,
+            hashedPassword,
+            null,  // gender
+            null,  // age
+            null,  // current_weight
+            null,  // target_weight
+            null,  // height
+            null,  // activity_level
+            null,  // goal
+            null,  // fitness_level
+            null,  // duration_months
+            1,     // is_ongoing
+            0      // survey_completed (0 = false)
+          ]
         );
         
         const token = jwt.sign(
