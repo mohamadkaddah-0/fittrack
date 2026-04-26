@@ -1418,3 +1418,45 @@ footer {
     box-shadow: 0 0 0 6px rgba(198, 241, 53, 0);
   }
 }
+/* Global mobile viewport fix */
+html {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  width: 100%;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Improve touch targets on mobile */
+@media (max-width: 768px) {
+  button, 
+  a,
+  [role="button"],
+  input[type="submit"],
+  input[type="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  input, 
+  select, 
+  textarea {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+}
+
+/* Fix for dropdown menus getting cut off by overflow hidden */
+select {
+  overflow: visible !important;
+}
+
+/* Ensure modal/dropdown content is visible */
+.modal, 
+.dropdown, 
+.popup {
+  position: fixed;
+  z-index: 9999;
+}
