@@ -10,7 +10,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../services/api";
-// ─── getCardioRatio — was in mockData, now lives here ────────────────────────
 function getCardioRatio(weightGoal) {
   if (weightGoal === "lose")        return 0.7;
   if (weightGoal === "gain")        return 0.3;

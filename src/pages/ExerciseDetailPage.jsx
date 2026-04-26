@@ -1,46 +1,29 @@
 /**
  * ExerciseDetailPage.jsx
  * ----------------------
- * This is the Detail View page of the FitTrack application.
- * It is the second of my two pages.
- *
- * What this page does:
- *  - Reads the exercise ID from the URL using useParams (react-router-dom)
- *  - Finds the matching exercise object from the EXERCISES array
- *  - Displays the exercise hero image (with fallback to initials)
- *  - Embeds a YouTube tutorial video for the exercise
- *  - Shows a level-based training plan (sets/reps/rest) from the survey data
- *  - Includes an interactive countdown timer for duration and rest
- *  - Lists step-by-step instructions, tips, and common mistakes
- *  - Shows primary and secondary muscles targeted
- *  - Lists exercise variations
- *  - Displays a caution warning if the exercise conflicts with the user's limitations
+ * Phase 2 update:
+ *  - Exercise loaded from GET /api/exercises/:id (database) instead of mockData
+ *  - getUserProfile, getExercisePlan, isRiskyForUser copied here as local helpers
+ *    (they read from localStorage / are pure logic — no DB needed)
+ *  - Loading and error states added
  */
 
 import { useState, useEffect, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
-import {
-  EXERCISES,
-  getExercisePlan,
-  getUserProfile,
-  isRiskyForUser,
-} from "../data/mockData";
+import api from "../services/api";
 
 // ─── Colour helpers ───────────────────────────────────────────────────────────
 
-/** Returns pink for Cardio, lime green for Weightlifting. */
 function getCatColor(category) {
   return category === "Cardio" ? "#FF2A5E" : "#C6F135";
 }
 
-/** Returns a colour for the difficulty level label. */
 function getDiffColor(difficulty) {
   if (difficulty === "Beginner")     return "#C6F135";
   if (difficulty === "Intermediate") return "#FFAA00";
   return "#FF2A5E";
 }
 
-/** Returns the inline style for a muscle tag pill. */
 function tagStyle(color) {
   return {
     color,
@@ -54,31 +37,107 @@ function tagStyle(color) {
   };
 }
 
+// ─── Local helpers (moved from mockData — pure logic, no DB needed) ───────────
+
+function getUserProfile() {
+  const defaultProfile = {
+    name: "User", email: "", gender: "male", age: 20,
+    weight: 70, weightUnit: "kg", height: 170,
+    weightGoal: "maintain", level: "beginner",
+    limitations: [], equipment: [], workoutTypes: [],
+    goal: "general fitness", weeklyTarget: 0.5, totalGoal: 5,
+    currentWeight: 70, targetWeight: 70,
+    activityLevel: "moderately_active", isOngoing: true,
+    duration: null, goal_meal: "maintain", timeline: "Ongoing",
+  };
+
+  try {
+    const _sessionRaw = sessionStorage.getItem("currentUser");
+    const _uid = _sessionRaw
+      ? (() => { try { return JSON.parse(_sessionRaw).id; } catch (e) { return null; } })()
+      : null;
+    const savedJson = _uid
+      ? (localStorage.getItem(`userProfile_${_uid}`) || localStorage.getItem("userProfile"))
+      : localStorage.getItem("userProfile");
+    if (!savedJson) return defaultProfile;
+
+    const p = JSON.parse(savedJson);
+    const goalMap     = { lose: "weight loss", gain: "muscle gain", buildMuscle: "muscle gain" };
+    const mealGoalMap = { lose: "lose", gain: "gain_muscle", buildMuscle: "gain_muscle", gain_muscle: "gain_muscle" };
+    const durationMap = { "1 month": 1, "3 months": 3, "6 months": 6, "1 year": 12, "2 years": 24 };
+
+    return {
+      name:          p.name        || "User",
+      email:         p.email       || "",
+      gender:        (p.gender     || "male").toLowerCase(),
+      age:           p.age         || 20,
+      weight:        parseFloat(p.weight)       || 70,
+      weightUnit:    p.weightUnit  || "kg",
+      height:        parseFloat(p.height)       || 170,
+      weightGoal:    p.weightGoal  || "maintain",
+      level:         p.fitnessLevel ? p.fitnessLevel.toLowerCase() : "beginner",
+      limitations:   Array.isArray(p.limitations)  ? p.limitations  : [],
+      equipment:     Array.isArray(p.equipment)     ? p.equipment    : [],
+      workoutTypes:  Array.isArray(p.workoutTypes)  ? p.workoutTypes : [],
+      goal:          goalMap[p.weightGoal]  || "general fitness",
+      weeklyTarget:  p.weeklyRate  ? parseFloat(p.weeklyRate) : 0.5,
+      totalGoal:     p.targetWeight && p.weight
+                       ? Math.abs(parseFloat(p.targetWeight) - parseFloat(p.weight))
+                       : 5,
+      currentWeight: parseFloat(p.weight)       || 70,
+      targetWeight:  parseFloat(p.targetWeight) || 70,
+      activityLevel: ["lightly_active","moderately_active","very_active","sedentary"].includes(p.activityLevel)
+                       ? p.activityLevel : "moderately_active",
+      isOngoing:     p.timeline === "Ongoing",
+      duration:      durationMap[p.timeline]    || null,
+      goal_meal:     mealGoalMap[p.weightGoal]  || "maintain",
+      timeline:      p.timeline    || "Ongoing",
+    };
+  } catch {
+    return defaultProfile;
+  }
+}
+
+function getExercisePlan(exercise, userLevel = "beginner") {
+  const level = (userLevel || "beginner").toLowerCase();
+  const plansByLevel = {
+    beginner:     {
+      duration:      { title: "3 sets × 20 sec",  details: "Rest 40 sec · Low intensity" },
+      "reps-cardio": { title: "3 sets × 12 reps", details: "Rest 35 sec" },
+      bodyweight:    { title: "3 sets × 8 reps",  details: "Rest 45 sec" },
+      weighted:      { title: "3 sets × 8 reps",  details: "Rest 60 sec · Light weight" },
+    },
+    intermediate: {
+      duration:      { title: "4 sets × 30 sec",  details: "Rest 30 sec · Moderate intensity" },
+      "reps-cardio": { title: "4 sets × 16 reps", details: "Rest 25 sec" },
+      bodyweight:    { title: "4 sets × 12 reps", details: "Rest 35 sec" },
+      weighted:      { title: "4 sets × 10 reps", details: "Rest 50 sec · Moderate weight" },
+    },
+    advanced:     {
+      duration:      { title: "5 sets × 40 sec",  details: "Rest 20 sec · High intensity" },
+      "reps-cardio": { title: "5 sets × 20 reps", details: "Rest 20 sec" },
+      bodyweight:    { title: "5 sets × 15 reps", details: "Rest 25 sec" },
+      weighted:      { title: "5 sets × 12 reps", details: "Rest 40 sec · Challenging weight" },
+    },
+    athlete:      {
+      duration:      { title: "6 sets × 45 sec",  details: "Rest 15 sec · Very high intensity" },
+      "reps-cardio": { title: "6 sets × 24 reps", details: "Rest 15 sec" },
+      bodyweight:    { title: "6 sets × 18 reps", details: "Rest 20 sec" },
+      weighted:      { title: "6 sets × 12 reps", details: "Rest 35 sec · Heavy weight" },
+    },
+  };
+  const levelConfig = plansByLevel[level] || plansByLevel.beginner;
+  return levelConfig[exercise.logType] || { title: "Custom workout", details: "Adjust based on your ability" };
+}
+
+function isRiskyForUser(ex, limitations) {
+  if (!limitations || limitations.length === 0) return false;
+  if (limitations.includes("No limitations")) return false;
+  return ex.limitedFor?.some((lim) => limitations.includes(lim)) || false;
+}
+
 // ─── Timer component ──────────────────────────────────────────────────────────
 
-/**
- * TimerSection — an interactive countdown timer.
- *
- * Props:
- *  exercise — the exercise object (used to determine if it is duration-based)
- *
- * Behaviour:
- *  - For duration-based exercises (logType === "duration"):
- *    "Use this timer to track your set"
- *  - For reps/weighted exercises:
- *    "Optional rest timer between sets"
- *
- * State:
- *  seconds  — current countdown value
- *  running  — whether the timer is actively counting
- *  finished — whether the countdown reached zero
- *
- * I use useRef to store the interval ID because updating it does not
- * need to trigger a re-render.
- *
- * I use useEffect with a cleanup function to start and clear the interval
- * whenever the running state changes .
- */
 function TimerSection({ exercise }) {
   const isDuration  = exercise.logType === "duration";
   const defaultSecs = isDuration ? 30 : 60;
@@ -86,21 +145,11 @@ function TimerSection({ exercise }) {
   const [seconds,  setSeconds]  = useState(defaultSecs);
   const [running,  setRunning]  = useState(false);
   const [finished, setFinished] = useState(false);
-
-  // useRef stores the interval ID without causing a re-render
   const intervalRef = useRef(null);
 
-  /**
-   * useEffect starts or clears the interval when running changes.
-   * The cleanup function (return) clears the interval when:
-   *  - the component unmounts
-   *  - running changes from true to false
-   * This prevents memory leaks.
-   */
   useEffect(() => {
     if (running) {
       intervalRef.current = setInterval(() => {
-        // Functional update reads the latest state value
         setSeconds((prev) => {
           if (prev <= 1) {
             clearInterval(intervalRef.current);
@@ -114,12 +163,9 @@ function TimerSection({ exercise }) {
     } else {
       clearInterval(intervalRef.current);
     }
-
-    // Cleanup — called before next effect or on unmount
     return () => clearInterval(intervalRef.current);
   }, [running]);
 
-  /** Resets the timer to its default duration. */
   function reset() {
     clearInterval(intervalRef.current);
     setRunning(false);
@@ -140,7 +186,6 @@ function TimerSection({ exercise }) {
         TIMER
       </h2>
 
-      {/* Context-appropriate instruction text */}
       {!isDuration && (
         <p className="mb-4 text-xs text-[#555555]">
           Optional — use this as a rest timer between sets.
@@ -152,7 +197,6 @@ function TimerSection({ exercise }) {
         </p>
       )}
 
-      {/* Countdown display */}
       <div className="mb-5 text-center">
         <p
           aria-live="polite"
@@ -167,7 +211,6 @@ function TimerSection({ exercise }) {
         </p>
       </div>
 
-      {/* Duration input — only shown when not finished */}
       {!finished && (
         <div className="mb-4">
           <label
@@ -183,25 +226,19 @@ function TimerSection({ exercise }) {
             max="3600"
             value={seconds}
             aria-label="Set duration in seconds"
-            onChange={(e) => {
-              if (!running) setSeconds(parseInt(e.target.value) || 30);
-            }}
+            onChange={(e) => { if (!running) setSeconds(parseInt(e.target.value) || 30); }}
             className="w-full rounded-[10px] border border-[#1E1E1E] bg-[#111111] px-[14px] py-[10px] text-sm text-[#ECECEC]"
           />
         </div>
       )}
 
-      {/* Timer controls */}
       <div className="flex gap-[10px]">
         <button
           onClick={() => { setFinished(false); setRunning((r) => !r); }}
           aria-label={running ? "Pause timer" : finished ? "Restart timer" : "Start timer"}
           aria-pressed={running}
           className="flex-1 cursor-pointer rounded-[10px] border-0 px-3 py-3 text-xs font-bold uppercase tracking-[0.1em]"
-          style={{
-            background: running ? "#FF2A5E" : "#C6F135",
-            color: "#080808",
-          }}
+          style={{ background: running ? "#FF2A5E" : "#C6F135", color: "#080808" }}
         >
           {running ? "Pause" : finished ? "Restart" : "Start"}
         </button>
@@ -220,24 +257,43 @@ function TimerSection({ exercise }) {
 
 // ─── Main detail page ─────────────────────────────────────────────────────────
 
-/**
- * ExerciseDetailPage — the Detail View for a specific exercise.
- *
- * How the exercise ID is read:
- *  useParams() reads the :id segment from the URL route /exercise/:id
- *  defined in App.jsx. This is part of react-router-dom used by the team.
- */
 export default function ExerciseDetailPage() {
-  // useParams reads :id from the URL — part of react-router-dom
-  const { id }   = useParams();
-  const user     = getUserProfile();
-  const [imgErr, setImgErr] = useState(false);
+  const { id } = useParams();
+  const user   = getUserProfile();
 
+  // ── Phase 2: exercise loaded from API (GET /api/exercises/:id) ──
+  const [exercise, setExercise] = useState(null);
+  const [loading,  setLoading]  = useState(true);
+  const [error,    setError]    = useState(null);
+  const [imgErr,   setImgErr]   = useState(false);
 
-  const exercise = EXERCISES.find((ex) => ex.id === Number(id));
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    setImgErr(false);
 
-  // ── Not found fallback ──
-  if (!exercise) {
+    api.getExerciseById(id)
+      .then(({ data }) => {
+        setExercise(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message || "Failed to load exercise");
+        setLoading(false);
+      });
+  }, [id]);
+
+  // ── Loading state ──
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#080808] text-[#ECECEC] flex items-center justify-center">
+        <p className="text-[#555555] font-bold uppercase tracking-[0.12em]">Loading…</p>
+      </div>
+    );
+  }
+
+  // ── Error / not found state ──
+  if (error || !exercise) {
     return (
       <div className="min-h-screen bg-[#080808] text-[#ECECEC]">
         <main className="p-10">
@@ -245,7 +301,7 @@ export default function ExerciseDetailPage() {
             className="text-[42px] font-black"
             style={{ fontFamily: "'Barlow Condensed',sans-serif" }}
           >
-            Exercise not found
+            {error || "Exercise not found"}
           </h1>
           <Link to="/exercises" className="text-[#00E5FF] no-underline">
             ← Back to library
@@ -256,8 +312,8 @@ export default function ExerciseDetailPage() {
   }
 
   // ── Derived values from the exercise and user profile ──
-  const plan    = getExercisePlan(exercise, user.level);
-  const caution = isRiskyForUser(exercise, user.limitations);
+  const plan     = getExercisePlan(exercise, user.level);
+  const caution  = isRiskyForUser(exercise, user.limitations);
   const initials = exercise.name.split(" ").map((w) => w[0]).join("").slice(0, 2);
 
   return (
@@ -284,7 +340,7 @@ export default function ExerciseDetailPage() {
             <span aria-current="page" className="text-[#ECECEC]">{exercise.name}</span>
           </nav>
 
-          {/* ── image ── */}
+          {/* ── Hero image ── */}
           <div
             className="relative mb-7 h-[280px] w-full overflow-hidden rounded-[18px] border border-[#1E1E1E] bg-[#111111]"
             role="img"
@@ -309,14 +365,12 @@ export default function ExerciseDetailPage() {
               </div>
             )}
 
-            {/* Gradient overlay to make the category badge readable */}
             <div
               aria-hidden="true"
               className="absolute inset-0"
               style={{ background: "linear-gradient(to top, rgba(8,8,8,0.9) 0%, transparent 60%)" }}
             />
 
-            {/* Category badge */}
             <div className="absolute bottom-5 left-6">
               <span
                 aria-label={`Category: ${exercise.category}`}
@@ -349,10 +403,10 @@ export default function ExerciseDetailPage() {
 
           {/* ── Two-column content grid ── */}
           <div className="grid grid-cols-1 gap-7 lg:grid-cols-[1.5fr_1fr]">
+
             {/* ── Left column — main content ── */}
             <section aria-label={`${exercise.name} details`}>
 
-              {/* Exercise title */}
               <h1
                 className="mb-4 text-[clamp(56px,9vw,100px)] font-black leading-[1.02]"
                 style={{ fontFamily: "'Barlow Condensed',sans-serif" }}
@@ -360,12 +414,11 @@ export default function ExerciseDetailPage() {
                 {exercise.name}
               </h1>
 
-              {/* Description */}
               <p className="mb-[22px] max-w-[680px] text-sm leading-[1.9] text-[#555555]">
                 {exercise.desc}
               </p>
 
-              {/* Caution warning — shown when exercise conflicts with user limitations */}
+              {/* Caution warning */}
               {caution && (
                 <div
                   role="alert"
@@ -380,7 +433,7 @@ export default function ExerciseDetailPage() {
                 </div>
               )}
 
-              {/* Stats grid — equipment, type, muscles, difficulty */}
+              {/* Stats grid */}
               <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {[
                   ["Equipment", exercise.equipmentName || "Not specified", "#00E5FF"],
@@ -400,7 +453,7 @@ export default function ExerciseDetailPage() {
                 ))}
               </div>
 
-              {/* Level-based plan — sets / reps / rest from survey level */}
+              {/* Level-based plan */}
               <div className="mb-6 rounded-[18px] border border-[#1E1E1E] bg-[#0D0D0D] p-6">
                 <h2
                   className="mb-4 text-[34px] font-black"
@@ -419,7 +472,7 @@ export default function ExerciseDetailPage() {
                 </div>
               </div>
 
-              {/* Timer — interactive countdown for sets or rest */}
+              {/* Timer */}
               <TimerSection exercise={exercise} />
 
               {/* Step-by-step instructions */}
@@ -448,7 +501,7 @@ export default function ExerciseDetailPage() {
                 </ol>
               </div>
 
-              {/* Tips and common mistakes */}
+              {/* Tips and mistakes */}
               <div className="rounded-[18px] border border-[#1E1E1E] bg-[#0D0D0D] p-6">
                 <h2
                   className="mb-4 text-[34px] font-black"
@@ -508,7 +561,7 @@ export default function ExerciseDetailPage() {
                 </div>
               </div>
 
-              {/* Exercise variations */}
+              {/* Variations */}
               <div className="rounded-[18px] border border-[#1E1E1E] bg-[#0D0D0D] p-6">
                 <h2
                   className="mb-4 text-[30px] font-black"
@@ -551,5 +604,3 @@ export default function ExerciseDetailPage() {
     </>
   );
 }
-
-
