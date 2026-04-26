@@ -994,7 +994,16 @@ function WorkoutCalendar({ calendarData, exerciseLogByDate }) {
  *  exerciseLogByDate               — { "YYYY-MM-DD": [{name, category}] } for calendar.
  */
 export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalendar, currentUser }) {
-  const mockUser = currentUser || getUserProfile();
+  
+const mockUser = currentUser
+  ? {
+      ...currentUser,
+      level:      currentUser.level      || currentUser.fitnessLevel || "beginner",
+      weightGoal: currentUser.weightGoal || currentUser.goal         || "maintain",
+      equipment:  currentUser.equipment  || [],
+      limitations: currentUser.limitations || [],
+    }
+  : getUserProfile();
 
   // ── Filter state for the ALL EXERCISES section ──
   const [search, setSearch] = useState("");
@@ -1002,7 +1011,7 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
   const [filterDiff, setFilterDiff] = useState("All");
 
   // ── Plan progression state ──
-  const [userLevel, setUserLevel] = useState(mockUser.level);
+  const [userLevel, setUserLevel] = useState(mockUser.level || mockUser.fitnessLevel || "beginner");
   const [boostCount, setBoostCount] = useState(0);
   const [planOpen, setPlanOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState(null);
