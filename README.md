@@ -1,209 +1,326 @@
-**FitTrack:** Fitness Tracking Web Application
+# FitTrack — Fitness Tracking Web Application
 
-**Project Overview:** 
-  FitTrack is a full-stack-ready frontend fitness tracking application built with React, Vite, and Tailwind CSS. The platform allows users to track their       diet, log workouts, monitor nutritional progress, and receive personalised meal recommendations based on their fitness profile.
+## Project Overview
 
-**Team Members: Deployables** 
-Sara Ibrahim
-Mohammad Moghnieh
-Jawad Al Housseini
-Mohammad Kaddah
-  
+FitTrack is a full-stack fitness tracking application built with React, Vite, and Tailwind CSS on the frontend and an Express.js REST API backed by a MySQL database on the backend. The platform allows users to register, complete a personalised fitness survey, track their diet, log workouts, monitor nutritional progress, sync steps via Google Fit, and receive personalised meal recommendations based on their fitness profile.
+
+**Team Members — Deployables**
+- Sara Ibrahim
+- Mohammad Moghnieh
+- Jawad Al Housseini
+- Mohammad Kaddah
+
 **Topic:** Fitness & Nutrition Tracking
 
-**Primary Data Entities:** Users, Meals, Ingredients, Exercises, Workouts, Calendar Logs
+**Primary Data Entities:** Users, Meals, Ingredients, Exercises, Workouts, Calendar Logs, Password Resets
 
-**Deployed Application on Vercel:** https://fittrack-flax.vercel.app/
+**Deployed Frontend (Vercel):** https://fittrack-flax.vercel.app/
 
+**Deployed Backend (Render):** https://fittrack-t4iu.onrender.com
 
-**Setup Instructions for Running Locally:**
+---
 
-*Prerequisites:* Make sure you have the following installed:
+## Tech Stack
 
-  Node.js v18 or higher — nodejs.org
-  npm v9 or higher (comes with Node.js)
-  Git — git-scm.com
+**Frontend**
+- React 19, React Router v7
+- Vite 8
+- Tailwind CSS 3
+- Axios / Fetch API
+- EmailJS (contact/support form)
 
-*Steps:*
-1. Clone the repository
-bashgit clone https://github.com/mohamadkaddah-0/fittrack.git
+**Backend**
+- Node.js with Express 5
+- MySQL 2 (promise-based connection pool)
+- JSON Web Tokens (JWT) for authentication
+- bcrypt for password hashing
+- Google Fit OAuth 2.0 integration
+- dotenv for environment configuration
+
+---
+
+## Project Structure
+
+```
+fittrack/
+├── db/
+│   ├── fittrack.sql          # Full MySQL schema and seed data
+│   └── pool.js               # MySQL connection pool
+├── lib/
+│   ├── activityDb.js         # DB helpers for activity/calendar data
+│   └── activityStore.js      # In-memory fallback state store
+├── middleware/
+│   ├── auth.js               # JWT requireAuth middleware
+│   ├── errorHandler.js       # Global error handler
+│   └── resolveUser.js        # Resolves user from JWT or fallback header
+├── routes/
+│   ├── auth.js               # Register, login, password reset
+│   ├── users.js              # Get/update current user profile
+│   ├── survey.js             # Save and retrieve fitness survey
+│   ├── activity.js           # Homepage data, calendar, workout log, saved meals
+│   ├── exercises.js          # Exercise library
+│   ├── meals.js              # Meal pool and meal ingredients
+│   ├── ingredients.js        # Ingredient database
+│   └── googlefit.js          # Google Fit OAuth and step sync
+├── src/
+│   ├── components/
+│   │   ├── GoogleFitSync.jsx
+│   │   ├── Navbar.jsx
+│   │   └── ThemeToggle.jsx
+│   ├── pages/
+│   │   ├── HomePage.jsx
+│   │   ├── LogWorkoutPage.jsx
+│   │   ├── DietProgram.jsx
+│   │   ├── MealLog.jsx
+│   │   ├── IngredientDetail.jsx
+│   │   ├── UserProgress.jsx
+│   │   ├── ExerciseDetailPage.jsx
+│   │   ├── exerciseLibrary.jsx
+│   │   ├── ForgotPassword.jsx
+│   │   ├── ResetPassword.jsx
+│   │   ├── Register/
+│   │   ├── UserProfile/
+│   │   ├── WelcomePage/
+│   │   ├── survey/
+│   │   └── Terms/
+│   ├── services/
+│   │   └── api.js            # Centralised API client (fetch wrapper)
+│   ├── data/
+│   │   └── mockData.js       # Static exercise/meal data and helper functions
+│   ├── App.jsx               # Root component, routing, shared state
+│   └── main.jsx
+├── server.js                 # Express entry point
+├── package.json
+├── vite.config.js
+├── vercel.json               # Vercel frontend deployment config
+└── .env                      # Environment variables (not committed)
+```
+
+---
+
+## Setup Instructions for Running Locally
+
+### Prerequisites
+
+- Node.js v18 or higher — https://nodejs.org
+- npm v9 or higher (comes with Node.js)
+- MySQL 8 or a compatible managed MySQL instance
+- Git — https://git-scm.com
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/mohamadkaddah-0/fittrack.git
 cd fittrack
-2. Install dependencies
-bash npm install
-3. Start the development server
-bashnpm run dev
-4. Open in browser
-Navigate to http://localhost:5173 in your browser.
+```
 
+### 2. Install dependencies
 
-**Member Contributions:**
+```bash
+npm install
+```
 
-*Sara Ibrahim:*
+### 3. Configure environment variables
 
-Diet Program (/diet-program)
-  Displays the user's personalised daily meal plan and macro targets. Calorie, protein, carbs, and fat daily targets are computed from the user's survey     data using the Mifflin-St Jeor BMR formula. Workout calories burned are added to the daily calorie target in real time. Meal recommendations rotate       every 3 days using a date-seeded algorithm that prioritises meal profiles matching to +-10% of the user's goal (e.g. high-protein for muscle gain).         Checking a meal logs it    to the shared calendar and updates the macro progress bars instantly. Note: since the mock database is still limited,     recommended meals may not add up to 10% of the daily macros yet. 
-  
-Meal Log (/meal-log)
-  A 3-step form for manually building and logging custom meals. Users search a database of 51 ingredients, adjust portion sizes with live macro             recalculation, and submit to the shared calendar. A sidebar shows daily budget progress against personalised targets and warns the user if logging would   exceed macro limits by more than 10%. Users can also save custom meals for quick re-logging in the My Meals tab.
-  
-Ingredient Detail (/ingredient/:id)
-  A detail view for individual ingredients showing full nutritional data per 100g. Users can adjust portion size using preset buttons or a manual input,     and all values update live. Accessible from both the Diet Program ingredient modal and the Meal Log search results.
-  
-User Progress (/progress)
-  A visual dashboard showing daily and weekly progress. Features circular ring charts for calories, protein, burned calories, and net balance. Includes a     7-day calorie bar chart comparing eaten vs burned against the daily target, weekly summary rings, a weight trend tracker with an editable current          weight,   a colour-coded activity calendar, and a custom personal goals checklist.
-  
+Create a `.env` file in the project root (or copy the provided `.env` template) and fill in your values:
 
+```env
+# Database
+DB_HOST=your-mysql-host
+DB_PORT=3306
+DB_NAME=fittrack
+DB_USER=your-db-user
+DB_PASS=your-db-password
 
-*Jawad Al Housseini:*
+# JWT
+JWT_SECRET=your-jwt-secret
 
-Primarily responsible for designing and implementing two main pages: the Exercise Library (/exercises) and the Exercise Detail page (/exercise/:id). My contribution focused on building a personalized workout experience based on user profile data collected from the survey. I developed the logic that generates a dynamic 14-day workout plan by combining the user’s fitness level and activity level into an effective level, filtering exercises based on available equipment and user limitations, and applying a goal-based cardio-to-strength ratio. I ensured the plan follows a structured design that includes rest days, variation between days, and a balanced distribution of exercises. I also implemented a progress tracking system that allows users to mark exercises as completed only on the current day, and designed a calendar feature that displays both meals and completed exercises while ensuring that each entry appears on the correct date. In addition, I built a search and filtering system for the exercise library, allowing users to browse exercises by name, category, difficulty, and equipment availability so that only relevant exercises are shown. In addition to my assigned pages, I also contributed to the Log Workout page by supporting parts of the logging logic and its integration with the shared calendar.
+# Google Fit OAuth
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_REDIRECT_URI=http://localhost:5000/api/googlefit/callback
+FRONTEND_URL=http://localhost:5173
 
-A key part of my contribution involved working with the shared mock data (mockData.js) to simulate application behavior. I used structured exercise data and helper functions to retrieve user information, control workout composition based on goals, and ensure exercises are appropriate for the user’s limitations. I also worked with shared logging and calendar data to ensure that completed exercises are recorded and reflected consistently across different parts of the application. The mock data acts as an in-memory data source that simulates how a real backend system would function, allowing the application to dynamically generate plans, track activity, and update the interface without requiring a database or server. This demonstrates how data flows through the application and how different components remain synchronized while staying within the project constraints.
+# Server
+PORT=3000
+```
 
+### 4. Set up the database
 
+Import the provided schema and seed data into your MySQL instance:
 
+```bash
+mysql -u your-db-user -p fittrack < db/fittrack.sql
+```
 
-*Mohammad Kaddah:*
+### 5. Start the backend server
 
-1-HomePage.jsx 
+```bash
+node server.js
+```
 
-Developed the main dashboard of the application.
+The API will be available at `http://localhost:3000`.
 
-- Displays the user's daily fitness stats including calories intake, calories burnt, water intake, exercises done, and steps taken
-- All stat cards are interactive â€” the user clicks any card to input today's value
-- Shows the user's current workout plan progress through a circular ring meter and a 7-day tracker
-- The plan name is dynamically derived from the user's survey goal (e.g. Muscle Gain, Fat Loss, Maintenance)
-- Includes an achievements section displaying unlocked and locked milestones
-- Features a full interactive activity calendar that visualizes logged meals and workouts per day, shared with the Diet Program page
-- Designed to provide a clear and simple navigation experience, allowing users to easily browse their daily and weekly progress
+### 6. Start the frontend development server
 
-**Mock Data:**
-All data is managed through React local state (`useState`). Stats initialize at `0` and are updated by user input. Achievements, goals, and plan mappings are defined as hardcoded constants at the top of the component. Calendar data is received as a prop from `App.jsx`, shared across the Diet Program and Log Workout pages.
+In a separate terminal:
 
----
+```bash
+npm run dev
+```
 
- 2. LogWorkoutPage.jsx ” Log New Workout (`/log`)
-
-Implemented the workout logging interface.
-
-- Enables users to log multiple exercises in a single workout session
-- Each exercise is selected from a searchable, filterable database of exercises
-- Input fields adapt based on exercise type:
-  - Weighted exercises show Sets, Reps, and Weight
-  - Bodyweight exercises show Sets and Reps
-  - Cardio exercises show Sets and Duration
-  - Distance exercises show Distance and Duration with auto-calculated speed
-- Calories burned are automatically estimated per exercise based on type and user weight, and are locked once logged
-- Includes a built-in rest timer between sets
-- All logged exercises are saved to the shared activity calendar on the homepage
-- Supports tracking of user activity over time, forming the basis for progress monitoring and future analytics features
-
-**Mock Data:**
-Imports `EXERCISES` from the shared `mockData.js` file to populate the exercise picker. Uses `getUserProfile()` to retrieve the user's weight for calorie estimation. Today's workout log is persisted in `localStorage` to simulate session continuity within the browser.
+Navigate to `http://localhost:5173` in your browser.
 
 ---
 
-3. App.jsx Application Root
+## API Endpoints
 
-Responsible for managing the overall application structure.
+All API routes are prefixed with `/api`.
 
-- Sets up all client-side routing using React Router
-- Manages shared state across all pages including calendar data, logged meals, and user profile
-- Controls which pages display the navbar and footer (hidden on auth and onboarding pages)
-- Passes shared functions such as `addWorkoutToCalendar`, `deleteMealFromDay`, and `togglePlanMeal` as props to the relevant pages
-- Integrates all four team members' pages into a single cohesive application
+### Authentication — `/api/auth`
 
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/register` | Create a new user account |
+| POST | `/login` | Log in and receive a JWT |
+| POST | `/forgot-password` | Request a 6-digit reset code |
+| POST | `/verify-code` | Verify the reset code |
+| POST | `/reset-password` | Set a new password using the verified code |
 
+### Users — `/api/users`
 
-## Future Plans ( Phase 2)
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/me` | Get the authenticated user's profile |
+| PUT | `/me` | Update the authenticated user's profile |
 
-The next phase will focus on expanding functionality and improving the overall tracking system.
+### Survey — `/api/survey`
 
-### Achievement Section Functionality
-- Activate and connect the achievement system to real user activity
-- Achievements will unlock dynamically based on milestones such as number of workouts completed, consecutive active days, and calorie goals reached
-- Introduce progress tracking and milestone-based rewards
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/` | Retrieve the authenticated user's survey data |
+| POST | `/` | Save or update the user's fitness survey |
 
-### Step Tracking Integration
-- Implement a system to track steps taken by the user
-- Use step data as an additional metric for daily activity tracking
-- Steps will contribute to total calories burned alongside logged workouts
+### Activity — `/api/activity`
 
-### Advanced Calorie Calculation
-- Improve total calorie burn estimation by combining:
-  - Steps taken
-  - Logged workouts
-  - Logged meals from the Diet Program
-- Provide a more accurate and unified representation of the user's daily calorie balance and fitness progress
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/homepage` | Get homepage stats and calendar data for a given date |
+| PATCH | `/homepage` | Update homepage stats (water, steps, plan progress) |
+| GET | `/calendar` | Get full calendar data |
+| POST | `/calendar` | Add a meal or workout entry to the calendar |
+| DELETE | `/calendar/:entryId` | Remove a calendar entry |
+| GET | `/workout-log` | Get the workout log for a given date |
+| POST | `/workout-log` | Add an exercise entry to the workout log |
+| POST | `/workout-log/save` | Save the workout log to the calendar |
+| DELETE | `/workout-log/:entryId` | Remove a workout log entry |
+| GET | `/saved-meals` | Get the user's saved custom meals |
+| POST | `/saved-meals` | Save a custom meal |
+| DELETE | `/saved-meals/:mealId` | Delete a saved meal |
 
+### Exercises — `/api/exercises`
 
-*Mohammad Moghnieh:*
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/` | Get all exercises |
+| GET | `/:id` | Get a single exercise by ID |
 
-Primarily responsible for designing and implementing the complete authentication, onboarding, and user profile ecosystem. This module handles user registration, login, password recovery, the fitness onboarding survey, and profile management, forming the foundational layer for user personalisation across the entire application.
+### Meals — `/api/meals`
 
-Authentication & User Management:
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/pool` | Get all meals from the meal pool |
+| GET | `/pool/:mealId` | Get ingredients for a specific meal |
 
-Welcome Page (WelcomePage.jsx): The application's landing page, showcasing key features and providing clear calls-to-action for new users to register or existing users to log in.
+### Ingredients — `/api/ingredients`
 
-Registration (Register.jsx): A secure account creation component featuring a real-time password strength meter (checking for length, uppercase, lowercase, numbers, and symbols) and robust validation rules. Upon successful registration, user data is persisted to localStorage (fittrack_users and fittrack_logins), simulating a backend database. The user is then seamlessly guided to the onboarding survey.
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/` | Get all ingredients |
 
-Login (Embedded in App.jsx): An authentication handler that validates credentials against both mock demo users and registered users from localStorage. On successful login, the global application state is updated, and the user is redirected to the main dashboard.
+### Google Fit — `/api/googlefit`
 
-Password Recovery Flow (ForgotPassword.jsx, ResetPassword.jsx): A two-step process that simulates a secure password reset. The user requests a reset for their email, a 6-digit code is generated (logged to the console for testing), and they can then set a new password after verifying the code.
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/auth-url` | Get the Google OAuth authorisation URL |
+| GET | `/callback` | OAuth redirect handler |
+| POST | `/sync` | Sync today's steps from Google Fit |
+| GET | `/status` | Check if Google Fit is connected |
+| DELETE | `/disconnect` | Disconnect Google Fit |
 
-User Onboarding & Personalisation:
+---
 
-Ready Survey (ReadySurvey.jsx): A transitional page that prepares new users for the upcoming fitness assessment, explaining its benefits and time commitment before they proceed.
+## Authentication
 
-Fitness Survey (Survey.jsx): A comprehensive 4-step questionnaire designed to build a detailed user profile. It collects:
+Protected routes use JWT Bearer token authentication. After a successful login or registration, the API returns a token which the frontend stores in `localStorage` under the key `fittrack_token`. All subsequent API requests include this token in the `Authorization: Bearer <token>` header.
 
-Basic Information: Birthdate (for age calculation), gender, height, and weight (with unit conversion).
-Fitness Goals: Weight goal, target weight, performance goal, and timeline, featuring a Goal Analysis Algorithm that calculates a healthy weekly rate and provides feedback on whether the user's target is "healthy", "ambitious", or "impossible".
-Workout Preferences: Preferred workout type, location, session duration, and time of day.
-Experience & Lifestyle: Fitness level, activity level (with descriptions), physical limitations, and available equipment.
-On completion, the raw survey data and a formatted user profile are saved to localStorage, enabling all other modules (Diet Program, Exercise Library, etc.) to access personalised user data.
-Profile Management:
+The `resolveUser` middleware additionally accepts an `x-fittrack-user-id` header as a fallback identity for unauthenticated session activity (used during development and guest flows).
 
-User Profile (UserProfile.jsx): A dedicated page for viewing and editing user information. It aggregates data from multiple localStorage sources to display personal details, physical statistics, and fitness preferences. Key features include inline editing of all fields, profile picture upload (with Base64 conversion), real-time validation, and automatic syncing of changes back to localStorage.
+---
 
-Support & Legal:
+## Member Contributions
 
-Legal Pages (Terms.jsx, Privacy.jsx): Standard Terms of Service and Privacy Policy pages.
+### Sara Ibrahim
 
-Support Page (Support.jsx): A centralised help hub integrating live chat (via Tawk.to), an email contact form (via EmailJS), phone support information, a searchable FAQ section, and system status indicators.
+**Diet Program** (`/diet-program`): Displays the user's personalised daily meal plan and macro targets. Calorie, protein, carbs, and fat daily targets are computed from the user's survey data using the Mifflin-St Jeor BMR formula. Workout calories burned are added to the daily calorie target in real time. Meal recommendations rotate every 3 days using a date-seeded algorithm that prioritises meal profiles matching to ±10% of the user's goal (e.g. high-protein for muscle gain). Checking a meal logs it to the calendar and updates the macro progress bars instantly.
 
-Mock Data System Contribution:
-My work established the core user data structure that the rest of the application relies on. I designed the localStorage schema for users, login credentials, survey data, and user profiles. This system allows for a fully functional, persistent user experience without a backend, simulating data flows such as:
+**Meal Log** (`/meal-log`): A 3-step form for manually building and logging custom meals. Users search a database of ingredients, adjust portion sizes with live macro recalculation, and submit to the shared calendar. A sidebar shows daily budget progress against personalised targets. Users can also save custom meals for quick re-logging.
 
-Registration → Storage → Login → Profile Retrieval
+**Ingredient Detail** (`/ingredient/:id`): A detail view for individual ingredients showing full nutritional data per 100g. Portion size adjustments update all values live.
 
-Survey → Profile Generation → Personalised Data Consumption by other modules
+**User Progress** (`/progress`): A visual dashboard with circular ring charts for calories, protein, burned calories, and net balance. Includes a 7-day calorie bar chart, weekly summary rings, a weight trend tracker, a colour-coded activity calendar, and a personal goals checklist.
 
-This foundation ensures that every other feature in FitTrack, from meal recommendations to workout plans, can access a consistent and personalised user profile.
+---
 
+### Jawad Al Housseini
 
+**Exercise Library** (`/exercises`) and **Exercise Detail** (`/exercise/:id`): Built a personalised workout experience driven by user profile data from the survey. Developed logic to generate a dynamic 14-day workout plan by combining fitness level and activity level, filtering exercises by available equipment and user limitations, and applying a goal-based cardio-to-strength ratio. The plan follows a structured design that includes rest days, variation, and balanced exercise distribution. Implemented a progress tracking system that allows users to mark exercises as completed only on the current day, and a calendar feature that displays completed exercises per date. Also built a search and filtering system for the exercise library by name, category, difficulty, and equipment.
 
+Also contributed to the **Log Workout** page by supporting parts of the logging logic and its integration with the shared calendar.
 
+---
 
+### Mohammad Kaddah
 
+**Home Page** (`/`): Developed the main dashboard. Displays the user's daily fitness stats (calories, calories burnt, water intake, exercises, steps). All stat cards are interactive. Shows current workout plan progress through a circular ring meter and a 7-day tracker. Includes an achievements section and a full interactive activity calendar shared with the Diet Program page.
 
+**Log Workout** (`/log`): Implemented the workout logging interface. Enables users to log multiple exercises in a single session with input fields that adapt based on exercise type (weighted, bodyweight, cardio, distance). Calories burned are automatically estimated per exercise based on type and user weight and are locked once logged. Includes a built-in rest timer and saves all logged exercises to the shared activity calendar.
 
+**App.jsx**: Responsible for the overall application structure — client-side routing, shared state management (calendar data, logged meals, user profile), and integration of all team members' pages into a single cohesive application.
 
+---
 
-**How Mock Data Simulates Real Interactions:** 
+### Mohammad Moghnieh
 
-In Phase 1, the application has no backend. All data is simulated through mockData.js, shared React state in App.jsx, and browser storage.
-User profile: After completing the survey, the user's data is saved to localStorage. On app load, getUserProfile() reads and maps this data into a currentUser object that flows to every page as a prop. This simulates an authenticated session with a real user profile fetched from a database.
+**Authentication & User Management**: Designed and implemented the complete authentication, onboarding, and user profile ecosystem.
 
-Nutrition calculations: Rather than storing static targets, calcNutritionTargets(user) computes personalised daily macros on every render using BMR, TDEE, and weekly rate formulas. Two users with different goals or activity levels receive completely different targets - simulating what an API would return.
+**Welcome Page** (`/welcome`): The application's landing page with calls-to-action for registration and login.
 
-Calendar as a database: calendarData in App.jsx is a shared in-memory object keyed by date (YYYY-MM-DD). Every meal and workout logged by any page writes to this object. All pages read from it, meaning a meal logged in Meal Log instantly reflects in the Diet Program macro bars, the homepage calendar dots, and the User Progress charts. This simulates real-time database synchronisation without any network requests.
+**Registration** (`/register`): Secure account creation with a real-time password strength meter and validation. On registration, the user is guided directly to the onboarding survey.
 
-Meal recommendations: recommendMeals() uses a date-seeded pseudo-random number generator so recommendations stay stable all day, a 3-day rotation stored in localStorage to avoid repetition, and goal-aware meal profile sorting to match suggestions to the user's fitness goal. A macro tolerance check validates the combo and attempts swaps if targets aren't met — simulating a constraint-based recommendation engine.
+**Login**: Validates credentials against the backend and updates global application state on success.
 
-Seed data: INITIAL_CALENDAR pre-populates the last 3 days with realistic entries using dynamic date keys, giving users a non-empty calendar from day one and simulating a returning user's history.
+**Password Recovery Flow** (`/forgot-password`, `/reset-password`): A two-step process — the user requests a reset for their email, a 6-digit code is generated and verified, and then a new password can be set.
 
-Ingredient database: 51 food items with accurate per-100g macros, including Lebanese foods. Portion-scaled macro calculations simulate the behaviour of an API.
+**Fitness Survey** (`/survey`): A comprehensive 4-step questionnaire covering basic info, fitness goals (with a Goal Analysis Algorithm for healthy rate calculation), workout preferences, and experience and lifestyle. On completion, all data is persisted to the backend via `/api/survey`.
 
-Exercise plan generation: buildPlanDays() constructs a 14-day plan from the user's filtered exercise pool, respecting a 3-day repeat cooldown and alternating rest days. Equipment filtering and cardio ratio logic simulate a personalised training programme generator.
+**User Profile** (`/profile`): Inline editing of all user fields, profile picture upload with Base64 conversion, real-time validation, and syncing changes back to the backend.
+
+**Support & Legal**: Terms of Service, Privacy Policy, and a Support page integrating live chat (Tawk.to), an email contact form (EmailJS), a searchable FAQ, and system status indicators.
+
+---
+
+## Deployment
+
+**Frontend** is deployed on Vercel using the configuration in `vercel.json`. All routes are rewritten to `index.html` to support client-side routing.
+
+**Backend** is deployed on Render at `https://fittrack-t4iu.onrender.com`. The frontend API client in `src/services/api.js` points to this URL in production.
+
+To deploy your own instance:
+
+1. Push the repository to GitHub.
+2. Connect the repository to Vercel for the frontend. Set `buildCommand` to `npm run build` and `outputDirectory` to `dist`.
+3. Deploy the backend to Render (or any Node.js host). Set all environment variables from the `.env` template in the host's dashboard.
+4. Update `API_BASE` in `src/services/api.js` and `GOOGLE_REDIRECT_URI` in `.env` to match your deployed backend URL.
+
 
