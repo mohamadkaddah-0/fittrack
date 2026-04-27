@@ -323,4 +323,44 @@ To deploy your own instance:
 3. Deploy the backend to Render (or any Node.js host). Set all environment variables from the `.env` template in the host's dashboard.
 4. Update `API_BASE` in `src/services/api.js` and `GOOGLE_REDIRECT_URI` in `.env` to match your deployed backend URL.
 
+---
+
+## Challenges and How We Handled Them
+
+### 1. Deployment Errors — Path and Entry Point Issues
+
+When deploying the backend to Render, the service repeatedly failed to start because it could not locate `server.js`. The root cause was that Render was scanning the project from an incorrect working directory, and some internal `require()` paths used relative references that broke outside of a local environment. We resolved this by explicitly setting the root directory and start command in Render's dashboard (`node server.js`), and by auditing all file imports to use consistent path references relative to the project root.
+
+### 2. Backend and Frontend Living in the Same Repository
+
+Because the backend was added to what started as a frontend-only repository, both sides shared a single `package.json` and the same root directory. This caused conflicts between Vite's dev server and the Express server, and made it unclear to deployment platforms which part to build or run. We handled this by structuring the project so that Vercel builds and serves only the `src/` frontend output, while Render runs `server.js` from the same repo root — using `vercel.json` for the frontend rewrite rules and Render's environment settings to isolate the backend process.
+
+### 3. Merge Conflicts
+
+With four team members working on separate pages and a shared `App.jsx`, merge conflicts were frequent — particularly in the routing table, shared state declarations, and the `package.json` dependency list. We handled this by designating one person (Mohammad Kaddah) as the integration owner for `App.jsx`, establishing a branch-per-feature workflow, and resolving conflicts through paired review sessions before merging to main.
+
+### 4. Registration Not Working After Backend Integration
+
+After the backend was connected, the registration form was silently failing. The issue was a mismatch between the field names the frontend was sending (e.g. `username`, `confirmPassword`) and what the backend route expected (`name`, `password`). Additionally, the API base URL was still pointing to `localhost` in the deployed build. We fixed this by aligning the request payload with the backend schema and moving the API base URL to an environment variable resolved at build time.
+
+### 5. User Profile — Save Changes Not Persisting
+
+The profile edit form was reading user data from a local state snapshot taken at login, while the backend stored a slightly different shape (e.g. `first_name`/`last_name` vs a single `name` field, and `profile_picture` stored as Base64 in the DB). When the user saved changes, the PUT request was either sending unexpected fields or overwriting data with stale values. We resolved this by normalising the data shape in `api.js` before sending, ensuring the frontend always re-fetches from `GET /api/users/me` after a successful save rather than relying on local state.
+
+### 6. Forgot Password and Reset Password Flow
+
+The password reset feature broke during backend integration because the frontend was calling the endpoints in the wrong order and not passing the verified reset token between steps. The backend expected a three-step flow (request code → verify code → reset password) but the frontend was skipping the verification step. We corrected the flow by updating the page logic to chain the three API calls in sequence and store the interim verification state in component state between steps.
+
+### 7. Survey Data Not Syncing with the Backend
+
+The fitness survey was saving correctly to local state but not persisting to the database. The POST request to `/api/survey` was being sent before the JWT token was available in `localStorage` (the user had just registered), so the request was rejected as unauthenticated. We fixed this by ensuring the token is written to storage and the auth header is set before the survey submission is triggered, and by adding a retry mechanism in the API client for this specific post-registration flow.
+
+### 8. Database Deployment on a Managed Service
+
+Deploying the MySQL database to a managed cloud service introduced several issues: the connection pool in `db/pool.js` was configured with `localhost` defaults, the schema import had to be run manually via a one-time migration step, and SSL was required by the host but not initially configured. We updated `pool.js` to read all connection parameters from environment variables and added the `ssl: { rejectUnauthorized: false }` option for hosted MySQL compatibility.
+
+### 9. Changing Environment Variables on Render
+
+During development and testing, environment variables (database credentials, JWT secret, Google OAuth keys) needed to be updated several times on Render. Each change required a manual redeploy, and on several occasions the service picked up a cached build that did not reflect the new values. We handled this by always triggering a clean deploy (not just a restart) after any environment variable change in the Render dashboard, and by adding startup logging to confirm which environment values were actually being loaded at runtime.
+
 
