@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from "react-router-dom";
 
 // ── Shared components ─────────────────────────────────────────
@@ -82,7 +82,58 @@ const Login = ({
   isLoading 
 }) => {
 
-   const navigate = useNavigate();
+  const navigate = useNavigate();
+  
+  const emailInputRef = useRef(null);
+  const passwordInputRef = useRef(null);
+
+   useEffect(() => {
+    const interval = setInterval(() => {
+      setForceUpdate(prev => prev + 1);
+    }, 200);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // Handle autofill detection
+  const handleAutofillDetection = () => {
+    if (emailInputRef.current && emailInputRef.current.value !== email) {
+      setEmail(emailInputRef.current.value);
+    }
+    if (passwordInputRef.current && passwordInputRef.current.value !== password) {
+      setPassword(passwordInputRef.current.value);
+    }
+  };
+
+  // Check for autofill on mount and when input events occur
+  useEffect(() => {
+    // Initial check
+    handleAutofillDetection();
+    
+    // Listen for autofill events
+    const emailInput = emailInputRef.current;
+    const passwordInput = passwordInputRef.current;
+    
+    if (emailInput) {
+      emailInput.addEventListener('animationstart', handleAutofillDetection);
+      emailInput.addEventListener('input', handleAutofillDetection);
+    }
+    if (passwordInput) {
+      passwordInput.addEventListener('animationstart', handleAutofillDetection);
+      passwordInput.addEventListener('input', handleAutofillDetection);
+    }
+    
+    return () => {
+      if (emailInput) {
+        emailInput.removeEventListener('animationstart', handleAutofillDetection);
+        emailInput.removeEventListener('input', handleAutofillDetection);
+      }
+      if (passwordInput) {
+        passwordInput.removeEventListener('animationstart', handleAutofillDetection);
+        passwordInput.removeEventListener('input', handleAutofillDetection);
+      }
+    };
+  }, []);
 
   return (
     <section className="login-section">
@@ -111,6 +162,7 @@ const Login = ({
               <input 
                 type="email" 
                 id="email"
+                ref={emailInputRef}
                 className="field-input bg-[var(--bg)] text-[var(--text)] border border-[var(--line)] font-['JetBrains_Mono'] text-xs p-[13px_16px] outline-none transition-colors duration-200 focus:border-[var(--cyan)]"
                 placeholder="you@example.com" 
                 value={email} 
@@ -126,6 +178,7 @@ const Login = ({
               <input 
                 type="password" 
                 id="password"
+                ref={passwordInputRef}
                 className="field-input bg-[var(--bg)] text-[var(--text)] border border-[var(--line)] font-['JetBrains_Mono'] text-xs p-[13px_16px] outline-none transition-colors duration-200 focus:border-[var(--cyan)]"
                 placeholder="password" 
                 value={password} 
@@ -152,7 +205,14 @@ const Login = ({
             <button 
               type="submit" 
               className="btn-submit" 
-              disabled={!isFormValid() || isLoading}
+              disabled={(() => {
+                const emailEl = document.getElementById('email');
+                const passwordEl = document.getElementById('password');
+                const currentEmail = emailEl?.value || email;
+                const currentPassword = passwordEl?.value || password;
+                const isValid = currentEmail.includes("@") && currentEmail.includes(".") && currentPassword.length >= 3;
+                return !isValid || isLoading;
+              })()}
             >
               <span>{isLoading ? 'LOGGING IN...' : 'Login'}</span>
             </button>
@@ -428,7 +488,16 @@ const [mealPool,    setMealPool]    = useState([]);
   }
 };
 
-  const isFormValid = () => email.includes("@") && email.includes(".") && password.length >= 3;
+  const isFormValid = () => {
+  // Get actual DOM values to support autofill
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+  
+  const currentEmail = emailInput?.value || email;
+  const currentPassword = passwordInput?.value || password;
+  
+  return currentEmail.includes("@") && currentEmail.includes(".") && currentPassword.length >= 3;
+};
 
   // ─────────────────────────────────────────────────────────────
   // RENDER
