@@ -160,50 +160,69 @@
   transform: translateY(-1px);
 }
 
-/* Password input wrapper with action buttons */
-.password-input-wrapper {
-  position: relative;
+/* Password field wrapper - places icon outside the input */
+.password-field-wrapper {
   display: flex;
   align-items: center;
+  gap: 12px;
 }
 
-.password-input-wrapper .field-input {
+.password-field-wrapper .field-input {
   flex: 1;
-  padding-right: 80px; /* Make room for the action buttons */
 }
 
-.password-field-actions {
-  position: absolute;
-  right: 10px;
-  display: flex;
-  gap: 8px;
+/* Professional eye icon button */
+.password-toggle-btn {
   background: transparent;
-}
-
-.password-action-btn {
-  background: transparent;
-  border: none;
+  border: 1px solid rgba(198, 241, 53, 0.2);
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 18px;
-  padding: 4px 6px;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-  color: var(--dim);
+  padding: 10px 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
+  color: var(--dim);
+  flex-shrink: 0;
 }
 
-.password-action-btn:hover:not(:disabled) {
-  background: rgba(198, 241, 53, 0.1);
-  transform: scale(1.05);
+.password-toggle-btn:hover:not(:disabled) {
+  border-color: var(--lime);
+  background: rgba(198, 241, 53, 0.05);
+  transform: scale(1.02);
 }
 
-.password-action-btn:active:not(:disabled) {
-  transform: scale(0.95);
+.password-toggle-btn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
-.password-action-btn:disabled {
+.password-toggle-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Eye icon styling */
+.eye-icon {
+  stroke: currentColor;
+  transition: stroke 0.2s ease;
+}
+
+.password-toggle-btn:hover:not(:disabled) .eye-icon {
+  stroke: var(--lime);
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 640px) {
+  .password-field-wrapper {
+    gap: 8px;
+  }
+  
+  .password-toggle-btn {
+    padding: 8px 10px;
+  }
+  
+  .eye-icon {
+    width: 18px;
+    height: 18px;
+  }
 }

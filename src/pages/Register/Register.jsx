@@ -28,9 +28,6 @@ const Register = () => {
   // State for password visibility
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
-  // State for copy feedback
-  const [copySuccess, setCopySuccess] = useState({ password: false, confirmPassword: false });
 
   // Check if we're coming back from terms/privacy pages
   useEffect(() => {
@@ -123,11 +120,6 @@ const Register = () => {
     if (errors.password) {
       setErrors(prev => ({ ...prev, password: '' }));
     }
-    
-    // Reset copy success when password changes
-    if (copySuccess.password) {
-      setCopySuccess(prev => ({ ...prev, password: false }));
-    }
   };
 
   // Handle input changes with sanitization
@@ -143,9 +135,6 @@ const Register = () => {
       handlePasswordChange(e);
     } else if (name === 'confirmPassword') {
       setFormData(prev => ({ ...prev, confirmPassword: sanitizedValue }));
-      if (copySuccess.confirmPassword) {
-        setCopySuccess(prev => ({ ...prev, confirmPassword: false }));
-      }
       if (errors.confirmPassword) {
         setErrors(prev => ({ ...prev, confirmPassword: '' }));
       }
@@ -158,21 +147,6 @@ const Register = () => {
       if (errors[name]) {
         setErrors(prev => ({ ...prev, [name]: '' }));
       }
-    }
-  };
-
-  // Copy password to clipboard
-  const copyToClipboard = async (text, field) => {
-    if (!text) return;
-    
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopySuccess(prev => ({ ...prev, [field]: true }));
-      setTimeout(() => {
-        setCopySuccess(prev => ({ ...prev, [field]: false }));
-      }, 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
     }
   };
 
@@ -459,7 +433,7 @@ const Register = () => {
               <label className="block text-[var(--dim)] text-base font-mono mb-1 tracking-wider" htmlFor="password">
                 PASSWORD
               </label>
-              <div className="password-input-wrapper">
+              <div className="password-field-wrapper">
                 <input
                   type={showPassword ? "text" : "password"}
                   id="password"
@@ -471,28 +445,25 @@ const Register = () => {
                   disabled={isLoading}
                   maxLength="128"
                 />
-                <div className="password-field-actions">
-                  {formData.password && (
-                    <button
-                      type="button"
-                      className="password-action-btn"
-                      onClick={() => copyToClipboard(formData.password, 'password')}
-                      title="Copy password"
-                      disabled={isLoading}
-                    >
-                      {copySuccess.password ? '✓' : '📋'}
-                    </button>
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onClick={() => togglePasswordVisibility('password')}
+                  title={showPassword ? "Hide password" : "Show password"}
+                  disabled={isLoading}
+                >
+                  {showPassword ? (
+                    <svg className="eye-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  ) : (
+                    <svg className="eye-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
                   )}
-                  <button
-                    type="button"
-                    className="password-action-btn"
-                    onClick={() => togglePasswordVisibility('password')}
-                    title={showPassword ? "Hide password" : "Show password"}
-                    disabled={isLoading}
-                  >
-                    {showPassword ? '👁️' : '👁️‍🗨️'}
-                  </button>
-                </div>
+                </button>
               </div>
               
               {/* Clean password strength indicator */}
@@ -538,7 +509,7 @@ const Register = () => {
               <label className="block text-[var(--dim)] text-base font-mono mb-1 tracking-wider" htmlFor="confirmPassword">
                 CONFIRM PASSWORD
               </label>
-              <div className="password-input-wrapper">
+              <div className="password-field-wrapper">
                 <input
                   type={showConfirmPassword ? "text" : "password"}
                   id="confirmPassword"
@@ -550,28 +521,25 @@ const Register = () => {
                   disabled={isLoading}
                   maxLength="128"
                 />
-                <div className="password-field-actions">
-                  {formData.confirmPassword && (
-                    <button
-                      type="button"
-                      className="password-action-btn"
-                      onClick={() => copyToClipboard(formData.confirmPassword, 'confirmPassword')}
-                      title="Copy password"
-                      disabled={isLoading}
-                    >
-                      {copySuccess.confirmPassword ? '✓' : '📋'}
-                    </button>
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onClick={() => togglePasswordVisibility('confirmPassword')}
+                  title={showConfirmPassword ? "Hide password" : "Show password"}
+                  disabled={isLoading}
+                >
+                  {showConfirmPassword ? (
+                    <svg className="eye-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  ) : (
+                    <svg className="eye-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
                   )}
-                  <button
-                    type="button"
-                    className="password-action-btn"
-                    onClick={() => togglePasswordVisibility('confirmPassword')}
-                    title={showConfirmPassword ? "Hide password" : "Show password"}
-                    disabled={isLoading}
-                  >
-                    {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
-                  </button>
-                </div>
+                </button>
               </div>
               {errors.confirmPassword && (
                 <span className="error-message">{errors.confirmPassword}</span>
