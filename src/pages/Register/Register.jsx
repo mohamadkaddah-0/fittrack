@@ -24,6 +24,13 @@ const Register = () => {
     label: ''
   });
   const [message, setMessage] = useState({ text: '', type: '' });
+  
+  // State for password visibility
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // State for copy feedback
+  const [copySuccess, setCopySuccess] = useState({ password: false, confirmPassword: false });
 
   // Check if we're coming back from terms/privacy pages
   useEffect(() => {
@@ -116,6 +123,11 @@ const Register = () => {
     if (errors.password) {
       setErrors(prev => ({ ...prev, password: '' }));
     }
+    
+    // Reset copy success when password changes
+    if (copySuccess.password) {
+      setCopySuccess(prev => ({ ...prev, password: false }));
+    }
   };
 
   // Handle input changes with sanitization
@@ -129,6 +141,14 @@ const Register = () => {
     
     if (name === 'password') {
       handlePasswordChange(e);
+    } else if (name === 'confirmPassword') {
+      setFormData(prev => ({ ...prev, confirmPassword: sanitizedValue }));
+      if (copySuccess.confirmPassword) {
+        setCopySuccess(prev => ({ ...prev, confirmPassword: false }));
+      }
+      if (errors.confirmPassword) {
+        setErrors(prev => ({ ...prev, confirmPassword: '' }));
+      }
     } else {
       setFormData(prev => ({
         ...prev,
@@ -138,6 +158,30 @@ const Register = () => {
       if (errors[name]) {
         setErrors(prev => ({ ...prev, [name]: '' }));
       }
+    }
+  };
+
+  // Copy password to clipboard
+  const copyToClipboard = async (text, field) => {
+    if (!text) return;
+    
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopySuccess(prev => ({ ...prev, [field]: true }));
+      setTimeout(() => {
+        setCopySuccess(prev => ({ ...prev, [field]: false }));
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  // Toggle password visibility
+  const togglePasswordVisibility = (field) => {
+    if (field === 'password') {
+      setShowPassword(!showPassword);
+    } else if (field === 'confirmPassword') {
+      setShowConfirmPassword(!showConfirmPassword);
     }
   };
 
@@ -242,52 +286,52 @@ const Register = () => {
 
   // Handle form submission
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  const newErrors = validateForm();
-  if (Object.keys(newErrors).length > 0) {
-    setErrors(newErrors);
-    return;
-  }
-  
-  setIsLoading(true);
-  setMessage({ text: '', type: '' });
-  
-  try {
-  const response = await fetch('https://fittrack-t4iu.onrender.com/api/auth/register', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      name: `${formData.firstName} ${formData.lastName}`,
-      email: formData.email,
-      password: formData.password,
-    })
-  });
+    e.preventDefault();
     
-    const data = await response.json();
+    const newErrors = validateForm();
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
     
-    if (data.success) {
-      localStorage.setItem('fittrack_token', data.token);
-      localStorage.setItem('fittrack_user', JSON.stringify(data.user));
-      
-      setMessage({
-        text: `Welcome, ${data.user.name}! Redirecting to survey...`,
-        type: 'success'
+    setIsLoading(true);
+    setMessage({ text: '', type: '' });
+    
+    try {
+      const response = await fetch('https://fittrack-t4iu.onrender.com/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          password: formData.password,
+        })
       });
       
-      setTimeout(() => {
-        navigate('/ready-survey');
-      }, 2000);
-    } else {
-      setMessage({ text: data.message, type: 'error' });
+      const data = await response.json();
+      
+      if (data.success) {
+        localStorage.setItem('fittrack_token', data.token);
+        localStorage.setItem('fittrack_user', JSON.stringify(data.user));
+        
+        setMessage({
+          text: `Welcome, ${data.user.name}! Redirecting to survey...`,
+          type: 'success'
+        });
+        
+        setTimeout(() => {
+          navigate('/ready-survey');
+        }, 2000);
+      } else {
+        setMessage({ text: data.message, type: 'error' });
+      }
+    } catch (error) {
+      console.error('Registration failed:', error);
+      setMessage({ text: 'Registration failed. Please try again.', type: 'error' });
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    console.error('Registration failed:', error);
-    setMessage({ text: 'Registration failed. Please try again.', type: 'error' });
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   // Get strength color - using your app's color scheme
   const getStrengthColor = () => {
@@ -375,7 +419,7 @@ const Register = () => {
                 type="email"
                 id="email"
                 name="email"
-                className={`field-input ${errors.username ? 'error' : ''}`}
+                className={`field-input ${errors.email ? 'error' : ''}`}
                 placeholder="you@example.com"
                 value={formData.email}
                 onChange={handleChange}
@@ -415,17 +459,41 @@ const Register = () => {
               <label className="block text-[var(--dim)] text-base font-mono mb-1 tracking-wider" htmlFor="password">
                 PASSWORD
               </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                className={`field-input ${errors.password ? 'error' : ''}`}
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={handleChange}
-                disabled={isLoading}
-                maxLength="128"
-              />
+              <div className="password-input-wrapper">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  name="password"
+                  className={`field-input ${errors.password ? 'error' : ''}`}
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                  maxLength="128"
+                />
+                <div className="password-field-actions">
+                  {formData.password && (
+                    <button
+                      type="button"
+                      className="password-action-btn"
+                      onClick={() => copyToClipboard(formData.password, 'password')}
+                      title="Copy password"
+                      disabled={isLoading}
+                    >
+                      {copySuccess.password ? '✓' : '📋'}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="password-action-btn"
+                    onClick={() => togglePasswordVisibility('password')}
+                    title={showPassword ? "Hide password" : "Show password"}
+                    disabled={isLoading}
+                  >
+                    {showPassword ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                </div>
+              </div>
               
               {/* Clean password strength indicator */}
               {formData.password && (
@@ -470,17 +538,41 @@ const Register = () => {
               <label className="block text-[var(--dim)] text-base font-mono mb-1 tracking-wider" htmlFor="confirmPassword">
                 CONFIRM PASSWORD
               </label>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                className={`field-input ${errors.confirmPassword ? 'error' : ''}`}
-                placeholder="••••••••"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                disabled={isLoading}
-                maxLength="128"
-              />
+              <div className="password-input-wrapper">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  className={`field-input ${errors.confirmPassword ? 'error' : ''}`}
+                  placeholder="••••••••"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                  maxLength="128"
+                />
+                <div className="password-field-actions">
+                  {formData.confirmPassword && (
+                    <button
+                      type="button"
+                      className="password-action-btn"
+                      onClick={() => copyToClipboard(formData.confirmPassword, 'confirmPassword')}
+                      title="Copy password"
+                      disabled={isLoading}
+                    >
+                      {copySuccess.confirmPassword ? '✓' : '📋'}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="password-action-btn"
+                    onClick={() => togglePasswordVisibility('confirmPassword')}
+                    title={showConfirmPassword ? "Hide password" : "Show password"}
+                    disabled={isLoading}
+                  >
+                    {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                </div>
+              </div>
               {errors.confirmPassword && (
                 <span className="error-message">{errors.confirmPassword}</span>
               )}

@@ -159,3 +159,51 @@
   border-bottom-color: var(--cyan);
   transform: translateY(-1px);
 }
+
+/* Password input wrapper with action buttons */
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper .field-input {
+  flex: 1;
+  padding-right: 80px; /* Make room for the action buttons */
+}
+
+.password-field-actions {
+  position: absolute;
+  right: 10px;
+  display: flex;
+  gap: 8px;
+  background: transparent;
+}
+
+.password-action-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  color: var(--dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.password-action-btn:hover:not(:disabled) {
+  background: rgba(198, 241, 53, 0.1);
+  transform: scale(1.05);
+}
+
+.password-action-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.password-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
