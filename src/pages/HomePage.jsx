@@ -208,10 +208,14 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
     .filter(e => e.type === "meal")
     .reduce((sum, e) => sum + (e.kcal || 0), 0);
 
-  // Calories burnt — auto-derived from today's logged workouts in calendarData
-  const caloriesBurnt   = todayEntries
+  // Calories burnt — auto-derived from today's logged workouts + steps taken
+  // Steps estimate: ~0.04 kcal/step (standard MET approximation for avg body weight)
+  const KCAL_PER_STEP = 0.04;
+  const caloriesFromWorkouts = todayEntries
     .filter(e => e.type === "workout")
     .reduce((sum, e) => sum + (e.caloriesBurned || 0), 0);
+  const caloriesFromSteps = Math.round(stepsTaken * KCAL_PER_STEP);
+  const caloriesBurnt = caloriesFromWorkouts + caloriesFromSteps;
 
   // Exercises done — auto count of today's logged workouts
   const exercisesDone   = todayEntries.filter(e => e.type === "workout").length;
@@ -476,24 +480,18 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border-b border-[#1E1E1E]">
           <AutoStatCard label="Calories Intake" value={caloriesIntake} unit="kcal" goal={GOALS.calories}  color="#C6F135" source="from meals" />
-          <AutoStatCard label="Calories Burnt"  value={caloriesBurnt}  unit="kcal" goal={0}               color="#FF2A5E" source="from workouts" />
+          <AutoStatCard label="Calories Burnt"  value={caloriesBurnt}  unit="kcal" goal={0}               color="#FF2A5E" source={caloriesFromSteps > 0 ? "workouts + steps" : "from workouts"} />
           <EditableStatCard label="Water Intake"    value={waterIntake}    unit="L"    goal={GOALS.water}     color="#00E5FF" onSave={handleWaterSave}     />
           <AutoStatCard label="Exercises Done"  value={exercisesDone}  unit=""     goal={GOALS.exercises} color="#FFAA00" source="from workouts" />
         </div>
 
-        {/* Steps Taken — Phase 2 */}
+        {/* Steps Taken */}
         <div className="px-6 md:px-14 py-5 border-b border-[#1E1E1E] flex flex-col sm:flex-row sm:items-center gap-4"
           style={{ background: "repeating-linear-gradient(135deg, transparent, transparent 6px, rgba(255,255,255,0.015) 6px, rgba(255,255,255,0.015) 12px)" }}
         >
-          {/* Label + Phase 2 badge */}
+          {/* Label */}
           <div className="flex items-center gap-3 shrink-0">
             <span className="text-[8px] tracking-[0.22em] uppercase text-[#444]">Steps Taken</span>
-            <span
-              className="text-[8px] font-bold tracking-[0.18em] uppercase px-2 py-1 border"
-              style={{ borderColor: "#00E5FF", color: "#00E5FF", background: "rgba(0,229,255,0.08)" }}
-            >
-              Manual Sync
-            </span>
           </div>
 
           <div className="flex-1 bg-[#1A1A1A] h-[6px] overflow-hidden border border-[#222]">
@@ -510,21 +508,6 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
               className="w-28 bg-transparent border-b border-[#00E5FF] text-[#00E5FF] font-['Barlow_Condensed'] font-black text-3xl outline-none text-right"
             />
             <span className="text-[9px] shrink-0 text-[#555]">/ {GOALS.steps.toLocaleString()} steps</span>
-          </div>
-
-          <span className="text-[8px] tracking-wide shrink-0" style={{ color: "#555" }}>
-            Manual step entry is live. Pedometer sync can be added later.
-          </span>
-
-          <div className="hidden">
-          {/* Value placeholder */}
-          <span className="font-['Barlow_Condensed'] font-black text-3xl shrink-0" style={{ color: "#333" }}>—</span>
-          <span className="text-[9px] shrink-0" style={{ color: "#333" }}>/ {GOALS.steps.toLocaleString()} steps</span>
-
-          {/* Explanation note */}
-          <span className="text-[8px] tracking-wide shrink-0" style={{ color: "#555" }}>
-            🔒 Needs pedometer API — coming in Phase 2
-          </span>
           </div>
         </div>
       </div>

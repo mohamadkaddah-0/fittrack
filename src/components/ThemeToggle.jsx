@@ -1,22 +1,22 @@
 import { useEffect, useState } from 'react';
 
 export default function ThemeToggle() {
+  // Theme persists during the browser session (sessionStorage).
+  // When the user closes the browser / tab the preference resets to dark (default).
   const [isDark, setIsDark] = useState(() => {
-    const saved = localStorage.getItem('fittrack-theme');
+    const saved = sessionStorage.getItem('fittrack-theme');
     if (saved) return saved === 'dark';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    // No session preference yet → default dark
+    return true;
   });
 
   useEffect(() => {
-    if (isDark) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      localStorage.setItem('fittrack-theme', 'dark');
-      sessionStorage.removeItem('fittrack-theme');
-    } else {
-      document.documentElement.setAttribute('data-theme', 'light');
-      localStorage.setItem('fittrack-theme', 'light');
-      sessionStorage.removeItem('fittrack-theme');
-    }
+    const theme = isDark ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+    // Write to sessionStorage only — clears when browser/tab closes
+    sessionStorage.setItem('fittrack-theme', theme);
+    // Remove any stale localStorage entry so it doesn't interfere
+    localStorage.removeItem('fittrack-theme');
   }, [isDark]);
 
   return (

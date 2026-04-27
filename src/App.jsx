@@ -178,10 +178,12 @@ export default function App() {
   const useBackendCalendar = api.hasActivityIdentity();
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || sessionStorage.getItem(THEME_STORAGE_KEY) || "dark";
+    // Read theme from sessionStorage (resets to dark when browser closes).
+    // Remove any legacy localStorage value so it doesn't interfere.
+    localStorage.removeItem(THEME_STORAGE_KEY);
+    const savedTheme = sessionStorage.getItem(THEME_STORAGE_KEY) || "dark";
     document.documentElement.dataset.theme = savedTheme;
-    localStorage.setItem(THEME_STORAGE_KEY, savedTheme);
-    sessionStorage.removeItem(THEME_STORAGE_KEY);
+    sessionStorage.setItem(THEME_STORAGE_KEY, savedTheme);
   }, []);
 
   // ── Diet teammate's shared state ─────────────────────────────
@@ -514,7 +516,7 @@ function AppFooter() {
         <li><Link to="/terms"   className="text-[8px] tracking-[0.2em] uppercase text-[var(--dim)] hover:text-[#C6F135] transition-colors">Terms</Link></li>
         <li><Link to="/support" className="text-[8px] tracking-[0.2em] uppercase text-[var(--dim)] hover:text-[#C6F135] transition-colors">Support</Link></li>
       </ul>
-      <div className="text-[8px] tracking-[0.2em] uppercase text-[var(--dim)]">2026 FitTrack v3.0.0</div>
+      <div className="text-[8px] tracking-[0.2em] uppercase text-[var(--dim)]">2026 FitTrack v1.0.0</div>
     </footer>
   );
 }

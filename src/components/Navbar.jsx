@@ -112,7 +112,7 @@ export default function Navbar() {
       <div style={{ background: "#C6F135", color: "#000", fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", padding: "8px 0", overflow: "hidden", whiteSpace: "nowrap" }}>
         <div style={{ display: "inline-flex", animation: "ticker 22s linear infinite" }}>
           {[...Array(2)].flatMap((_, ai) =>
-            ["FitTrack","* * *","Track Your Limits","* * *","Stay Consistent","* * *","v3.0.0","* * *"].map(
+            ["FitTrack","* * *","Track Your Limits","* * *","Stay Consistent","* * *","v1.0.0","* * *"].map(
               (t, i) => <span key={`${ai}-${i}`} style={{ padding: "0 32px" }}>{t}</span>
             )
           )}
