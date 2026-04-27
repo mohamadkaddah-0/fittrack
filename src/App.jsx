@@ -178,7 +178,10 @@ export default function App() {
   const useBackendCalendar = api.hasActivityIdentity();
 
   useEffect(() => {
-    document.documentElement.dataset.theme = sessionStorage.getItem(THEME_STORAGE_KEY) || "dark";
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || sessionStorage.getItem(THEME_STORAGE_KEY) || "dark";
+    document.documentElement.dataset.theme = savedTheme;
+    localStorage.setItem(THEME_STORAGE_KEY, savedTheme);
+    sessionStorage.removeItem(THEME_STORAGE_KEY);
   }, []);
 
   // ── Diet teammate's shared state ─────────────────────────────
@@ -480,7 +483,7 @@ const [mealPool,    setMealPool]    = useState([]);
             {/* Jawad */}
             <Route path="/exercises"    element={<ExerciseLibrary calendarData={calendarData} addWorkoutToCalendar={addWorkoutToCalendar} currentUser={currentUser} />} />
             <Route path="/exercise/:id" element={<ExerciseDetailPage />} />
-            <Route path="/log" element={<LogWorkoutPage addWorkoutToCalendar={addWorkoutToCalendar} />} />
+            <Route path="/log" element={<LogWorkoutPage addWorkoutToCalendar={addWorkoutToCalendar} currentUser={currentUser} />} />
             {/* Mohammad Moghnieh */}
             <Route path="/profile"         element={<UserProfile user={currentUser} />} />
             <Route path="/profile/:userId" element={<UserProfile />} />
@@ -504,7 +507,7 @@ function AppFooter() {
   const NO_FOOTER_ROUTES = ["/", "/welcome", "/login", "/register", "/surveys", "/ready-survey", "/forgot-password", "/reset-password", "/get-started"];
   if (NO_FOOTER_ROUTES.includes(location.pathname)) return null;
   return (
-    <footer className="px-14 py-8 flex items-center justify-between border-t border-[var(--line)]">
+    <footer className="px-14 py-8 flex items-center justify-between border-t border-[var(--line)] bg-[var(--bg)] text-[var(--text)]">
       <div className="font-['Barlow_Condensed'] font-black text-xl text-[#C6F135] uppercase">FitTrack</div>
       <ul className="flex gap-6 list-none">
         <li><Link to="/privacy" className="text-[8px] tracking-[0.2em] uppercase text-[var(--dim)] hover:text-[#C6F135] transition-colors">Privacy</Link></li>

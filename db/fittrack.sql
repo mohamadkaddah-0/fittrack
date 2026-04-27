@@ -715,6 +715,58 @@ CREATE TABLE IF NOT EXISTS calendar_entries (
   FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE SET NULL
 );
 
+-- ============================================================
+-- Activity state used by HomePage and LogWorkoutPage
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS user_daily_metrics (
+  id           INT PRIMARY KEY AUTO_INCREMENT,
+  user_id      INT NOT NULL,
+  metric_date  DATE NOT NULL,
+  water_intake DECIMAL(5,2) NOT NULL DEFAULT 0,
+  steps_taken  INT UNSIGNED NOT NULL DEFAULT 0,
+  created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_user_metric_date (user_id, metric_date),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS user_plan_progress (
+  user_id        INT PRIMARY KEY,
+  days_completed INT UNSIGNED NOT NULL DEFAULT 0,
+  total_days     INT UNSIGNED NOT NULL DEFAULT 7,
+  updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS workout_log_entries (
+  id                 INT PRIMARY KEY AUTO_INCREMENT,
+  user_id            INT NOT NULL,
+  entry_date         DATE NOT NULL,
+  exercise_id        INT NULL,
+  name               VARCHAR(100) NOT NULL,
+  category           VARCHAR(50) NOT NULL DEFAULT 'Workout',
+  log_type           VARCHAR(30) NOT NULL DEFAULT 'bodyweight',
+  calories_burned    SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  sets               SMALLINT UNSIGNED NULL,
+  reps               SMALLINT UNSIGNED NULL,
+  weight_kg          DECIMAL(6,2) NULL,
+  duration_sec       SMALLINT UNSIGNED NULL,
+  distance_km        DECIMAL(6,2) NULL,
+  rest_sec           SMALLINT UNSIGNED NULL,
+  notes              TEXT NULL,
+  workout_timestamp  DATETIME NULL,
+  synced_to_calendar BOOLEAN NOT NULL DEFAULT FALSE,
+  calendar_entry_id  INT NULL,
+  created_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_workout_log_user_date (user_id, entry_date),
+  INDEX idx_workout_log_calendar_entry (calendar_entry_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE SET NULL,
+  FOREIGN KEY (calendar_entry_id) REFERENCES calendar_entries(id) ON DELETE SET NULL
+);
+
 -- ─────────────────────────────────────────────────────────────
 -- Seed: Omar (user 3) — fixed dates so demo data is always visible.
 -- Using fixed dates (not DATE_SUB) ensures the data does not shift

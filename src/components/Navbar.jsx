@@ -26,7 +26,7 @@ export default function Navbar() {
   const [user,        setUser]        = useState(null);
   const [theme,       setTheme]       = useState(() => {
     if (typeof window === "undefined") return "dark";
-    return sessionStorage.getItem(THEME_STORAGE_KEY) || "dark";
+    return localStorage.getItem(THEME_STORAGE_KEY) || sessionStorage.getItem(THEME_STORAGE_KEY) || "dark";
   });
 
   const accountRef = useRef(null);
@@ -69,7 +69,8 @@ export default function Navbar() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    sessionStorage.setItem(THEME_STORAGE_KEY, theme);
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+    sessionStorage.removeItem(THEME_STORAGE_KEY);
   }, [theme]);
 
   useEffect(() => {
@@ -177,19 +178,42 @@ export default function Navbar() {
               aria-label={`Switch to ${isLightTheme ? "dark" : "light"} mode`}
               title={`Switch to ${isLightTheme ? "dark" : "light"} mode`}
               style={{
-                width: 34,
-                height: 34,
-                display: "grid",
-                placeItems: "center",
+                width: 62,
+                height: 30,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
                 border: "1px solid var(--line2)",
-                background: "var(--bg2)",
-                color: "var(--text)",
+                borderRadius: 999,
+                background: isLightTheme ? "#F7FAF0" : "#101010",
+                color: "transparent",
                 cursor: "pointer",
-                fontSize: 15,
+                fontSize: 0,
+                fontWeight: 900,
+                letterSpacing: "0.12em",
                 lineHeight: 1,
+                padding: "0 8px",
+                position: "relative",
+                boxShadow: isLightTheme ? "inset 0 0 0 1px rgba(198,241,53,0.25)" : "inset 0 0 0 1px rgba(255,255,255,0.04)",
               }}
             >
               {isLightTheme ? "☾" : "☀"}
+              <span style={{ opacity: isLightTheme ? 1 : 0.45, color: isLightTheme ? "#111" : "#ECECEC", fontSize: 9 }}>LT</span>
+              <span style={{ opacity: isLightTheme ? 0.45 : 1, color: isLightTheme ? "#111" : "#ECECEC", fontSize: 9 }}>DK</span>
+              <span
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  top: 3,
+                  left: isLightTheme ? 3 : 31,
+                  width: 24,
+                  height: 24,
+                  borderRadius: "50%",
+                  background: isLightTheme ? "#C6F135" : "#FFAA00",
+                  transition: "left 0.22s ease, background 0.22s ease",
+                  boxShadow: "0 6px 14px rgba(0,0,0,0.28)",
+                }}
+              />
             </button>
 
             <div style={{ position: "relative" }} ref={accountRef}>

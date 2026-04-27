@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { getTodayKey } from "../data/mockData";
 import api from "../services/api";
 
@@ -152,12 +151,12 @@ function EditableStatCard({ label, value, unit, goal, color, onSave }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function HomePage({ calendarData = {}, currentUser, deleteMealFromDay, deleteWorkoutFromDay, togglePlanMeal, loggedMeals = {} }) {
-  const navigate = useNavigate();
   const useBackend = api.hasActivityIdentity();
   const [backendCalendarData, setBackendCalendarData] = useState({});
   const [waterIntake, setWaterIntake] = useState(0);
   const [stepsTaken, setStepsTaken] = useState(0);
   const [daysCompleted, setDaysCompleted] = useState(0);
+  const [planTotalDays, setPlanTotalDays] = useState(PLAN_TOTAL_DAYS);
 
   // Derive plan name from user's survey goal — falls back to default if no user
   const planName = GOAL_TO_PLAN[currentUser?.goal] || "Your Fitness Plan";
@@ -180,7 +179,8 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
         setWaterIntake(Number(response.homepage?.waterIntake || 0));
         setStepsTaken(Number(response.homepage?.stepsTaken || 0));
         setDaysCompleted(Number(response.homepage?.daysCompleted || 0));
-      } catch (error) {
+        setPlanTotalDays(Number(response.homepage?.planTotalDays || PLAN_TOTAL_DAYS));
+      } catch {
         if (!cancelled) {
           setBackendCalendarData({});
         }
@@ -199,18 +199,7 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
       return calendarData;
     }
 
-    const merged = { ...calendarData };
-
-    Object.entries(backendCalendarData).forEach(([dateKey, backendEntries]) => {
-      const localEntries = Array.isArray(merged[dateKey]) ? merged[dateKey] : [];
-      const localIds = new Set(localEntries.map((entry) => String(entry.id || "")));
-      const backendOnlyEntries = (backendEntries || []).filter(
-        (entry) => entry?.id && !localIds.has(String(entry.id))
-      );
-      merged[dateKey] = [...localEntries, ...backendOnlyEntries];
-    });
-
-    return merged;
+    return backendCalendarData;
   }, [backendCalendarData, calendarData, useBackend]);
 
   // Calories intake — auto-derived from today's meal entries in calendarData
@@ -312,7 +301,7 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
   const [calMonth,    setCalMonth]    = useState(todayDate.getMonth());
   const [selectedDay, setSelectedDay] = useState(today);
 
-  const planProgress = Math.round((daysCompleted / PLAN_TOTAL_DAYS) * 100);
+  const planProgress = Math.round((daysCompleted / planTotalDays) * 100);
 
   // Calendar helpers
   function changeMonth(direction) {
@@ -367,7 +356,7 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
 
     try {
       await api.updateHomepageData({ date: getTodayKey(), waterIntake: nextValue });
-    } catch (error) {
+    } catch {
       // Keep the optimistic value in place so the UI still feels responsive.
     }
   }
@@ -380,8 +369,8 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
     }
 
     try {
-      await api.updateHomepageData({ daysCompleted: nextValue });
-    } catch (error) {
+      await api.updateHomepageData({ daysCompleted: nextValue, planTotalDays });
+    } catch {
       // Keep the optimistic value in place so the progress UI remains usable.
     }
   }
@@ -395,7 +384,7 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
 
     try {
       await api.updateHomepageData({ date: getTodayKey(), stepsTaken: nextValue });
-    } catch (error) {
+    } catch {
       // Keep the optimistic value in place so the UI remains usable.
     }
   }
@@ -415,13 +404,44 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
           return next;
         });
         return;
-      } catch (error) {
+      } catch {
         // Fall through to the existing prop callback if the API is unavailable.
       }
     }
 
     if (deleteWorkoutFromDay) {
       deleteWorkoutFromDay(selectedDay, index);
+    }
+  }
+
+  async function handleMealDelete(entry) {
+    if (useBackend && entry?.id) {
+      try {
+        await api.deleteCalendarEntry(entry.id, selectedDay);
+        setBackendCalendarData((prev) => {
+          const next = { ...prev };
+          const dayEntries = (next[selectedDay] || []).filter((item) => String(item.id) !== String(entry.id));
+          if (dayEntries.length === 0) {
+            delete next[selectedDay];
+          } else {
+            next[selectedDay] = dayEntries;
+          }
+          return next;
+        });
+        return;
+      } catch {
+        // Fall through to the local callback if the API is unavailable.
+      }
+    }
+
+    const entryIndex = selectedDayEntries.findIndex((item) =>
+      item === entry || (entry?.id && String(item.id) === String(entry.id))
+    );
+
+    if (entryIndex >= 0 && deleteMealFromDay) {
+      deleteMealFromDay(selectedDay, entryIndex);
+      const checkedSet = loggedMeals?.[today] || new Set();
+      if (togglePlanMeal && checkedSet.has?.(entry.name)) togglePlanMeal(entry);
     }
   }
 
@@ -434,7 +454,7 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
   // RENDER
   // ─────────────────────────────────────────────────────────────
   return (
-    <div>
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
 
       {/* SECTION 1 — Today's Stats */}
       <div className="border-b border-[#1E1E1E]">
@@ -533,7 +553,7 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
               <div className="flex flex-col gap-3">
                 <div className="text-[9px] tracking-[0.15em] uppercase text-[#555]">Click a day to mark it done</div>
                 <div className="flex gap-2 flex-wrap mt-1">
-                  {Array.from({ length: PLAN_TOTAL_DAYS }).map((_, i) => (
+                  {Array.from({ length: planTotalDays }).map((_, i) => (
                     <button key={i}
                       onClick={() => handleDaysCompletedChange(i < daysCompleted ? i : i + 1)}
                       className="w-9 h-9 border flex items-center justify-center text-[10px] transition-colors cursor-pointer"
@@ -545,7 +565,7 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
                     </button>
                   ))}
                 </div>
-                <div className="text-[9px] tracking-widest text-[#555]">{daysCompleted} / {PLAN_TOTAL_DAYS} Days Completed</div>
+                <div className="text-[9px] tracking-widest text-[#555]">{daysCompleted} / {planTotalDays} Days Completed</div>
               </div>
             </div>
 
@@ -691,7 +711,7 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
   <p className="text-xs text-[#555] mb-2 italic">Past day — read only</p>
 )}
 {selectedMeals.map((entry, i) => (
-  <li key={i} className="flex items-center justify-between py-2 border-b last:border-b-0 border-[#1E1E1E]">
+  <li key={entry.id || `${entry.name}-${i}`} className="flex items-center justify-between py-2 border-b last:border-b-0 border-[#1E1E1E]">
     <div className="flex items-center gap-2">
       <div className="w-[6px] h-[6px] rounded-full flex-shrink-0" style={{ background: MEAL_CAT_COLORS[entry.cat] || "#555" }} />
       <div>
@@ -701,13 +721,9 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
     </div>
     <div className="flex items-center gap-3">
       <p className="text-xs font-bold text-[#C6F135]">{entry.kcal} kcal</p>
-      {selectedDay === today && deleteMealFromDay && (
+      {selectedDay === today && (deleteMealFromDay || entry.id) && (
         <button
-          onClick={() => {
-            deleteMealFromDay(selectedDay, i);
-            const checkedSet = loggedMeals?.[today] || new Set();
-            if (togglePlanMeal && checkedSet.has?.(entry.name)) togglePlanMeal(entry);
-          }}
+          onClick={() => handleMealDelete(entry)}
           className="w-6 h-6 border border-[#222] text-[#555] hover:border-[#FF2A5E] hover:text-[#FF2A5E] flex items-center justify-center text-xs transition-colors">
           ✕
         </button>

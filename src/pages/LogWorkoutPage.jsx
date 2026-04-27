@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import { EXERCISES, getUserProfile } from "../data/mockData";
 import api from "../services/api";
 
@@ -263,11 +262,11 @@ function LogForm({ ex, logData, onChange, calories }) {
 // EXERCISE PICKER
 // ─────────────────────────────────────────────────────────────────────────────
 
-function ExercisePicker({ onSelect }) {
+function ExercisePicker({ exercises, onSelect }) {
   const [search,    setSearch]    = useState("");
   const [catFilter, setCatFilter] = useState("All");
 
-  const filtered = EXERCISES.filter(ex => {
+  const filtered = exercises.filter(ex => {
     const matchSearch = ex.name.toLowerCase().includes(search.toLowerCase());
     const matchCat    = catFilter === "All" || ex.category === catFilter;
     return matchSearch && matchCat;
@@ -474,10 +473,16 @@ function RestTimer({ defaultSeconds = 60 }) {
 // MAIN PAGE
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function LogWorkoutPage({ addWorkoutToCalendar }) {
-  const user    = getUserProfile();
-  const navigate = useNavigate();
+export default function LogWorkoutPage({ addWorkoutToCalendar, currentUser }) {
   const useBackend = api.hasActivityIdentity();
+  const profile = currentUser || getUserProfile();
+  const user = {
+    ...profile,
+    name: profile?.name || "User",
+    weight: profile?.weight || profile?.currentWeight || profile?.current_weight || 70,
+  };
+  const [exerciseOptions, setExerciseOptions] = useState(EXERCISES);
+  const localEntryId = useRef(0);
 
   // Exercise currently selected for logging
   const [selectedEx,     setSelectedEx]     = useState(null);
@@ -485,6 +490,9 @@ export default function LogWorkoutPage({ addWorkoutToCalendar }) {
   const [logData,        setLogData]        = useState({});
   // All exercises logged this session (persisted to localStorage per day)
   const [loggedEntries,  setLoggedEntries]  = useState(() => {
+    if (useBackend) {
+      return [];
+    }
     try {
       const saved = localStorage.getItem("workoutLog_" + getTodayKey());
       return saved ? JSON.parse(saved) : [];
@@ -496,6 +504,29 @@ export default function LogWorkoutPage({ addWorkoutToCalendar }) {
   const [toast,          setToast]          = useState(null);
   // Whether the session has been saved to the calendar
   const [savedToCalendar, setSavedToCalendar] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadExercises() {
+      try {
+        const response = await api.getExercises();
+        if (!cancelled && response?.ok && Array.isArray(response.data)) {
+          setExerciseOptions(response.data);
+        }
+      } catch {
+        if (!cancelled) {
+          setExerciseOptions(EXERCISES);
+        }
+      }
+    }
+
+    loadExercises();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Persist today's log to localStorage whenever entries change
   useEffect(() => {
@@ -521,7 +552,7 @@ export default function LogWorkoutPage({ addWorkoutToCalendar }) {
 
         setLoggedEntries(response.entries || []);
         setSavedToCalendar(Boolean(response.savedToCalendar));
-      } catch (error) {
+      } catch {
         if (!cancelled) {
           setLoggedEntries([]);
           setSavedToCalendar(false);
@@ -568,8 +599,10 @@ export default function LogWorkoutPage({ addWorkoutToCalendar }) {
     // Calories are calculated now and locked — they won't change after logging
     const calories = estimateCalories(selectedEx, logData, user.weight);
 
+    localEntryId.current += 1;
     const entry = {
-      id:        Date.now(),
+      id:        `workout-local-${getTodayKey()}-${localEntryId.current}`,
+      exerciseId: selectedEx.id,
       name:      selectedEx.name,
       category:  selectedEx.category,
       logType:   type,
@@ -582,6 +615,7 @@ export default function LogWorkoutPage({ addWorkoutToCalendar }) {
       try {
         const response = await api.addWorkoutLogEntry({
           date: getTodayKey(),
+          exerciseId: selectedEx.id,
           ...entry,
         });
         setLoggedEntries(prev => [response.entry, ...prev]);
@@ -623,6 +657,7 @@ export default function LogWorkoutPage({ addWorkoutToCalendar }) {
     loggedEntries.forEach(entry => {
       addWorkoutToCalendar(today, {
         name:           entry.name,
+        exerciseId:     entry.exerciseId,
         cat:            "workout",
         type:           "workout",
         caloriesBurned: entry.calories || 0,
@@ -673,7 +708,7 @@ export default function LogWorkoutPage({ addWorkoutToCalendar }) {
         @media(min-width:640px){.lw-summary{grid-template-columns:repeat(4,1fr);}}
       `}</style>
 
-      <div style={{ background: "#080808", color: "#ECECEC", minHeight: "100vh",
+      <div className="fittrack-workout-page" style={{ background: "var(--bg)", color: "var(--text)", minHeight: "100vh",
         fontFamily: "'JetBrains Mono', monospace", overflowX: "hidden" }}>
         <main style={{ maxWidth: "1200px", margin: "0 auto",
           padding: "clamp(24px,5vw,48px) clamp(16px,4vw,40px)" }}>
@@ -807,7 +842,7 @@ export default function LogWorkoutPage({ addWorkoutToCalendar }) {
 
                 {pickerOpen && (
                   <div style={{ marginTop: "14px", animation: "fadeUp 0.2s ease" }}>
-                    <ExercisePicker onSelect={handleSelectExercise} />
+                    <ExercisePicker exercises={exerciseOptions} onSelect={handleSelectExercise} />
                   </div>
                 )}
               </div>

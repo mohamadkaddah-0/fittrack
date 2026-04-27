@@ -26,4 +26,18 @@ export default defineConfig([
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
     },
   },
+  {
+    files: [
+      'server.js',
+      'test-db.js',
+      'db/**/*.js',
+      'lib/**/*.js',
+      'middleware/**/*.js',
+      'routes/**/*.js',
+    ],
+    languageOptions: {
+      globals: globals.node,
+      sourceType: 'commonjs',
+    },
+  },
 ])

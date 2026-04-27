@@ -9,11 +9,13 @@ export default function ThemeToggle() {
 
   useEffect(() => {
     if (isDark) {
-      document.documentElement.removeAttribute('data-theme');
+      document.documentElement.setAttribute('data-theme', 'dark');
       localStorage.setItem('fittrack-theme', 'dark');
+      sessionStorage.removeItem('fittrack-theme');
     } else {
       document.documentElement.setAttribute('data-theme', 'light');
       localStorage.setItem('fittrack-theme', 'light');
+      sessionStorage.removeItem('fittrack-theme');
     }
   }, [isDark]);
 

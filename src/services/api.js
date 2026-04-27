@@ -5,13 +5,19 @@ const getToken = () => localStorage.getItem("fittrack_token");
 const getSessionUserId = () => {
   try {
     const sessionUser = sessionStorage.getItem("currentUser");
-    if (!sessionUser) {
-      return null;
+    if (sessionUser) {
+      const parsed = JSON.parse(sessionUser);
+      if (parsed?.id) return String(parsed.id);
     }
 
-    const parsed = JSON.parse(sessionUser);
-    return parsed?.id ? String(parsed.id) : null;
-  } catch (error) {
+    const storedUser = localStorage.getItem("fittrack_user");
+    if (storedUser) {
+      const parsed = JSON.parse(storedUser);
+      if (parsed?.id) return String(parsed.id);
+    }
+
+    return null;
+  } catch {
     return null;
   }
 };
@@ -39,7 +45,7 @@ const parseJson = async (response) => {
 
   try {
     data = await response.json();
-  } catch (error) {
+  } catch {
     data = null;
   }
 
