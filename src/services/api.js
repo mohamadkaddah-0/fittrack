@@ -144,9 +144,15 @@ getMealIngredients: (mealId) => request(`/meals/pool/${mealId}`),
   getSavedMeals: () => request("/activity/saved-meals"),
   addSavedMeal: (meal) => jsonRequest("/activity/saved-meals", "POST", meal),
   deleteSavedMeal: (mealId) => request(`/activity/saved-meals/${encodeURIComponent(mealId)}`, { method: "DELETE" }),
-  // ── Exercise endpoints (NEW) ──
+  // ── Exercise endpoints ──
   getExercises:    ()   => request("/exercises"),
   getExerciseById: (id) => request(`/exercises/${id}`),
+
+  // ── Google Fit endpoints ──
+  getGoogleFitAuthUrl: () => request("/googlefit/auth-url"),
+  syncGoogleFitSteps:  () => jsonRequest("/googlefit/sync", "POST", {}),
+  getGoogleFitStatus:  () => request("/googlefit/status"),
+  disconnectGoogleFit: () => request("/googlefit/disconnect", { method: "DELETE" }),
 };
 export default api;
 export { api };

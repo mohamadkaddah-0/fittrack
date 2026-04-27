@@ -14,6 +14,7 @@ app.use('/api/activity',    require('./routes/activity'));
 app.use('/api/exercises',   require('./routes/exercises'));
 app.use('/api/meals',       require('./routes/meals'));
 app.use('/api/ingredients', require('./routes/ingredients'));
+app.use('/api/googlefit',  require('./routes/googlefit'));
 
 // Health check
 app.get('/health', (req, res) => {

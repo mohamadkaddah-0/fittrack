@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getTodayKey } from "../data/mockData";
 import api from "../services/api";
+import GoogleFitSync from "../components/GoogleFitSync";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIGURATION
@@ -489,9 +490,10 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
         <div className="px-6 md:px-14 py-5 border-b border-[#1E1E1E] flex flex-col sm:flex-row sm:items-center gap-4"
           style={{ background: "repeating-linear-gradient(135deg, transparent, transparent 6px, rgba(255,255,255,0.015) 6px, rgba(255,255,255,0.015) 12px)" }}
         >
-          {/* Label */}
-          <div className="flex items-center gap-3 shrink-0">
+          {/* Label + Google Fit sync control */}
+          <div className="flex items-center gap-3 shrink-0 flex-wrap">
             <span className="text-[8px] tracking-[0.22em] uppercase text-[#444]">Steps Taken</span>
+            <GoogleFitSync onStepsUpdated={handleStepsSave} />
           </div>
 
           <div className="flex-1 bg-[#1A1A1A] h-[6px] overflow-hidden border border-[#222]">
