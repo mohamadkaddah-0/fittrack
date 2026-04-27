@@ -6,7 +6,7 @@ const router  = express.Router();
 router.get('/pool', async (req, res) => {
   try {
     const [meals] = await db.execute(
-      'SELECT * FROM meal_pool ORDER BY category, id'
+      'SELECT *, category as cat FROM meal_pool ORDER BY category, id'
     );
     res.json({ success: true, meals });
   } catch (error) {
