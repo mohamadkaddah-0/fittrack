@@ -16,22 +16,54 @@ router.get('/', async (req, res) => {
       limMap[row.exercise_id].push(row.limitation);
     }
 
+    // Send BOTH naming styles so old and new frontend code both work
     const exercises = rows.map((ex) => ({
       id:                ex.id,
       name:              ex.name,
       category:          ex.category,
       difficulty:        ex.difficulty,
+
+      // Both styles for log_type
+      log_type:          ex.log_type,
       logType:           ex.log_type,
+
+      // Both styles for met_value
+      met_value:         ex.met_value,
       met:               ex.met_value,
+
+      // Both styles for kcal_per_rep
+      kcal_per_rep:      ex.kcal_per_rep,
       kcalPerRep:        ex.kcal_per_rep,
+
+      // Both styles for kcal_range
+      kcal_range:        ex.kcal_range,
       kcalRange:         ex.kcal_range,
+
       muscles:           ex.muscles,
+
+      // Both styles for description
+      description:       ex.description,
       desc:              ex.description,
+
+      // Both styles for equipment_name
+      equipment_name:    ex.equipment_name,
       equipmentName:     ex.equipment_name,
+
+      // Both styles for exercise_type
+      exercise_type:     ex.exercise_type,
       type:              ex.exercise_type,
+
+      // Both styles for image_url
+      image_url:         ex.image_url,
       image:             ex.image_url,
+
+      // Both styles for video_id
+      video_id:          ex.video_id,
       videoId:           ex.video_id,
+
+      required_equipment:ex.required_equipment,
       requiredEquipment: ex.required_equipment,
+
       limitedFor:        limMap[ex.id] || [],
       link:              `/exercises/${ex.id}`,
     }));
@@ -87,22 +119,35 @@ router.get('/:id', async (req, res) => {
 
     const ex = exRows[0];
 
+    // Send BOTH naming styles
     const exercise = {
-      id:               ex.id,
-      name:             ex.name,
-      category:         ex.category,
-      difficulty:       ex.difficulty,
-      logType:          ex.log_type,
-      met:              ex.met_value,
-      kcalPerRep:       ex.kcal_per_rep,
-      kcalRange:        ex.kcal_range,
-      muscles:          ex.muscles,
-      desc:             ex.description,
-      equipmentName:    ex.equipment_name,
-      type:             ex.exercise_type,
-      image:            ex.image_url,
-      videoId:          ex.video_id,
-      requiredEquipment:ex.required_equipment,
+      id:                ex.id,
+      name:              ex.name,
+      category:          ex.category,
+      difficulty:        ex.difficulty,
+      log_type:          ex.log_type,
+      logType:           ex.log_type,
+      met_value:         ex.met_value,
+      met:               ex.met_value,
+      kcal_per_rep:      ex.kcal_per_rep,
+      kcalPerRep:        ex.kcal_per_rep,
+      kcal_range:        ex.kcal_range,
+      kcalRange:         ex.kcal_range,
+      muscles:           ex.muscles,
+      description:       ex.description,
+      desc:              ex.description,
+      equipment_name:    ex.equipment_name,
+      equipmentName:     ex.equipment_name,
+      exercise_type:     ex.exercise_type,
+      type:              ex.exercise_type,
+      image_url:         ex.image_url,
+      image:             ex.image_url,
+      video_id:          ex.video_id,
+      videoId:           ex.video_id,
+      required_equipment:ex.required_equipment,
+      requiredEquipment: ex.required_equipment,
+
+      // Detail data
       steps:            stepRows.map((r) => r.step_text),
       tips:             tipRows.filter((r) => r.entry_type === 'tip').map((r) => r.entry_text),
       mistakes:         tipRows.filter((r) => r.entry_type === 'mistake').map((r) => r.entry_text),
