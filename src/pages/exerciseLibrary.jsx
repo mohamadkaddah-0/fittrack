@@ -507,7 +507,12 @@ function WorkoutCalendar({ calendarData, exerciseLogByDate }) {
       const dateKey   = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
       const entries   = allCalendar[dateKey] || [];
       const meals     = entries.filter((e) => e.type !== "workout");
-      const exForDate = exerciseLogByDate[dateKey] || [];
+      // Read workouts from calendarData (DB) so they persist after navigation/login
+      const workoutsFromDb = entries.filter((e) => e.type === "workout");
+      const exForDate = [
+        ...workoutsFromDb.map((w) => ({ name: w.name, category: w.category || "Cardio" })),
+        ...(exerciseLogByDate[dateKey] || []),
+      ];
 
       cells.push({
         day, dateKey, other,
@@ -524,7 +529,12 @@ function WorkoutCalendar({ calendarData, exerciseLogByDate }) {
   const cells            = buildCells();
   const selectedEntry    = allCalendar[selected] || [];
   const selectedMeals    = selectedEntry.filter((e) => e.type !== "workout");
-  const selectedExercises= exerciseLogByDate[selected] || [];
+  // Read workouts from calendarData (DB) so they show even after refresh/login
+  const selectedWorkoutsDb = selectedEntry.filter((e) => e.type === "workout");
+  const selectedExercises  = [
+    ...selectedWorkoutsDb.map((w) => ({ name: w.name, category: w.category || "Cardio" })),
+    ...(exerciseLogByDate[selected] || []),
+  ];
 
   return (
     <section aria-label="Calendar showing meals and exercises" className="mb-16">
@@ -693,8 +703,24 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
       mockUser.equipment, mockUser.activityLevel, exercises
     );
     setPlanDays(buildPlanDays(pool, exercises));
-    setCompletedPlanItems({});
+    // NOTE: do NOT reset completedPlanItems — they come from the DB
   }, [exercises, userLevel, boostCount]);
+
+  // Load checkmarks from database when user logs in
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    api.getCheckmarks()
+      .then(({ data }) => {
+        const map = {};
+        (data || []).forEach((row) => {
+          map[`${row.plan_day}-${row.exercise_id}`] = true;
+        });
+        setCompletedPlanItems(map);
+      })
+      .catch(() => {
+        // Silently fail — checkmarks just won't appear if API fails
+      });
+  }, [currentUser]);
 
   const todayPlanDay = 1;
 
@@ -706,40 +732,34 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
   function toggleExerciseDone(day, exerciseId) {
     if (day !== todayPlanDay) return;
     const key      = `${day}-${exerciseId}`;
-    const isDone   = !completedPlanItems[key];
+    // ── ONCE CHECKED, CANNOT BE UNCHECKED ──
+    if (completedPlanItems[key]) return;
+
     const exercise = exercises.find((ex) => ex.id === exerciseId);
     const today    = getTodayKey();
 
-    setCompletedPlanItems((prev) => ({ ...prev, [key]: isDone }));
+    setCompletedPlanItems((prev) => ({ ...prev, [key]: true }));
 
-    if (isDone) {
-      setExerciseLogByDate((prev) => ({
-        ...prev,
-        [today]: [...(prev[today] || []), { name: exercise?.name || "Exercise", category: exercise?.category || "Cardio" }],
-      }));
+    // Save checkmark to database (non-blocking)
+    api.addCheckmark(exerciseId, day).catch(() => {});
 
-      if (addWorkoutToCalendar) {
-        const rangeParts = (exercise?.kcal_range || "0").replace("–", "-").split("-");
-        const kcalMid = rangeParts.length === 2
-          ? Math.round((parseFloat(rangeParts[0]) + parseFloat(rangeParts[1])) / 2)
-          : parseFloat(rangeParts[0]) || 0;
+    setExerciseLogByDate((prev) => ({
+      ...prev,
+      [today]: [...(prev[today] || []), { name: exercise?.name || "Exercise", category: exercise?.category || "Cardio" }],
+    }));
 
-        addWorkoutToCalendar(today, {
-          name:           exercise?.name || "Exercise",
-          category:       exercise?.category || "Cardio",
-          caloriesBurned: kcalMid,
-          cat:            "workout",
-          type:           "workout",
-        });
-      }
-    } else {
-      setExerciseLogByDate((prev) => {
-        const existing = prev[today] || [];
-        const index    = existing.findIndex((item) => item.name === (exercise?.name || "Exercise"));
-        if (index === -1) return prev;
-        const updated  = [...existing];
-        updated.splice(index, 1);
-        return { ...prev, [today]: updated };
+    if (addWorkoutToCalendar) {
+      const rangeParts = (exercise?.kcal_range || "0").replace("–", "-").split("-");
+      const kcalMid = rangeParts.length === 2
+        ? Math.round((parseFloat(rangeParts[0]) + parseFloat(rangeParts[1])) / 2)
+        : parseFloat(rangeParts[0]) || 0;
+
+      addWorkoutToCalendar(today, {
+        name:           exercise?.name || "Exercise",
+        category:       exercise?.category || "Cardio",
+        caloriesBurned: kcalMid,
+        cat:            "workout",
+        type:           "workout",
       });
     }
   }
