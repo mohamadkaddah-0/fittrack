@@ -945,10 +945,7 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
 
           <hr className="mb-16 border-[#1E1E1E]" />
 
-          {/* ── Calendar ── */}
-          <WorkoutCalendar calendarData={calendarData} exerciseLogByDate={exerciseLogByDate} />
-
-          <hr className="mb-16 border-[#1E1E1E]" />
+          {/* Calendar removed — see HomePage for the unified calendar */}
 
           {/* ── All exercises ── */}
           <section aria-label="All available exercises" className="mb-6">
