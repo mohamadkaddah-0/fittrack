@@ -693,8 +693,24 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
       mockUser.equipment, mockUser.activityLevel, exercises
     );
     setPlanDays(buildPlanDays(pool, exercises));
-    setCompletedPlanItems({});
+    // NOTE: do NOT reset completedPlanItems — they come from the DB
   }, [exercises, userLevel, boostCount]);
+
+  // Load checkmarks from database when user logs in
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    api.getCheckmarks()
+      .then(({ data }) => {
+        const map = {};
+        (data || []).forEach((row) => {
+          map[`${row.plan_day}-${row.exercise_id}`] = true;
+        });
+        setCompletedPlanItems(map);
+      })
+      .catch(() => {
+        // Silently fail — checkmarks just won't appear if API fails
+      });
+  }, [currentUser]);
 
   const todayPlanDay = 1;
 
@@ -711,6 +727,13 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
     const today    = getTodayKey();
 
     setCompletedPlanItems((prev) => ({ ...prev, [key]: isDone }));
+
+    // Save checkmark to database (non-blocking)
+    if (isDone) {
+      api.addCheckmark(exerciseId, day).catch(() => {});
+    } else {
+      api.removeCheckmark(exerciseId, day).catch(() => {});
+    }
 
     if (isDone) {
       setExerciseLogByDate((prev) => ({
