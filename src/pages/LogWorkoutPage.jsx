@@ -644,6 +644,8 @@ export default function LogWorkoutPage({ addWorkoutToCalendar, currentUser }) {
         await api.saveWorkoutLogToCalendar(getTodayKey());
         setSavedToCalendar(true);
         showToast("Workout saved to your calendar!", "#00E5FF");
+        // Notify other pages (e.g. HomePage) that calendar data has changed
+        window.dispatchEvent(new CustomEvent("fittrack:calendarUpdated"));
         return;
       } catch (error) {
         showToast(error.message || "Unable to save to calendar", "#FF2A5E");
@@ -665,6 +667,7 @@ export default function LogWorkoutPage({ addWorkoutToCalendar, currentUser }) {
     });
     setSavedToCalendar(true);
     showToast("Workout saved to your calendar!", "#00E5FF");
+    window.dispatchEvent(new CustomEvent("fittrack:calendarUpdated"));
   }
 
   async function handleDeleteEntry(id) {

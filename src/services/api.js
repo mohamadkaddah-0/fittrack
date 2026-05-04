@@ -1,4 +1,5 @@
-const API_BASE = "https://fittrack-t4iu.onrender.com/api";
+const API_BASE =
+  import.meta.env.VITE_API_URL || "https://fittrack-t4iu.onrender.com/api";
 
 const getToken = () => localStorage.getItem("fittrack_token");
 

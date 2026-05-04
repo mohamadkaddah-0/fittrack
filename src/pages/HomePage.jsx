@@ -190,8 +190,21 @@ export default function HomePage({ calendarData = {}, currentUser, deleteMealFro
 
     loadHomepageData();
 
+    // Re-fetch when the tab regains focus (e.g. after saving a workout on LogWorkoutPage)
+    function handleVisibilityChange() {
+      if (!document.hidden) loadHomepageData();
+    }
+    // Re-fetch when LogWorkoutPage fires the calendarUpdated event (same-tab navigation)
+    function handleCalendarUpdated() {
+      loadHomepageData();
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('fittrack:calendarUpdated', handleCalendarUpdated);
+
     return () => {
       cancelled = true;
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('fittrack:calendarUpdated', handleCalendarUpdated);
     };
   }, [useBackend]);
 
