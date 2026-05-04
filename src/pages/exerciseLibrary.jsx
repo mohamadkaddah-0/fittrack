@@ -732,47 +732,34 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
   function toggleExerciseDone(day, exerciseId) {
     if (day !== todayPlanDay) return;
     const key      = `${day}-${exerciseId}`;
-    const isDone   = !completedPlanItems[key];
+    // ── ONCE CHECKED, CANNOT BE UNCHECKED ──
+    if (completedPlanItems[key]) return;
+
     const exercise = exercises.find((ex) => ex.id === exerciseId);
     const today    = getTodayKey();
 
-    setCompletedPlanItems((prev) => ({ ...prev, [key]: isDone }));
+    setCompletedPlanItems((prev) => ({ ...prev, [key]: true }));
 
     // Save checkmark to database (non-blocking)
-    if (isDone) {
-      api.addCheckmark(exerciseId, day).catch(() => {});
-    } else {
-      api.removeCheckmark(exerciseId, day).catch(() => {});
-    }
+    api.addCheckmark(exerciseId, day).catch(() => {});
 
-    if (isDone) {
-      setExerciseLogByDate((prev) => ({
-        ...prev,
-        [today]: [...(prev[today] || []), { name: exercise?.name || "Exercise", category: exercise?.category || "Cardio" }],
-      }));
+    setExerciseLogByDate((prev) => ({
+      ...prev,
+      [today]: [...(prev[today] || []), { name: exercise?.name || "Exercise", category: exercise?.category || "Cardio" }],
+    }));
 
-      if (addWorkoutToCalendar) {
-        const rangeParts = (exercise?.kcal_range || "0").replace("–", "-").split("-");
-        const kcalMid = rangeParts.length === 2
-          ? Math.round((parseFloat(rangeParts[0]) + parseFloat(rangeParts[1])) / 2)
-          : parseFloat(rangeParts[0]) || 0;
+    if (addWorkoutToCalendar) {
+      const rangeParts = (exercise?.kcal_range || "0").replace("–", "-").split("-");
+      const kcalMid = rangeParts.length === 2
+        ? Math.round((parseFloat(rangeParts[0]) + parseFloat(rangeParts[1])) / 2)
+        : parseFloat(rangeParts[0]) || 0;
 
-        addWorkoutToCalendar(today, {
-          name:           exercise?.name || "Exercise",
-          category:       exercise?.category || "Cardio",
-          caloriesBurned: kcalMid,
-          cat:            "workout",
-          type:           "workout",
-        });
-      }
-    } else {
-      setExerciseLogByDate((prev) => {
-        const existing = prev[today] || [];
-        const index    = existing.findIndex((item) => item.name === (exercise?.name || "Exercise"));
-        if (index === -1) return prev;
-        const updated  = [...existing];
-        updated.splice(index, 1);
-        return { ...prev, [today]: updated };
+      addWorkoutToCalendar(today, {
+        name:           exercise?.name || "Exercise",
+        category:       exercise?.category || "Cardio",
+        caloriesBurned: kcalMid,
+        cat:            "workout",
+        type:           "workout",
       });
     }
   }
