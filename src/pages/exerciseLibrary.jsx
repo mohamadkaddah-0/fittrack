@@ -507,7 +507,6 @@ function WorkoutCalendar({ calendarData, exerciseLogByDate }) {
       const dateKey   = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
       const entries   = allCalendar[dateKey] || [];
       const meals     = entries.filter((e) => e.type !== "workout");
-      // Deduplicate workouts by name so each exercise counts only once per day
       const wRaw      = entries.filter((e) => e.type === "workout");
       const wSeen     = new Set();
       const exForDate = wRaw.filter((w) => {
@@ -531,12 +530,11 @@ function WorkoutCalendar({ calendarData, exerciseLogByDate }) {
   const cells            = buildCells();
   const selectedEntry    = allCalendar[selected] || [];
   const selectedMeals    = selectedEntry.filter((e) => e.type !== "workout");
-  // Deduplicate by name — each exercise should appear only once per day
-  const workoutsRaw      = selectedEntry.filter((e) => e.type === "workout");
-  const seenNames        = new Set();
-  const selectedExercises = workoutsRaw.filter((w) => {
-    if (seenNames.has(w.name)) return false;
-    seenNames.add(w.name);
+  const wRaw2            = selectedEntry.filter((e) => e.type === "workout");
+  const wSeen2           = new Set();
+  const selectedExercises = wRaw2.filter((w) => {
+    if (wSeen2.has(w.name)) return false;
+    wSeen2.add(w.name);
     return true;
   });
 
@@ -728,8 +726,7 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
 
   // ── 12-HOUR DAY ADVANCEMENT ─────────────────────────────────────────────
   // todayPlanDay starts at 1 and advances every 12 hours after the FIRST
-  // exercise check on Day 1. This is per-user and saved in localStorage.
-  // We re-check every 60 seconds so the UI updates without a refresh.
+  // exercise check on Day 1. Per-user, saved in localStorage.
   const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
 
   function computeTodayPlanDay() {
@@ -762,38 +759,44 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
   }
 
   function toggleExerciseDone(day, exerciseId) {
+    // Only allow checking exercises from TODAY's plan day
     if (day !== todayPlanDay) return;
-    const key      = `${day}-${exerciseId}`;
-    const isDone   = !completedPlanItems[key];
+
+    const key = `${day}-${exerciseId}`;
+
+    // Once checked, cannot be unchecked (locked)
+    if (completedPlanItems[key]) return;
+
     const exercise = exercises.find((ex) => ex.id === exerciseId);
     const today    = getTodayKey();
 
-    setCompletedPlanItems((prev) => ({ ...prev, [key]: isDone }));
+    setCompletedPlanItems((prev) => ({ ...prev, [key]: true }));
 
-    // Save checkmark to database (non-blocking)
-    if (isDone) {
-      api.addCheckmark(exerciseId, day).catch(() => {});
+    // Save checkmark to database
+    api.addCheckmark(exerciseId, day).catch(() => {});
 
-      // Save the plan start timestamp the very first time any exercise is checked.
-      // From this moment, every 12 hours advances todayPlanDay by 1.
-      const userId = currentUser?.id;
-      if (userId) {
-        const planStartKey = `planStart_${userId}`;
-        if (!localStorage.getItem(planStartKey)) {
-          localStorage.setItem(planStartKey, Date.now().toString());
-        }
+    // Save planStart the first time any exercise is checked → starts the 12-hour timer
+    const userId = currentUser?.id;
+    if (userId) {
+      const planStartKey = `planStart_${userId}`;
+      if (!localStorage.getItem(planStartKey)) {
+        localStorage.setItem(planStartKey, Date.now().toString());
       }
-    } else {
-      api.removeCheckmark(exerciseId, day).catch(() => {});
     }
 
-    if (isDone) {
-      setExerciseLogByDate((prev) => ({
-        ...prev,
-        [today]: [...(prev[today] || []), { name: exercise?.name || "Exercise", category: exercise?.category || "Cardio" }],
-      }));
+    setExerciseLogByDate((prev) => ({
+      ...prev,
+      [today]: [...(prev[today] || []), { name: exercise?.name || "Exercise", category: exercise?.category || "Cardio" }],
+    }));
 
-      if (addWorkoutToCalendar) {
+    // Add to calendar ONLY if not already there (no duplicates)
+    if (addWorkoutToCalendar) {
+      const todayEntries = calendarData?.[today] || [];
+      const alreadyExists = todayEntries.some(
+        (e) => e.type === "workout" && e.name === (exercise?.name || "Exercise")
+      );
+
+      if (!alreadyExists) {
         const rangeParts = (exercise?.kcal_range || "0").replace("–", "-").split("-");
         const kcalMid = rangeParts.length === 2
           ? Math.round((parseFloat(rangeParts[0]) + parseFloat(rangeParts[1])) / 2)
@@ -807,15 +810,6 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
           type:           "workout",
         });
       }
-    } else {
-      setExerciseLogByDate((prev) => {
-        const existing = prev[today] || [];
-        const index    = existing.findIndex((item) => item.name === (exercise?.name || "Exercise"));
-        if (index === -1) return prev;
-        const updated  = [...existing];
-        updated.splice(index, 1);
-        return { ...prev, [today]: updated };
-      });
     }
   }
 
