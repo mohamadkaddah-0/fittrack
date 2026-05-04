@@ -148,6 +148,10 @@ getMealIngredients: (mealId) => request(`/meals/pool/${mealId}`),
   // ── Exercise endpoints ──
   getExercises:    ()   => request("/exercises"),
   getExerciseById: (id) => request(`/exercises/${id}`),
+  // Exercise checkmarks
+  getCheckmarks:    ()                     => request("/checkmarks"),
+  addCheckmark:     (exerciseId, planDay)  => jsonRequest("/checkmarks", "POST", { exerciseId, planDay }),
+  removeCheckmark:  (exerciseId, planDay)  => request(`/checkmarks/${exerciseId}/${planDay}`, { method: "DELETE" }),
 
   // ── Google Fit endpoints ──
   getGoogleFitAuthUrl: () => request("/googlefit/auth-url"),
