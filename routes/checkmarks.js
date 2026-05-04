@@ -1,9 +1,15 @@
 const express = require('express');
 const pool    = require('../db/pool');
+const resolveUser = require('../middleware/resolveUser');
 const router  = express.Router();
 
-// Helper to get user_id from token or session header
+// Apply the same auth middleware that the rest of the app uses.
+// This decodes the JWT token from the Authorization header and sets req.fittrackUserId.
+router.use(resolveUser);
+
+// Helper that gets the user_id either from the decoded JWT, or from the fallback header.
 function getUserId(req) {
+  if (req.fittrackUserId) return Number(req.fittrackUserId);
   const headerId = req.headers['x-fittrack-user-id'];
   if (headerId) return Number(headerId);
   return null;
