@@ -12,6 +12,7 @@ app.use('/api/users',       require('./routes/users'));
 app.use('/api/survey',      require('./routes/survey'));
 app.use('/api/activity',    require('./routes/activity'));
 app.use('/api/exercises',   require('./routes/exercises'));
+app.use('/api/checkmarks', require('./routes/checkmarks'));
 app.use('/api/meals',       require('./routes/meals'));
 app.use('/api/ingredients', require('./routes/ingredients'));
 app.use('/api/googlefit',  require('./routes/googlefit'));
