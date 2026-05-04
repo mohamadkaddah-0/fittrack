@@ -507,7 +507,12 @@ function WorkoutCalendar({ calendarData, exerciseLogByDate }) {
       const dateKey   = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
       const entries   = allCalendar[dateKey] || [];
       const meals     = entries.filter((e) => e.type !== "workout");
-      const exForDate = exerciseLogByDate[dateKey] || [];
+      // Read workouts from calendarData (DB) so they persist after navigation/login
+      const workoutsFromDb = entries.filter((e) => e.type === "workout");
+      const exForDate = [
+        ...workoutsFromDb.map((w) => ({ name: w.name, category: w.category || "Cardio" })),
+        ...(exerciseLogByDate[dateKey] || []),
+      ];
 
       cells.push({
         day, dateKey, other,
@@ -524,7 +529,12 @@ function WorkoutCalendar({ calendarData, exerciseLogByDate }) {
   const cells            = buildCells();
   const selectedEntry    = allCalendar[selected] || [];
   const selectedMeals    = selectedEntry.filter((e) => e.type !== "workout");
-  const selectedExercises= exerciseLogByDate[selected] || [];
+  // Read workouts from calendarData (DB) so they show even after refresh/login
+  const selectedWorkoutsDb = selectedEntry.filter((e) => e.type === "workout");
+  const selectedExercises  = [
+    ...selectedWorkoutsDb.map((w) => ({ name: w.name, category: w.category || "Cardio" })),
+    ...(exerciseLogByDate[selected] || []),
+  ];
 
   return (
     <section aria-label="Calendar showing meals and exercises" className="mb-16">
