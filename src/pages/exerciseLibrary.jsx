@@ -73,11 +73,22 @@ function getEffectiveLevel(fitnessLevel, activityLevel) {
 }
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
-function pickRandom(array, count) {
+// Deterministic pseudo-random generator based on a seed.
+// Same seed → same picks every time. Different users → different plans.
+function seededRandom(seed) {
+  let state = seed;
+  return function () {
+    state = (state * 9301 + 49297) % 233280;
+    return state / 233280;
+  };
+}
+
+function pickRandom(array, count, rng) {
   const copy = [...array];
   const result = [];
+  const random = typeof rng === "function" ? rng : Math.random;
   while (result.length < count && copy.length > 0) {
-    const index = Math.floor(Math.random() * copy.length);
+    const index = Math.floor(random() * copy.length);
     result.push(copy[index]);
     copy.splice(index, 1);
   }
@@ -115,11 +126,12 @@ function getTodayKey() {
   return new Date().toISOString().split("T")[0];
 }
 
-function buildPlanDays(pool, exercises) {
+function buildPlanDays(pool, exercises, seed = 1) {
   const safePool = pool.length > 0
     ? pool
     : exercises.filter((ex) => EXERCISE_EQUIPMENT_MAP[ex.id] === "none");
 
+  const rng = seededRandom(seed);
   const lastUsed = {};
   const days = [];
 
@@ -133,7 +145,7 @@ function buildPlanDays(pool, exercises) {
         (ex) => !lastUsed[ex.id] || day - lastUsed[ex.id] >= 3
       );
       const source = available.length >= count ? available : safePool;
-      picks = pickRandom(source, count);
+      picks = pickRandom(source, count, rng);
       picks.forEach((ex) => { lastUsed[ex.id] = day; });
     }
 
@@ -704,9 +716,11 @@ export default function ExerciseLibrary({ calendarData = {}, addWorkoutToCalenda
       mockUser.goal, userLevel, mockUser.weightGoal,
       mockUser.equipment, mockUser.activityLevel, exercises
     );
-    setPlanDays(buildPlanDays(pool, exercises));
+    // Use user id as seed → same user always gets the same plan
+    const seed = (currentUser?.id || 1) + boostCount * 1000;
+    setPlanDays(buildPlanDays(pool, exercises, seed));
     // NOTE: do NOT reset completedPlanItems — they come from the DB
-  }, [exercises, userLevel, boostCount]);
+  }, [exercises, userLevel, boostCount, currentUser]);
 
   // Load checkmarks from database when user logs in
   useEffect(() => {
